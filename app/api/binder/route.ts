@@ -19,8 +19,45 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const binderId = searchParams.get('binderId')
+    const all = searchParams.get('all') === '1'
 
     let binder: { id: string; title: string; is_public: boolean } | null = null
+
+    if (all) {
+      // Todas las cartas del usuario a través de sus binders (para proponer cambios)
+      const { data: binders } = await supabase
+        .from('binders')
+        .select('id')
+        .eq('user_id', user.id)
+      const ids = (binders || []).map((b) => b.id)
+      if (ids.length === 0) {
+        return NextResponse.json({ cards: [] })
+      }
+      const { data: cards, error } = await supabase
+        .from('binder_cards')
+        .select(
+          'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override'
+        )
+        .in('binder_id', ids)
+        .order('slot_number', { ascending: true })
+      if (error) throw error
+
+      const meta = await getCardMetadataMap()
+      const enriched = await Promise.all(
+        (cards || []).map(async (c) => {
+          const m = meta.get(c.card_id)
+          return {
+            ...c,
+            rarity: m?.rarity ?? null,
+            supertype: m?.supertype ?? null,
+            subtypes: m?.subtypes ?? null,
+            types: m?.types ?? null,
+            image: await resolveCardImage(c.set_id, c.number)
+          }
+        })
+      )
+      return NextResponse.json({ cards: enriched })
+    }
 
     if (binderId) {
       const { data } = await supabase
@@ -56,7 +93,9 @@ export async function GET(req: Request) {
 
     const { data: cards, error } = await supabase
       .from('binder_cards')
-      .select('id, binder_id, card_id, card_name, set_id, number, slot_number, market_price')
+      .select(
+        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override'
+      )
       .eq('binder_id', binder.id)
       .order('slot_number', { ascending: true })
     if (error) throw error

@@ -9,6 +9,8 @@ export interface RawCard {
   number: string
   slot_number: number
   market_price: number | null
+  status?: string | null
+  price_override?: number | null
   rarity?: string | null
   supertype?: string | null
   subtypes?: string[] | null

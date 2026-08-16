@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
     // RLS: solo devuelve el binder si is_public = true (para visitantes anónimos)
     const { data: binder } = await supabase
       .from('binders')
-      .select('id, title')
+      .select('id, title, user_id')
       .eq('id', binderId)
       .eq('is_public', true)
       .maybeSingle()
@@ -22,9 +22,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
       return NextResponse.json({ error: 'Binder no encontrado o privado' }, { status: 404 })
     }
 
+    // Perfil del dueño para el badge del vendedor (solo campos públicos)
+    const { data: owner } = await supabase
+      .from('profiles')
+      .select('username, whatsapp_number, country, city')
+      .eq('id', binder.user_id)
+      .maybeSingle()
+
     const { data: cards, error } = await supabase
       .from('binder_cards')
-      .select('id, binder_id, card_id, card_name, set_id, number, slot_number, market_price')
+      .select(
+        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override'
+      )
       .eq('binder_id', binderId)
       .order('slot_number', { ascending: true })
     if (error) throw error
@@ -47,7 +56,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
       })
     )
 
-    return NextResponse.json({ binder, cards: enriched })
+    return NextResponse.json({
+      binder: { id: binder.id, title: binder.title },
+      owner,
+      cards: enriched
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
     return NextResponse.json({ error: message }, { status: 500 })

@@ -5,8 +5,12 @@ import { useRouter } from 'next/navigation'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SlotSearchModal, { type SearchResult } from '@/components/SlotSearchModal'
+import ProfileSettings from '@/components/ProfileSettings'
+import ProfileRequiredModal from '@/components/ProfileRequiredModal'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
+import { isProfileComplete, type Profile } from '@/lib/profile'
+import type { CardStatus } from '@/lib/cardStatus'
 import {
   SLOTS_PER_SHEET,
   computeTotalValue,
@@ -35,6 +39,9 @@ export default function BinderPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [currentSheet, setCurrentSheet] = useState(0)
   const [activeBinderId, setActiveBinderId] = useState<string | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [showProfile, setShowProfile] = useState(false)
+  const [sellCard, setSellCard] = useState<SlotCard | null>(null)
 
   const loadBinder = useCallback(async (binderId?: string) => {
     try {
@@ -62,6 +69,16 @@ export default function BinderPage() {
     }
   }, [])
 
+  const loadProfile = useCallback(async () => {
+    try {
+      const res = await fetch('/api/profile')
+      const data = await res.json()
+      if (res.ok && data.profile) setProfile(data.profile)
+    } catch {
+      // perfil no disponible: se reintenta al abrir configuración
+    }
+  }, [])
+
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
@@ -70,7 +87,8 @@ export default function BinderPage() {
       if (u) loadBinders(u.id)
     })
     loadBinder()
-  }, [loadBinder, loadBinders])
+    loadProfile()
+  }, [loadBinder, loadBinders, loadProfile])
 
   async function selectBinder(binderId: string) {
     setLoading(true)
@@ -198,6 +216,28 @@ export default function BinderPage() {
     }
   }
 
+  async function updateCardStatus(
+    card: SlotCard,
+    status: CardStatus,
+    priceOverride: number | null
+  ) {
+    setMessage(null)
+    try {
+      const res = await fetch(`/api/binder/slots/${card.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, price_override: priceOverride })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al actualizar el estado')
+      await loadBinder()
+      const s = status === 'for_sale' ? 'En venta' : status === 'for_trade' ? 'Acepta cambios' : status === 'reserved' ? 'Reservada' : 'Colección'
+      setMessage(`"${card.card_name}" ahora está: ${s}.`)
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Error al actualizar el estado')
+    }
+  }
+
   async function removeSlot(slotId: string) {
     try {
       const res = await fetch(`/api/binder/slots/${slotId}`, { method: 'DELETE' })
@@ -312,6 +352,16 @@ export default function BinderPage() {
           </button>
 
           <button
+            onClick={() => {
+              if (!profile) loadProfile()
+              setShowProfile(true)
+            }}
+            className="h-10 rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
+          >
+            Perfil
+          </button>
+
+          <button
             onClick={logout}
             className="h-10 rounded-xl px-3 text-sm font-medium text-slate-500 transition-colors hover:text-slate-200"
           >
@@ -349,6 +399,16 @@ export default function BinderPage() {
                   slots={sheetCards ? padSheet(sheetCards) : Array(9).fill(null)}
                   onRemoveSlot={removeSlot}
                   onEmptySlotClick={(slotIndex) => setSlotTarget({ sheetIndex, slotIndex })}
+                  onStatusChange={updateCardStatus}
+                  onSellCard={(card) => {
+                    if (isProfileComplete(profile)) {
+                      setMessage(
+                        `"${card.card_name}" está lista para vender. La publicación y los claims llegan pronto.`
+                      )
+                    } else {
+                      setSellCard(card)
+                    }
+                  }}
                 />
               )
             })}
@@ -370,6 +430,29 @@ export default function BinderPage() {
             await addCardToSlot(card)
             setSlotTarget(null)
           }}
+        />
+      )}
+
+      {showProfile && (
+        <ProfileSettings
+          profile={profile}
+          onSaved={(p) => {
+            setProfile(p)
+            setShowProfile(false)
+          }}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
+
+      {sellCard && (
+        <ProfileRequiredModal
+          cardName={sellCard.card_name}
+          onComplete={(p) => {
+            setProfile(p)
+            setMessage(`"${sellCard.card_name}" está lista para vender. La publicación y los claims llegan pronto.`)
+            setSellCard(null)
+          }}
+          onClose={() => setSellCard(null)}
         />
       )}
     </div>

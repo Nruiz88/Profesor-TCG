@@ -29,8 +29,11 @@ create table if not exists public.binder_cards (
   number text not null,           -- ej: '4'
   slot_number int not null,       -- Posición (1 a 9, etc.)
   market_price numeric(10, 2) default 0.00,
+  status text not null default 'collection',   -- collection | for_sale | for_trade | reserved
+  price_override numeric(10, 2),                -- precio manual del usuario (opcional)
   updated_at timestamptz not null default timezone('utc'::text, now()),
-  unique (binder_id, slot_number)
+  unique (binder_id, slot_number),
+  constraint binder_cards_status_check check (status in ('collection', 'for_sale', 'for_trade', 'reserved'))
 );
 
 create index if not exists idx_binder_cards_binder on public.binder_cards(binder_id);

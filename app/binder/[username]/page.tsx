@@ -4,49 +4,47 @@ import { useEffect, useState } from 'react'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
-import {
-  computeTotalValue,
-  groupIntoSheets,
-  padSheet,
-  toSlotCard,
-  type SlotCard
-} from '@/lib/sheets'
+import { computeTotalValue, groupIntoSheets, padSheet, toSlotCard, type SlotCard } from '@/lib/sheets'
 
 interface Binder {
   id: string
   title: string
 }
 
-export default function PublicBinderPage({ params }: { params: Promise<{ binderId: string }> }) {
-  const [binderId, setBinderId] = useState<string | null>(null)
+export default function PublicBinderByUsernamePage({
+  params
+}: {
+  params: Promise<{ username: string }>
+}) {
+  const [username, setUsername] = useState<string | null>(null)
   const [binder, setBinder] = useState<Binder | null>(null)
+  const [seller, setSeller] = useState<SellerInfo | null>(null)
   const [cards, setCards] = useState<SlotCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentSheet, setCurrentSheet] = useState(0)
-  const [seller, setSeller] = useState<SellerInfo | null>(null)
 
   useEffect(() => {
-    params.then(({ binderId }) => setBinderId(binderId))
+    params.then(({ username }) => setUsername(username))
   }, [params])
 
   useEffect(() => {
-    if (!binderId) return
+    if (!username) return
     ;(async () => {
       try {
-        const res = await fetch(`/api/public/binder/${binderId}`)
+        const res = await fetch(`/api/public/by-username/${encodeURIComponent(username)}`)
         const data = await res.json()
-        if (!res.ok) throw new Error(data.error || 'Error')
+        if (!res.ok) throw new Error(data.error || 'Binder no encontrado')
         setBinder(data.binder)
-        setCards((data.cards || []).map(toSlotCard))
         setSeller(data.owner ?? null)
+        setCards((data.cards || []).map(toSlotCard))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Binder no encontrado')
       } finally {
         setLoading(false)
       }
     })()
-  }, [binderId])
+  }, [username])
 
   const totalValue = computeTotalValue(cards)
   const sheets = groupIntoSheets(cards)
@@ -80,13 +78,13 @@ export default function PublicBinderPage({ params }: { params: Promise<{ binderI
         </div>
 
         <div className="flex flex-col items-end gap-3">
-        <div className="w-full sm:w-64 rounded-xl border border-yellow-400/20 bg-slate-900 px-4 py-2 text-right">
-          <p className="text-[10px] uppercase tracking-widest text-yellow-400/50">Valor total</p>
-          <p className="text-lg font-bold text-yellow-400">
-            ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
-            <span className="text-xs font-semibold text-yellow-400/50">USD</span>
-          </p>
-        </div>
+          <div className="w-full rounded-xl border border-yellow-400/20 bg-slate-900 px-4 py-2 text-right sm:w-64">
+            <p className="text-[10px] uppercase tracking-widest text-yellow-400/50">Valor total</p>
+            <p className="text-lg font-bold text-yellow-400">
+              ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+              <span className="text-xs font-semibold text-yellow-400/50">USD</span>
+            </p>
+          </div>
         </div>
       </header>
 
