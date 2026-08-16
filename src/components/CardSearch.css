@@ -1,0 +1,81 @@
+.search__form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search__input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 1rem;
+}
+
+.search__input::placeholder {
+  color: #64748b;
+}
+
+.search__button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.search__button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.search__error {
+  color: #fca5a5;
+  margin-top: 0.75rem;
+}
+
+.search__results {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.search__card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 1rem;
+  width: 100%;
+  text-align: left;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.search__card:hover {
+  border-color: #3b82f6;
+}
+
+.search__card-name {
+  font-weight: 600;
+}
+
+.search__card-set {
+  grid-column: 1;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.search__card-price {
+  grid-row: span 2;
+  align-self: center;
+  color: #7dd3fc;
+  font-weight: 600;
+}
