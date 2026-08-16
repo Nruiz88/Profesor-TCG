@@ -1,5 +1,9 @@
+'use client'
+
+import { useState } from 'react'
 import type { SlotCard } from '@/lib/sheets'
 import PokemonCard from './PokemonCard'
+import CardDetailModal from './CardDetailModal'
 
 interface BinderSheetProps {
   sheetNumber: number
@@ -9,6 +13,8 @@ interface BinderSheetProps {
 }
 
 export default function BinderSheet({ sheetNumber, slots, onRemoveSlot, onEmptySlotClick }: BinderSheetProps) {
+  const [selected, setSelected] = useState<SlotCard | null>(null)
+
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
       <div className="mb-4 flex items-center justify-between px-1">
@@ -24,17 +30,31 @@ export default function BinderSheet({ sheetNumber, slots, onRemoveSlot, onEmptyS
           >
             {card ? (
               <div className="relative h-full w-full">
-                <PokemonCard card={card} />
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelected(card)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') setSelected(card)
+                  }}
+                  className="h-full w-full cursor-pointer rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-binder-accent"
+                  aria-label={`Ver detalle de ${card.card_name}`}
+                >
+                  <PokemonCard card={card} />
+                </div>
 
                 {card.market_price != null && card.market_price > 0 && (
-                  <div className="absolute right-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-yellow-400 shadow-md ring-1 ring-yellow-400/30">
+                  <div className="pointer-events-none absolute right-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-yellow-400 shadow-md ring-1 ring-yellow-400/30">
                     ${card.market_price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 )}
 
                 {onRemoveSlot && (
                   <button
-                    onClick={() => onRemoveSlot(card.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onRemoveSlot(card.id)
+                    }}
                     className="absolute left-1.5 top-1.5 rounded-full bg-black/70 p-1 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
                     aria-label={`Quitar ${card.card_name}`}
                   >
@@ -68,6 +88,8 @@ export default function BinderSheet({ sheetNumber, slots, onRemoveSlot, onEmptyS
           </div>
         ))}
       </div>
+
+      {selected && <CardDetailModal card={selected} onClose={() => setSelected(null)} />}
     </div>
   )
 }
