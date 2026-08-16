@@ -78,7 +78,7 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
             <h2 className="text-lg font-semibold">Agregar carta · {slotLabel}</h2>
-            <p className="text-xs text-slate-400">Buscá por nombre en el catálogo local</p>
+            <p className="text-xs text-slate-400">Buscá por nombre, número (015/084) o número + set</p>
           </div>
           <button
             onClick={onClose}
@@ -93,7 +93,7 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Escribí el nombre de la carta… ej: charizard"
+            placeholder="Ej: charizard · 015/084 · 015/084 pitch black"
             autoFocus
             className="w-full rounded-xl border border-white/10 bg-binder-sheet px-4 py-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition-colors focus:border-binder-accent"
           />

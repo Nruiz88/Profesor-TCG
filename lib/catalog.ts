@@ -101,6 +101,30 @@ export async function searchCards(query: string, limit = 40): Promise<Array<Card
   if (!q) return []
 
   const index = await buildIndex()
+  const sets = await getSets()
+
+  // Busqueda por número tipo "015/084", "15/84" o "015" (opcionalmente + nombre de set)
+  const numberMatch = q.match(/^(\d+)(?:\s*\/\s*(\d+))?\s*(.*)$/)
+  if (numberMatch) {
+    const num = parseInt(numberMatch[1], 10)
+    const total = numberMatch[2] ? parseInt(numberMatch[2], 10) : null
+    const rest = numberMatch[3].trim()
+    const setTotal = new Map(sets.map((s) => [s.id, s.printedTotal]))
+
+    return index
+      .filter((c) => {
+        const cardNum = parseInt(c.number, 10)
+        if (cardNum !== num) return false
+        if (total !== null && total !== setTotal.get(c.setId)) return false
+        if (rest) {
+          const setName = sets.find((s) => s.id === c.setId)?.name.toLowerCase() ?? ''
+          if (!setName.includes(rest)) return false
+        }
+        return true
+      })
+      .slice(0, limit)
+  }
+
   return index
     .filter((c) => c.name.toLowerCase().includes(q))
     .slice(0, limit)

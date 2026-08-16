@@ -122,12 +122,11 @@ export default function PublicBinderPage({ params }: { params: Promise<{ binderI
             {[0, 1].map((offset) => {
               const sheetIndex = currentSheet * 2 + offset
               const sheetCards = sheets[sheetIndex]
-              if (!sheetCards) return null
               return (
                 <BinderSheet
                   key={sheetIndex}
                   sheetNumber={sheetIndex + 1}
-                  slots={padSheet(sheetCards)}
+                  slots={sheetCards ? padSheet(sheetCards) : Array(9).fill(null)}
                 />
               )
             })}
@@ -146,7 +145,7 @@ export default function PublicBinderPage({ params }: { params: Promise<{ binderI
             </span>
             <button
               onClick={() => setCurrentSheet((p) => p + 1)}
-              disabled={currentSheet * 2 + 1 >= sheets.length}
+              disabled={currentSheet + 1 >= Math.max(1, Math.ceil(sheets.length / 2))}
               className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-40"
             >
               Siguiente ►

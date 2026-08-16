@@ -347,24 +347,11 @@ export default function BinderPage() {
             {[0, 1].map((offset) => {
               const sheetIndex = currentSheet * 2 + offset
               const sheetCards = sheets[sheetIndex]
-              if (!sheetCards) {
-                if (sheets.length === 0 && sheetIndex === 0) {
-                  return (
-                    <BinderSheet
-                      key={sheetIndex}
-                      sheetNumber={1}
-                      slots={Array(9).fill(null)}
-                      onEmptySlotClick={(slotIndex) => setSlotTarget({ sheetIndex, slotIndex })}
-                    />
-                  )
-                }
-                return null
-              }
               return (
                 <BinderSheet
                   key={sheetIndex}
                   sheetNumber={sheetIndex + 1}
-                  slots={padSheet(sheetCards)}
+                  slots={sheetCards ? padSheet(sheetCards) : Array(9).fill(null)}
                   onRemoveSlot={removeSlot}
                   onEmptySlotClick={(slotIndex) => setSlotTarget({ sheetIndex, slotIndex })}
                 />
@@ -385,7 +372,7 @@ export default function BinderPage() {
             </span>
             <button
               onClick={() => setCurrentSheet((p) => p + 1)}
-              disabled={currentSheet * 2 + 1 >= sheets.length}
+              disabled={currentSheet + 1 >= Math.max(1, Math.ceil(sheets.length / 2))}
               className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-40"
             >
               Siguiente ►
