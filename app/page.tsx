@@ -2,45 +2,58 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import BinderSheet, { type SlotCard } from '@/components/BinderSheet'
-import AddCardModal from '@/components/AddCardModal'
 import SlotSearchModal, { type SearchResult } from '@/components/SlotSearchModal'
 
-interface Page {
+interface Binder {
   id: string
-  name: string
-  position: number
-  slots: SlotCard[]
+  title: string
 }
 
-interface PickedCard {
+interface RawCard {
   id: string
-  name: string
+  binder_id: string
+  card_id: string
+  card_name: string
+  set_id: string
   number: string
-  rarity: string | null
-  image: string
+  slot_number: number
+  market_price: number | null
 }
 
-interface SlotTarget {
-  pageId: string
-  slot: number
+const SLOTS_PER_SHEET = 9
+
+function toSlotCard(card: RawCard): SlotCard {
+  return {
+    ...card,
+    image: `https://images.pokemontcg.io/${card.set_id}/${card.number}_hires.png`
+  }
 }
 
-const SHEET_SIZE = 9
+function groupIntoSheets(cards: SlotCard[]): SlotCard[][] {
+  const sheets: SlotCard[][] = []
+  for (const card of cards) {
+    const sheetIndex = Math.floor((card.slot_number - 1) / SLOTS_PER_SHEET)
+    if (!sheets[sheetIndex]) sheets[sheetIndex] = []
+    sheets[sheetIndex].push(card)
+  }
+  return sheets
+}
 
-function sheetSlots(slots: SlotCard[]): (SlotCard | null)[] {
-  const arr: (SlotCard | null)[] = Array(SHEET_SIZE).fill(null)
-  for (const s of slots) {
-    if (s.slot >= 0 && s.slot < SHEET_SIZE) arr[s.slot] = s
+function padSheet(cards: SlotCard[]): (SlotCard | null)[] {
+  const arr: (SlotCard | null)[] = Array(SLOTS_PER_SHEET).fill(null)
+  for (const card of cards) {
+    const idx = (card.slot_number - 1) % SLOTS_PER_SHEET
+    arr[idx] = card
   }
   return arr
 }
 
 export default function BinderPage() {
-  const [pages, setPages] = useState<Page[]>([])
+  const [binder, setBinder] = useState<Binder | null>(null)
+  const [cards, setCards] = useState<SlotCard[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
-  const [showAdd, setShowAdd] = useState(false)
-  const [slotTarget, setSlotTarget] = useState<SlotTarget | null>(null)
+  const [slotTarget, setSlotTarget] = useState<{ sheetIndex: number; slotIndex: number } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
   const loadBinder = useCallback(async () => {
@@ -48,7 +61,8 @@ export default function BinderPage() {
       const res = await fetch('/api/binder')
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error')
-      setPages(data.pages || [])
+      setBinder(data.binder)
+      setCards((data.cards || []).map(toSlotCard))
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Error al cargar el binder')
     } finally {
@@ -60,15 +74,15 @@ export default function BinderPage() {
     loadBinder()
   }, [loadBinder])
 
-  const totalValue = pages.reduce(
-    (sum, page) => sum + page.slots.reduce((s, c) => s + (c.market_price ?? 0), 0),
-    0
-  )
-  const totalCards = pages.reduce((sum, page) => sum + page.slots.length, 0)
+  const totalValue = cards.reduce((sum, c) => sum + (c.market_price ?? 0), 0)
+  const totalCards = cards.length
+
+  const sheets = groupIntoSheets(cards)
+  // Siempre mostramos al menos una hoja vacía al final para poder agregar
+  if (sheets.length === 0) sheets.push([])
 
   async function updatePrices() {
-    const cardIds = pages.flatMap((p) => p.slots.map((s) => s.card_id))
-    if (cardIds.length === 0) return
+    if (!binder) return
 
     setUpdating(true)
     setMessage(null)
@@ -76,7 +90,7 @@ export default function BinderPage() {
       const res = await fetch('/api/binder/update-prices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cardIds })
+        body: JSON.stringify({ binderId: binder.id })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error')
@@ -86,18 +100,6 @@ export default function BinderPage() {
       setMessage(err instanceof Error ? err.message : 'Error al actualizar precios')
     } finally {
       setUpdating(false)
-    }
-  }
-
-  async function addPage() {
-    try {
-      const res = await fetch('/api/binder/pages', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error')
-      await loadBinder()
-      setShowAdd(true)
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Error al crear hoja')
     }
   }
 
@@ -113,79 +115,25 @@ export default function BinderPage() {
   }
 
   async function addCardToSlot(card: SearchResult) {
-    if (!slotTarget) throw new Error('Sin slot objetivo')
+    if (!binder || !slotTarget) throw new Error('Sin binder o slot objetivo')
 
-    const setParts = card.id.split('-')
-    const setId = setParts[0]
+    const slotNumber = slotTarget.sheetIndex * SLOTS_PER_SHEET + slotTarget.slotIndex + 1
 
     const res = await fetch('/api/binder/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        page_id: slotTarget.pageId,
-        slot: slotTarget.slot,
+        binder_id: binder.id,
+        slot_number: slotNumber,
         card_id: card.id,
         card_name: card.name,
-        card_set_id: setId,
-        card_set_name: card.set_name,
-        card_number: card.number,
-        card_rarity: card.rarity,
-        card_image: card.image
+        set_id: card.set_id,
+        number: card.number
       })
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Error al guardar carta')
     await loadBinder()
-  }
-
-  async function addCard(card: PickedCard) {
-    const setParts = card.id.split('-')
-    const setId = setParts[0]
-    const number = card.number || setParts.slice(1).join('-')
-
-    try {
-      let targetPage = pages.find((p) => p.slots.length < SHEET_SIZE)
-
-      if (!targetPage) {
-        const res = await fetch('/api/binder/pages', { method: 'POST' })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error || 'Error al crear hoja')
-        await loadBinder()
-        targetPage = (await fetch('/api/binder').then((r) => r.json())).pages.find(
-          (p: Page) => p.slots.length < SHEET_SIZE
-        )
-      }
-
-      if (!targetPage) {
-        setMessage('No hay espacio en el binder')
-        return
-      }
-
-      const occupied = new Set(targetPage.slots.map((s) => s.slot))
-      let freeSlot = 0
-      while (occupied.has(freeSlot)) freeSlot++
-
-      const res = await fetch('/api/binder/slots', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          page_id: targetPage.id,
-          slot: freeSlot,
-          card_id: card.id,
-          card_name: card.name,
-          card_set_id: setId,
-          card_set_name: setId.toUpperCase(),
-          card_number: number,
-          card_rarity: card.rarity,
-          card_image: card.image
-        })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error al agregar carta')
-      await loadBinder()
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Error al agregar carta')
-    }
   }
 
   return (
@@ -194,7 +142,7 @@ export default function BinderPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Profesor TCG</h1>
           <p className="text-sm text-slate-400">
-            {totalCards} cartas en {pages.length} hoja{pages.length !== 1 ? 's' : ''}
+            {binder?.title} · {totalCards} cartas en {sheets.length} hoja{sheets.length !== 1 ? 's' : ''}
           </p>
         </div>
 
@@ -214,20 +162,6 @@ export default function BinderPage() {
           >
             {updating ? 'Actualizando…' : 'Actualizar precios'}
           </button>
-
-          <button
-            onClick={() => setShowAdd(true)}
-            className="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:bg-white/20"
-          >
-            + Agregar carta
-          </button>
-
-          <button
-            onClick={addPage}
-            className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/5"
-          >
-            + Nueva hoja
-          </button>
         </div>
       </header>
 
@@ -239,40 +173,23 @@ export default function BinderPage() {
 
       {loading ? (
         <p className="py-20 text-center text-slate-500">Cargando binder…</p>
-      ) : pages.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/15 py-20 text-center">
-          <p className="text-slate-400">Tu binder está vacío.</p>
-          <button
-            onClick={addPage}
-            className="mt-4 rounded-xl bg-binder-accent px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500"
-          >
-            Crear primera hoja
-          </button>
-        </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
-          {pages.map((page) => (
+          {sheets.map((sheetCards, sheetIndex) => (
             <BinderSheet
-              key={page.id}
-              name={page.name}
-              slots={sheetSlots(page.slots)}
+              key={sheetIndex}
+              sheetNumber={sheetIndex + 1}
+              slots={padSheet(sheetCards)}
               onRemoveSlot={removeSlot}
-              onEmptySlotClick={(slot) => setSlotTarget({ pageId: page.id, slot })}
+              onEmptySlotClick={(slotIndex) => setSlotTarget({ sheetIndex, slotIndex })}
             />
           ))}
         </div>
       )}
 
-      {showAdd && (
-        <AddCardModal
-          onClose={() => setShowAdd(false)}
-          onAdd={addCard}
-        />
-      )}
-
       {slotTarget && (
         <SlotSearchModal
-          slotLabel={`Hoja ${(pages.find((p) => p.id === slotTarget.pageId)?.position ?? 0) + 1} · bolsillo ${slotTarget.slot + 1}`}
+          slotLabel={`Hoja ${slotTarget.sheetIndex + 1} · bolsillo ${slotTarget.slotIndex + 1}`}
           onClose={() => setSlotTarget(null)}
           onSelect={async (card) => {
             await addCardToSlot(card)

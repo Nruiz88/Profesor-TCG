@@ -4,15 +4,12 @@ import { getSupabase } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
 
 interface SlotInput {
-  page_id: string
-  slot: number
+  binder_id: string
+  slot_number: number
   card_id: string
   card_name: string
-  card_set_id: string
-  card_set_name: string
-  card_number: string
-  card_rarity: string | null
-  card_image: string
+  set_id: string
+  number: string
 }
 
 export async function POST(req: Request) {
@@ -26,28 +23,31 @@ export async function POST(req: Request) {
   }
 
   if (
-    !body.page_id ||
-    typeof body.slot !== 'number' ||
-    body.slot < 0 ||
-    body.slot > 8 ||
+    !body.binder_id ||
+    typeof body.slot_number !== 'number' ||
+    body.slot_number < 1 ||
     !body.card_id ||
-    !body.card_name
+    !body.card_name ||
+    !body.set_id ||
+    !body.number
   ) {
     return NextResponse.json({ error: 'Datos de slot inválidos' }, { status: 400 })
   }
 
   try {
-    const { error } = await supabase.from('binder_slots').insert({
-      page_id: body.page_id,
-      slot: body.slot,
-      card_id: body.card_id,
-      card_name: body.card_name,
-      card_set_id: body.card_set_id,
-      card_set_name: body.card_set_name,
-      card_number: body.card_number,
-      card_rarity: body.card_rarity || null,
-      card_image: body.card_image
-    })
+    const { error } = await supabase.from('binder_cards').upsert(
+      {
+        binder_id: body.binder_id,
+        slot_number: body.slot_number,
+        card_id: body.card_id,
+        card_name: body.card_name,
+        set_id: body.set_id,
+        number: body.number,
+        market_price: 0,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: 'binder_id,slot_number' }
+    )
     if (error) throw error
 
     return NextResponse.json({ success: true }, { status: 201 })

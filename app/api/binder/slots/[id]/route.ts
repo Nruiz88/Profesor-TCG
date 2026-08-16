@@ -8,7 +8,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const supabase = getSupabase()
 
   try {
-    const { error } = await supabase.from('binder_slots').delete().eq('id', id)
+    const { error } = await supabase.from('binder_cards').delete().eq('id', id)
     if (error) throw error
 
     return NextResponse.json({ success: true })

@@ -1,29 +1,27 @@
 export interface SlotCard {
   id: string
-  page_id: string
-  slot: number
+  binder_id: string
   card_id: string
   card_name: string
-  card_set_id: string
-  card_set_name: string
-  card_number: string
-  card_rarity: string | null
-  card_image: string
+  set_id: string
+  number: string
+  slot_number: number
   market_price: number | null
+  image: string
 }
 
 interface BinderSheetProps {
-  name: string
+  sheetNumber: number
   slots: (SlotCard | null)[]
   onRemoveSlot?: (slotId: string) => void
-  onEmptySlotClick?: (slot: number) => void
+  onEmptySlotClick?: (slotIndex: number) => void
 }
 
-export default function BinderSheet({ name, slots, onRemoveSlot, onEmptySlotClick }: BinderSheetProps) {
+export default function BinderSheet({ sheetNumber, slots, onRemoveSlot, onEmptySlotClick }: BinderSheetProps) {
   return (
     <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-binder-sheet to-binder-bg p-4 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
       <div className="mb-3 flex items-center justify-between px-1">
-        <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-400">{name}</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-400">Hoja {sheetNumber}</h3>
         <div className="h-px flex-1 mx-3 bg-white/10" />
         <span className="text-xs text-slate-500">{slots.filter(Boolean).length}/9</span>
       </div>
@@ -38,7 +36,7 @@ export default function BinderSheet({ name, slots, onRemoveSlot, onEmptySlotClic
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={card.card_image}
+                  src={card.image}
                   alt={card.card_name}
                   loading="lazy"
                   className="absolute inset-0 h-full w-full object-cover"
@@ -48,11 +46,11 @@ export default function BinderSheet({ name, slots, onRemoveSlot, onEmptySlotClic
                     {card.card_name}
                   </p>
                   <p className="truncate text-[9px] text-slate-300">
-                    {card.card_set_name} {card.card_number}
+                    {card.set_id.toUpperCase()} · {card.number}
                   </p>
                 </div>
 
-                {card.market_price != null && (
+                {card.market_price != null && card.market_price > 0 && (
                   <div className="absolute right-1 top-1 rounded-full bg-binder-accent px-2 py-0.5 text-[10px] font-bold text-white shadow-lg">
                     ${card.market_price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
