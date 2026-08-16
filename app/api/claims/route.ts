@@ -33,24 +33,17 @@ export async function POST(req: Request) {
     // Primero revierte reservas vencidas (soft lock expirado vuelve a estar disponible)
     await revertExpiredReservations(admin)
 
+    // Una carta en venta/cambio es pública por sí misma (aparece en el
+    // marketplace) aunque su binder esté privado, así que el claim no exige
+    // binder público: basta con que la carta esté listada.
     const { data: card, error: cardError } = await admin
       .from('binder_cards')
-      .select(
-        'id, binder_id, status, is_for_sale, is_for_trade, reserved_until, binders!binder_cards_binder_id_fkey!inner(is_public)'
-      )
+      .select('id, binder_id, status, is_for_sale, is_for_trade, reserved_until')
       .eq('id', cardId)
       .maybeSingle()
     if (cardError) throw cardError
     if (!card) {
       return NextResponse.json({ error: 'Carta no encontrada' }, { status: 404 })
-    }
-
-    const binder = Array.isArray(card.binders) ? card.binders[0] : card.binders
-    if (!binder?.is_public) {
-      return NextResponse.json(
-        { error: 'La carta no está en un binder público' },
-        { status: 403 }
-      )
     }
 
     if (!card.is_for_sale && !card.is_for_trade) {

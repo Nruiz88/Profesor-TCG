@@ -500,6 +500,30 @@ export default function BinderPage() {
         />
       </div>
 
+      {/* Aviso: cartas en venta/cambio con binder privado. Las cartas igual
+          aparecen en el marketplace como publicación individual; el binder
+          completo solo se ve si es público. */}
+      {binder && !binder.is_public && cards.some((c) => c.is_for_sale || c.is_for_trade) && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <p className="text-sm leading-relaxed text-amber-200">
+            <strong>
+              {cards.filter((c) => c.is_for_sale || c.is_for_trade).length}{" "}
+              carta{cards.filter((c) => c.is_for_sale || c.is_for_trade).length !== 1 ? 's' : ''}{" "}
+              en venta/cambio
+            </strong>{' '}
+            aparecen en el marketplace como publicación individual, pero tu binder completo es
+            privado: solo quienes tengan el link pueden ver la colección.
+          </p>
+          <button
+            onClick={togglePublic}
+            className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-amber-400"
+          >
+            <GlobeIcon width={15} height={15} />
+            Hacer público el binder
+          </button>
+        </div>
+      )}
+
       {message && (
         <div className="mb-4 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-300">
           {message}

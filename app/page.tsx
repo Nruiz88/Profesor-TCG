@@ -4,6 +4,7 @@ import CommunityStatsBar from '@/components/CommunityStatsBar'
 import LiveMarketFeed from '@/components/LiveMarketFeed'
 import LiveActivityTicker from '@/components/LiveActivityTicker'
 import TradeFairnessWidget from '@/components/TradeFairnessWidget'
+import ClaimSimulator from '@/components/ClaimSimulator'
 import {
   CardsIcon,
   WalletIcon,
@@ -202,6 +203,31 @@ export default function LandingPage() {
 
         <div className="mt-10">
           <LiveMarketFeed />
+        </div>
+      </section>
+
+      {/* Simulador en vivo del WhatsApp Claim */}
+      <section className="border-t border-slate-800/60 bg-slate-900/40 py-20">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="mb-10 max-w-2xl">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-400">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              Simulador en vivo
+            </p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">
+              Así de fácil se vende desde tu Binder 3D
+            </h2>
+            <p className="mt-3 text-slate-400">
+              Un clic aplica la reserva de 24&nbsp;h y le abre el WhatsApp con el mensaje listo al
+              comprador. Probá la simulación: la carta pasa a{' '}
+              <span className="font-semibold text-amber-300">Reservada</span> y el vendedor recibe el
+              claim al instante.
+            </p>
+          </div>
+          <ClaimSimulator />
         </div>
       </section>
 

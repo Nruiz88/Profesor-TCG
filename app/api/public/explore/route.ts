@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getCardMetadataMap, getSets } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
 import { effectivePrice } from '@/lib/cardStatus'
@@ -9,6 +10,14 @@ export const dynamic = 'force-dynamic'
 const MAX_LIMIT = 120
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>
+
+type AdminClient = ReturnType<typeof createAdminClient>
+
+// Tipo estructural mínimo para funciones compartidas entre el cliente regular
+// (RLS) y el de service role: ambos exponen .from(table) con la misma cadena.
+type QueryClient = {
+  from: (table: string) => any
+}
 
 // Fila cruda de la query anidada binder_cards -> binders
 interface ExploreCardRow {
@@ -31,10 +40,12 @@ interface ExploreCardRow {
     id: string
     title: string
     user_id: string
+    is_public: boolean
   } | null
 }
 
-// Perfil del vendedor (RLS: lectura pública solo para dueños con binder público)
+// Perfil del vendedor (lectura con service role: una carta en venta/cambio es
+// pública por sí misma aunque su binder esté privado)
 interface SellerProfile {
   username: string
   city: string | null
@@ -45,7 +56,7 @@ interface SellerProfile {
 // Perfiles por user_id — consulta aparte porque binders.user_id apunta a
 // auth.users y no hay FK directo hacia profiles (PostgREST no puede anidarlos).
 async function getProfilesByUserId(
-  supabase: SupabaseClient,
+  supabase: QueryClient,
   userIds: string[]
 ): Promise<Map<string, SellerProfile>> {
   if (userIds.length === 0) return new Map()
@@ -55,15 +66,23 @@ async function getProfilesByUserId(
     .in('id', userIds)
   if (error) throw error
   return new Map(
-    (data || []).map((p) => [
-      p.id,
-      {
-        username: p.username,
-        city: p.city,
-        country: p.country,
-        whatsapp_number: p.whatsapp_number
-      }
-    ])
+    (data || []).map(
+      (p: {
+        id: string
+        username: string
+        city: string | null
+        country: string | null
+        whatsapp_number: string | null
+      }) => [
+        p.id,
+        {
+          username: p.username,
+          city: p.city,
+          country: p.country,
+          whatsapp_number: p.whatsapp_number
+        }
+      ]
+    )
   )
 }
 
@@ -83,6 +102,7 @@ export interface ExploreCard {
   city: string | null
   country: string | null
   whatsapp_number: string | null
+  binder_public: boolean
   updated_at: string
 }
 
@@ -116,7 +136,16 @@ export async function GET(req: Request) {
     if (view === 'binders') {
       return await getBinders(supabase)
     }
-    return await getCards(supabase, {
+
+    // La vista de cartas usa service role: una carta marcada en venta/cambio
+    // es pública por sí misma y debe aparecer en el marketplace aunque su
+    // binder esté privado (solo esa carta, no el binder completo).
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const cardsClient =
+      serviceKey && url ? createAdminClient(url, serviceKey) : supabase
+
+    return await getCards(cardsClient, {
       mode,
       q,
       setFilter,
@@ -132,7 +161,7 @@ export async function GET(req: Request) {
 }
 
 async function getCards(
-  supabase: SupabaseClient,
+  supabase: QueryClient,
   opts: {
     mode: string
     q: string
@@ -152,7 +181,7 @@ async function getCards(
        market_price, status, price_override, is_for_sale, is_for_trade,
        price, trade_notes, updated_at,
        binders!binder_cards_binder_id_fkey!inner (
-         id, title, user_id
+         id, title, user_id, is_public
        )`
     )
     .or('is_for_sale.eq.true,is_for_trade.eq.true')
@@ -212,6 +241,7 @@ async function getCards(
       city: seller?.city ?? null,
       country: seller?.country ?? null,
       whatsapp_number: seller?.whatsapp_number ?? null,
+      binder_public: !!r.binders?.is_public,
       updated_at: r.updated_at
     })
   }
