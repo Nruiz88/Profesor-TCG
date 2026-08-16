@@ -35,12 +35,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Rutas protegidas: si no hay usuario, redirigir a /login
-  if (
-    !user &&
-    (pathname === '/' ||
-      pathname.startsWith('/binder') ||
-      pathname.startsWith('/api/binder'))
-  ) {
+  if (!user && (pathname.startsWith('/binder') || pathname.startsWith('/api/binder'))) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('next', pathname)
@@ -50,7 +45,7 @@ export async function middleware(request: NextRequest) {
   // Si hay usuario y va a /login, ir al binder
   if (user && pathname === '/login') {
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    url.pathname = '/binder'
     url.search = ''
     return NextResponse.redirect(url)
   }

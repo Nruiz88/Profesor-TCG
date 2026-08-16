@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -27,7 +28,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
       }
-      router.push('/')
+      router.push('/binder')
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error de autenticación')
@@ -43,6 +44,9 @@ export default function LoginPage() {
         <p className="mt-1 text-sm text-slate-500">
           {mode === 'login' ? 'Iniciá sesión en tu binder privado' : 'Creá tu cuenta y tu binder privado'}
         </p>
+        <Link href="/" className="mt-2 inline-block text-xs text-slate-600 hover:text-slate-300">
+          ← Volver a la página principal
+        </Link>
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
           <input
