@@ -34,10 +34,18 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Rutas protegidas: el binder privado (/binder) y las API privadas.
-  // /binder/[username] es la ficha pública y debe poder verse sin sesión.
+  // Rutas protegidas: el binder privado (/binder), la bandeja de ofertas
+  // (/offers) y las API privadas. /binder/[username] es la ficha pública
+  // y debe poder verse sin sesión.
   const isPrivateBinder = pathname === '/binder' || pathname === '/binder/'
-  if (!user && (isPrivateBinder || pathname.startsWith('/api/binder'))) {
+  if (
+    !user &&
+    (isPrivateBinder ||
+      pathname === '/offers' ||
+      pathname.startsWith('/api/binder') ||
+      pathname.startsWith('/api/offers') ||
+      pathname === '/api/profile')
+  ) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('next', pathname)

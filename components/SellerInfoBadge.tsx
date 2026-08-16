@@ -1,6 +1,7 @@
 import { formatLocation, whatsAppLink } from '@/lib/profile'
 
 export interface SellerInfo {
+  id?: string | null
   username: string | null
   whatsapp_number: string | null
   country: string | null

@@ -25,14 +25,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
     // Perfil del dueño para el badge del vendedor (solo campos públicos)
     const { data: owner } = await supabase
       .from('profiles')
-      .select('username, whatsapp_number, country, city')
+      .select('id, username, whatsapp_number, country, city')
       .eq('id', binder.user_id)
       .maybeSingle()
 
     const { data: cards, error } = await supabase
       .from('binder_cards')
       .select(
-        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override'
+        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes'
       )
       .eq('binder_id', binderId)
       .order('slot_number', { ascending: true })

@@ -36,7 +36,7 @@ export async function GET(req: Request) {
       const { data: cards, error } = await supabase
         .from('binder_cards')
         .select(
-          'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override'
+          'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes'
         )
         .in('binder_id', ids)
         .order('slot_number', { ascending: true })
@@ -59,10 +59,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ cards: enriched })
     }
 
+    const BINDER_SELECT = 'id, title, description, is_public, cover_card_id, created_at'
+
     if (binderId) {
       const { data } = await supabase
         .from('binders')
-        .select('id, title, is_public')
+        .select(BINDER_SELECT)
         .eq('id', binderId)
         .eq('user_id', user.id)
         .maybeSingle()
@@ -74,7 +76,7 @@ export async function GET(req: Request) {
       // Aseguramos el binder del usuario autenticado
       const { data: existing } = await supabase
         .from('binders')
-        .select('id, title, is_public')
+        .select(BINDER_SELECT)
         .eq('user_id', user.id)
         .limit(1)
       let b = existing?.[0] ?? null
@@ -83,7 +85,7 @@ export async function GET(req: Request) {
         const { data: created, error: createError } = await supabase
           .from('binders')
           .insert({ title: 'Mi Colección', user_id: user.id })
-          .select('id, title, is_public')
+          .select(BINDER_SELECT)
           .single()
         if (createError) throw createError
         b = created
@@ -94,7 +96,7 @@ export async function GET(req: Request) {
     const { data: cards, error } = await supabase
       .from('binder_cards')
       .select(
-        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override'
+        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes'
       )
       .eq('binder_id', binder.id)
       .order('slot_number', { ascending: true })
@@ -139,7 +141,13 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  let body: { binderId?: string; is_public?: boolean }
+  let body: {
+    binderId?: string
+    title?: unknown
+    description?: unknown
+    is_public?: boolean
+    cover_card_id?: unknown
+  }
   try {
     body = await req.json()
   } catch {
@@ -153,7 +161,7 @@ export async function PATCH(req: Request) {
   try {
     const { data: binder } = await supabase
       .from('binders')
-      .select('id, title, is_public')
+      .select('id, title, description, is_public, cover_card_id')
       .eq('id', body.binderId)
       .eq('user_id', user.id)
       .maybeSingle()
@@ -161,11 +169,55 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Binder no encontrado' }, { status: 404 })
     }
 
+    const updates: Record<string, string | boolean | null> = {}
+
+    if (body.title !== undefined) {
+      if (typeof body.title !== 'string' || body.title.trim() === '') {
+        return NextResponse.json({ error: 'El título no puede estar vacío' }, { status: 400 })
+      }
+      updates.title = body.title.trim().slice(0, 60)
+    }
+
+    if (body.description !== undefined) {
+      if (body.description === null) {
+        updates.description = null
+      } else if (typeof body.description === 'string') {
+        updates.description = body.description.trim() === '' ? null : body.description.trim().slice(0, 300)
+      } else {
+        return NextResponse.json({ error: 'Descripción inválida' }, { status: 400 })
+      }
+    }
+
+    if (body.is_public !== undefined) {
+      updates.is_public = !!body.is_public
+    }
+
+    // Portada: debe ser una carta del propio binder
+    if (body.cover_card_id !== undefined) {
+      if (body.cover_card_id === null || body.cover_card_id === '') {
+        updates.cover_card_id = null
+      } else {
+        const { data: cover } = await supabase
+          .from('binder_cards')
+          .select('id')
+          .eq('id', body.cover_card_id)
+          .eq('binder_id', binder.id)
+          .maybeSingle()
+        if (!cover) {
+          return NextResponse.json(
+            { error: 'La carta de portada no pertenece a este binder' },
+            { status: 400 }
+          )
+        }
+        updates.cover_card_id = body.cover_card_id as string
+      }
+    }
+
     const { data, error } = await supabase
       .from('binders')
-      .update({ is_public: body.is_public ?? false })
+      .update(updates)
       .eq('id', binder.id)
-      .select('id, title, is_public')
+      .select('id, title, description, is_public, cover_card_id, created_at')
       .single()
     if (error) throw error
 

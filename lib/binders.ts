@@ -13,12 +13,26 @@ export async function getUserBinders(userId: string) {
   return data || []
 }
 
-// Crear un nuevo binder
-export async function createBinder(userId: string, title: string) {
+// Crear un nuevo binder con opciones (título, descripción, privacidad, portada)
+export async function createBinder(
+  userId: string,
+  title: string,
+  options?: {
+    description?: string | null
+    is_public?: boolean
+    cover_card_id?: string | null
+  }
+) {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('binders')
-    .insert({ user_id: userId, title })
+    .insert({
+      user_id: userId,
+      title,
+      description: options?.description ?? null,
+      is_public: options?.is_public ?? false,
+      cover_card_id: options?.cover_card_id ?? null
+    })
     .select()
     .single()
 

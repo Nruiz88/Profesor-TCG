@@ -22,6 +22,10 @@ interface ExploreCardRow {
   market_price: number | null
   status: string | null
   price_override: number | null
+  is_for_sale: boolean | null
+  is_for_trade: boolean | null
+  price: number | null
+  trade_notes: string | null
   updated_at: string
   binders: {
     id: string
@@ -92,6 +96,7 @@ interface PublicBinderRow {
   id: string
   title: string
   user_id: string
+  cover_card_id: string | null
 }
 
 export async function GET(req: Request) {
@@ -126,12 +131,6 @@ export async function GET(req: Request) {
   }
 }
 
-function statusFilter(mode: string): string[] {
-  if (mode === 'for_sale') return ['for_sale']
-  if (mode === 'for_trade') return ['for_trade']
-  return ['for_sale', 'for_trade']
-}
-
 async function getCards(
   supabase: SupabaseClient,
   opts: {
@@ -144,16 +143,25 @@ async function getCards(
     limit: number
   }
 ) {
+  // Filtro por disponibilidad usando las flags (is_for_sale / is_for_trade):
+  // una carta "venta_o_cambio" aparece tanto en modo venta como en cambio.
   let query = supabase
     .from('binder_cards')
     .select(
       `id, binder_id, card_id, card_name, set_id, number, slot_number,
-       market_price, status, price_override, updated_at,
+       market_price, status, price_override, is_for_sale, is_for_trade,
+       price, trade_notes, updated_at,
        binders!inner (
          id, title, user_id
        )`
     )
-    .in('status', statusFilter(opts.mode))
+    .or('is_for_sale.eq.true,is_for_trade.eq.true')
+
+  if (opts.mode === 'for_sale') {
+    query = query.eq('is_for_sale', true)
+  } else if (opts.mode === 'for_trade') {
+    query = query.eq('is_for_trade', true)
+  }
 
   if (opts.q) {
     query = query.ilike('card_name', `%${opts.q}%`)
@@ -180,8 +188,8 @@ async function getCards(
   for (const r of rows) {
     const m = meta.get(r.card_id)
     const seller = r.binders?.user_id ? profiles.get(r.binders.user_id) ?? null : null
-    const status = r.status === 'for_trade' ? 'for_trade' : 'for_sale'
-    const price = effectivePrice(r.market_price, r.price_override)
+    const status = r.is_for_sale ? 'for_sale' : 'for_trade'
+    const price = effectivePrice(r.market_price, r.price_override, r.price)
     const rarity = m?.rarity ?? null
 
     // Filtros que dependen de la metadata (rareza) o del perfil (ciudad)
@@ -253,8 +261,8 @@ async function getBinders(supabase: SupabaseClient) {
   // Conteo de cartas activas (venta/cambio) y portada por binder
   const { data: activeCards, error: cardsError } = await supabase
     .from('binder_cards')
-    .select('binder_id, set_id, number, status')
-    .in('status', ['for_sale', 'for_trade'])
+    .select('id, binder_id, set_id, number, is_for_sale, is_for_trade')
+    .or('is_for_sale.eq.true,is_for_trade.eq.true')
     .limit(1000)
   if (cardsError) throw cardsError
 
@@ -262,17 +270,21 @@ async function getBinders(supabase: SupabaseClient) {
     string,
     { sale: number; trade: number; cover: { set_id: string; number: string } | null }
   >()
+  // card_id -> imagen, para resolver la portada configurada por el usuario
+  const coverByCardId = new Map<string, { set_id: string; number: string }>()
   for (const c of activeCards || []) {
     const entry = byBinder.get(c.binder_id) ?? {
       sale: 0,
       trade: 0,
       cover: null
     }
-    if (c.status === 'for_sale') entry.sale++
-    else entry.trade++
+    // Una carta "venta_o_cambio" cuenta en ambas categorías
+    if (c.is_for_sale) entry.sale++
+    if (c.is_for_trade) entry.trade++
     if (!entry.cover) {
       entry.cover = { set_id: c.set_id, number: c.number }
     }
+    coverByCardId.set(c.id, { set_id: c.set_id, number: c.number })
     byBinder.set(c.binder_id, entry)
   }
 
@@ -283,7 +295,7 @@ async function getBinders(supabase: SupabaseClient) {
 
   const { data: binders, error } = await supabase
     .from('binders')
-    .select('id, title, user_id')
+    .select('id, title, user_id, cover_card_id')
     .in('id', binderIds)
     .eq('is_public', true)
   if (error) throw error
@@ -297,6 +309,8 @@ async function getBinders(supabase: SupabaseClient) {
   const result: ExploreBinder[] = await Promise.all(
     rows.map(async (b) => {
       const stats = byBinder.get(b.id) ?? { sale: 0, trade: 0, cover: null }
+      // Portada: la carta configurada por el usuario si es activa, si no la primera activa
+      const chosen = (b.cover_card_id && coverByCardId.get(b.cover_card_id)) ?? stats.cover
       const seller = profiles.get(b.user_id) ?? null
       return {
         id: b.id,
@@ -308,8 +322,8 @@ async function getBinders(supabase: SupabaseClient) {
         saleCount: stats.sale,
         tradeCount: stats.trade,
         totalActive: stats.sale + stats.trade,
-        coverImage: stats.cover
-          ? await resolveCardImage(stats.cover.set_id, stats.cover.number)
+        coverImage: chosen
+          ? await resolveCardImage(chosen.set_id, chosen.number)
           : ''
       }
     })

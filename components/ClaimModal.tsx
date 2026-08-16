@@ -5,6 +5,7 @@ import type { SlotCard } from '@/lib/sheets'
 import type { SellerInfo } from '@/components/SellerInfoBadge'
 import { whatsAppLink } from '@/lib/profile'
 import { CARD_STATUS_META, normalizeStatus } from '@/lib/cardStatus'
+import MakeTradeOfferModal from './MakeTradeOfferModal'
 
 interface ClaimModalProps {
   card: SlotCard
@@ -14,13 +15,12 @@ interface ClaimModalProps {
 
 export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
   const status = normalizeStatus(card.status)
-  const [ownCards, setOwnCards] = useState<SlotCard[] | null>(null)
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
-  const [selectedOwn, setSelectedOwn] = useState<SlotCard | null>(null)
+  const [showOffer, setShowOffer] = useState(false)
 
   const sellerName = seller?.username ? `@${seller.username}` : 'coleccionista'
 
-  // Cargar las cartas propias (si hay sesión) para proponer cambio
+  // Detectar si hay sesión (para ofrecer un cambio)
   useEffect(() => {
     let active = true
     fetch('/api/binder?all=1')
@@ -29,10 +29,8 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
           if (active) setLoggedIn(false)
           return
         }
-        const data = await res.json()
-        if (!active) return
-        setLoggedIn(true)
-        setOwnCards(data.cards || [])
+        await res.json()
+        if (active) setLoggedIn(true)
       })
       .catch(() => {
         if (active) setLoggedIn(false)
@@ -43,18 +41,11 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
   }, [])
 
   // Mensaje pre-armado para el claim
-  const claimUrl = whatsAppLink(
-    seller?.whatsapp_number ?? ''
-  ) + `?text=${encodeURIComponent(
-    `Hola ${sellerName}! Vi tu carta "${card.card_name}" (${card.set_id.toUpperCase()} ${card.number}) en tu binder de Profesor TCG. ¿Sigue disponible? Quiero hacer un claim.`
-  )}`
-
-  const tradeUrl = selectedOwn
-    ? whatsAppLink(seller?.whatsapp_number ?? '') +
-      `?text=${encodeURIComponent(
-        `Hola ${sellerName}! Vi tu carta "${card.card_name}" (${card.set_id.toUpperCase()} ${card.number}) en tu binder. Te propongo un intercambio por mi "${selectedOwn.card_name}" (${selectedOwn.set_id.toUpperCase()} ${selectedOwn.number}). ¿Te interesa?`
-      )}`
-    : null
+  const claimUrl =
+    whatsAppLink(seller?.whatsapp_number ?? '') +
+    `?text=${encodeURIComponent(
+      `Hola ${sellerName}! Vi tu carta "${card.card_name}" (${card.set_id.toUpperCase()} ${card.number}) en tu binder de Profesor TCG. ¿Sigue disponible? Quiero hacer un claim.`
+    )}`
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
@@ -95,7 +86,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
             Hacer Claim en WhatsApp
           </a>
 
-          {/* Proponer cambio */}
+          {/* Proponer intercambio formal (oferta en la bandeja) */}
           {loggedIn === false ? (
             <a
               href="/login"
@@ -105,44 +96,22 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
             </a>
           ) : loggedIn === null ? (
             <p className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-center text-sm text-slate-500">
-              Cargando tus cartas…
-            </p>
-          ) : ownCards && ownCards.length === 0 ? (
-            <p className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-center text-sm text-slate-500">
-              No tenés cartas en tu binder para ofrecer.
+              Cargando…
             </p>
           ) : (
-            <>
-              <p className="text-xs font-medium text-slate-400">Proponé un cambio con una de tus cartas:</p>
-              <select
-                value={selectedOwn?.id ?? ''}
-                onChange={(e) => {
-                  const c = ownCards?.find((x) => x.id === e.target.value) ?? null
-                  setSelectedOwn(c)
-                }}
-                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 focus:border-binder-accent focus:outline-none"
-              >
-                <option value="">Elegí una carta tuya…</option>
-                {ownCards?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.card_name} ({c.set_id.toUpperCase()} {c.number})
-                  </option>
-                ))}
-              </select>
-              {tradeUrl && (
-                <a
-                  href={tradeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-xl bg-sky-600 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-sky-500"
-                >
-                  Enviar propuesta por WhatsApp
-                </a>
-              )}
-            </>
+            <button
+              onClick={() => setShowOffer(true)}
+              className="rounded-xl bg-sky-600 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-sky-500"
+            >
+              Proponer cambio con mi binder
+            </button>
           )}
         </div>
       </div>
+
+      {showOffer && seller && (
+        <MakeTradeOfferModal card={card} seller={seller} onClose={() => setShowOffer(false)} />
+      )}
     </div>
   )
 }

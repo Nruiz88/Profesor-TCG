@@ -40,7 +40,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
     const { data: cards, error } = await supabase
       .from('binder_cards')
       .select(
-        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override'
+        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes'
       )
       .eq('binder_id', binder.id)
       .order('slot_number', { ascending: true })
@@ -58,6 +58,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
     return NextResponse.json({
       binder: { id: binder.id, title: binder.title },
       owner: {
+        id: profile.id,
         username: profile.username,
         whatsapp_number: profile.whatsapp_number,
         country: profile.country,

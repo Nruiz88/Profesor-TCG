@@ -11,6 +11,10 @@ export interface RawCard {
   market_price: number | null
   status?: string | null
   price_override?: number | null
+  is_for_sale?: boolean | null
+  is_for_trade?: boolean | null
+  price?: number | null
+  trade_notes?: string | null
   rarity?: string | null
   supertype?: string | null
   subtypes?: string[] | null

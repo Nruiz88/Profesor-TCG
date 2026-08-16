@@ -35,13 +35,114 @@ export function isCardStatus(value: unknown): value is CardStatus {
   return typeof value === 'string' && value in CARD_STATUS_META
 }
 
+// ---------------------------------------------------------------------------
+// Modalidad de disponibilidad: qué ofrece el usuario con la carta.
+// ---------------------------------------------------------------------------
+
+export type Availability =
+  | 'solo_coleccion'
+  | 'solo_venta'
+  | 'solo_cambio'
+  | 'venta_o_cambio'
+
+export const AVAILABILITIES: Availability[] = [
+  'solo_coleccion',
+  'solo_venta',
+  'solo_cambio',
+  'venta_o_cambio'
+]
+
+export interface AvailabilityMeta {
+  label: string
+  description: string
+}
+
+export const AVAILABILITY_META: Record<Availability, AvailabilityMeta> = {
+  solo_coleccion: {
+    label: 'Solo colección',
+    description: 'Privada: no disponible para venta ni intercambio.'
+  },
+  solo_venta: {
+    label: 'En venta',
+    description: 'Fijá un precio y recibí claims por WhatsApp.'
+  },
+  solo_cambio: {
+    label: 'Para intercambio',
+    description: 'Aceptás cartas a cambio. Contá qué buscás.'
+  },
+  venta_o_cambio: {
+    label: 'Venta o cambio',
+    description: 'Precio en efectivo y también aceptás intercambios.'
+  }
+}
+
+export function isAvailability(value: unknown): value is Availability {
+  return typeof value === 'string' && value in AVAILABILITY_META
+}
+
+// Flags de la DB (is_for_sale / is_for_trade) -> modalidad
+export function availabilityFromFlags(
+  isForSale: boolean | null | undefined,
+  isForTrade: boolean | null | undefined
+): Availability {
+  const sale = !!isForSale
+  const trade = !!isForTrade
+  if (sale && trade) return 'venta_o_cambio'
+  if (sale) return 'solo_venta'
+  if (trade) return 'solo_cambio'
+  return 'solo_coleccion'
+}
+
+// Modalidad -> flags de la DB
+export function availabilityToFlags(a: Availability): {
+  isForSale: boolean
+  isForTrade: boolean
+} {
+  return {
+    isForSale: a === 'solo_venta' || a === 'venta_o_cambio',
+    isForTrade: a === 'solo_cambio' || a === 'venta_o_cambio'
+  }
+}
+
+// status derivado (legacy) para una modalidad — 'reserved' se mantiene aparte
+export function statusFromAvailability(a: Availability): CardStatus {
+  if (a === 'solo_cambio') return 'for_trade'
+  if (a === 'solo_coleccion') return 'collection'
+  return 'for_sale' // solo_venta y venta_o_cambio
+}
+
+// Texto del badge según la modalidad:
+//  solo_venta      -> "En venta - $15.00"
+//  solo_cambio     -> "🔄 Solo Trade"
+//  venta_o_cambio  -> "💵 $15.00 / 🔄 Trade"
+export function availabilityBadgeText(avail: Availability, price: number | null): string {
+  const fmt = (n: number) =>
+    n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  if (avail === 'solo_venta') {
+    return price != null ? `En venta - $${fmt(price)}` : 'En venta'
+  }
+  if (avail === 'solo_cambio') {
+    return '🔄 Solo Trade'
+  }
+  if (avail === 'venta_o_cambio') {
+    return price != null ? `💵 $${fmt(price)} / 🔄 Trade` : '💵 En venta / 🔄 Trade'
+  }
+  return 'Colección'
+}
+
 export function normalizeStatus(value: unknown): CardStatus {
   return isCardStatus(value) ? value : 'collection'
 }
 
-// Precio efectivo: el override del usuario prima sobre el de la API
-export function effectivePrice(market: number | null, override: number | null | undefined): number | null {
-  if (override != null) return override
+// Precio efectivo: el precio del usuario prima, luego el override legacy, luego la API
+export function effectivePrice(
+  market: number | null,
+  override: number | null | undefined,
+  price: number | null | undefined = undefined
+): number | null {
+  if (price != null && price > 0) return price
+  if (override != null && override > 0) return override
   return market != null && market > 0 ? market : null
 }
 

@@ -1,21 +1,25 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SlotSearchModal, { type SearchResult } from '@/components/SlotSearchModal'
 import ProfileSettings from '@/components/ProfileSettings'
 import ProfileRequiredModal from '@/components/ProfileRequiredModal'
+import EditCardModal from '@/components/EditCardModal'
+import BinderSettingsModal from '@/components/BinderSettingsModal'
+import BinderToolbar from '@/components/BinderToolbar'
+import ProfileHeaderStats from '@/components/ProfileHeaderStats'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
-import { isProfileComplete, type Profile } from '@/lib/profile'
-import type { CardStatus } from '@/lib/cardStatus'
+import type { Profile } from '@/lib/profile'
+import { effectivePrice, type Availability } from '@/lib/cardStatus'
 import {
   SLOTS_PER_SHEET,
-  computeTotalValue,
   groupIntoSheets,
   padSheet,
+  sheetPageCount,
   toSlotCard,
   type SlotCard
 } from '@/lib/sheets'
@@ -23,7 +27,9 @@ import {
 interface Binder {
   id: string
   title: string
+  description?: string | null
   is_public?: boolean
+  cover_card_id?: string | null
   created_at?: string
 }
 
@@ -41,7 +47,12 @@ export default function BinderPage() {
   const [activeBinderId, setActiveBinderId] = useState<string | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [showProfile, setShowProfile] = useState(false)
-  const [sellCard, setSellCard] = useState<SlotCard | null>(null)
+  const [editCard, setEditCard] = useState<SlotCard | null>(null)
+  const [requireProfileFor, setRequireProfileFor] = useState<Availability | null>(null)
+  const [search, setSearch] = useState('')
+  const [saleOnly, setSaleOnly] = useState(false)
+  const [tradeOnly, setTradeOnly] = useState(false)
+  const [settingsModal, setSettingsModal] = useState<'create' | 'edit' | null>(null)
 
   const loadBinder = useCallback(async (binderId?: string) => {
     try {
@@ -97,18 +108,50 @@ export default function BinderPage() {
     await loadBinder(binderId)
   }
 
-  async function handleCreateBinder() {
+  // Crear una carpeta nueva desde el modal de configuración
+  async function handleSaveBinder(values: {
+    title: string
+    description: string | null
+    isPublic: boolean
+    coverCardId: string | null
+  }) {
     if (!user) return
     setMessage(null)
-    try {
-      const title = window.prompt('Nombre del binder:', `Binder ${binders.length + 1}`)
-      if (!title) return
-      const created = await createBinder(user.id, title.trim())
-      setBinders((prev) => [...prev, created])
-      setMessage(`Binder "${created.title}" creado.`)
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Error al crear binder')
-    }
+    const created = await createBinder(user.id, values.title, {
+      description: values.description,
+      is_public: values.isPublic,
+      cover_card_id: values.coverCardId
+    })
+    setBinders((prev) => [...prev, created])
+    await selectBinder(created.id)
+    setMessage(`Carpeta "${created.title}" creada.`)
+  }
+
+  // Actualizar título / descripción / privacidad / portada de la carpeta actual
+  async function handleUpdateBinder(values: {
+    title: string
+    description: string | null
+    isPublic: boolean
+    coverCardId: string | null
+  }) {
+    if (!binder) return
+    setMessage(null)
+    const res = await fetch('/api/binder', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        binderId: binder.id,
+        title: values.title,
+        description: values.description,
+        is_public: values.isPublic,
+        cover_card_id: values.coverCardId
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error')
+    setBinder(data.binder)
+    setBinders((prev) => prev.map((b) => (b.id === data.binder.id ? data.binder : b)))
+    setMessage('Carpeta actualizada.')
   }
 
   async function handleDeleteBinder() {
@@ -181,12 +224,39 @@ export default function BinderPage() {
     }
   }
 
-  const totalValue = computeTotalValue(cards)
+  // Estadísticas del perfil (sobre todas las cartas, sin filtros)
   const totalCards = cards.length
+  const saleCount = cards.filter((c) => c.is_for_sale).length
+  const tradeCount = cards.filter((c) => c.is_for_trade).length
+  const totalValue = cards.reduce(
+    (sum, c) => sum + (effectivePrice(c.market_price, c.price_override, c.price) ?? 0),
+    0
+  )
 
-  const sheets = groupIntoSheets(cards)
-  // Siempre mostramos al menos una hoja vacía al final para poder agregar
-  if (sheets.length === 0) sheets.push([])
+  // Filtros del visor (búsqueda + disponibilidad) — client-side, sin refetch
+  const filteredCards = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return cards.filter((c) => {
+      if (saleOnly && !c.is_for_sale) return false
+      if (tradeOnly && !c.is_for_trade) return false
+      if (q) {
+        const name = c.card_name.toLowerCase()
+        const num = String(c.number).toLowerCase()
+        if (!name.includes(q) && !num.includes(q)) return false
+      }
+      return true
+    })
+  }, [cards, search, saleOnly, tradeOnly])
+
+  // Reiniciar la página al cambiar la búsqueda o los filtros
+  useEffect(() => {
+    setCurrentSheet(0)
+  }, [search, saleOnly, tradeOnly])
+
+  const hasActiveFilters = search.trim() !== '' || saleOnly || tradeOnly
+  const sheets = groupIntoSheets(filteredCards)
+  // Sin filtros: siempre mostramos una hoja vacía al final para poder agregar
+  if (sheets.length === 0 && !hasActiveFilters) sheets.push([])
 
   async function updatePrices() {
     if (!binder) return
@@ -213,28 +283,6 @@ export default function BinderPage() {
       setMessage(err instanceof Error ? err.message : 'Error al actualizar precios')
     } finally {
       setUpdating(false)
-    }
-  }
-
-  async function updateCardStatus(
-    card: SlotCard,
-    status: CardStatus,
-    priceOverride: number | null
-  ) {
-    setMessage(null)
-    try {
-      const res = await fetch(`/api/binder/slots/${card.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, price_override: priceOverride })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error al actualizar el estado')
-      await loadBinder()
-      const s = status === 'for_sale' ? 'En venta' : status === 'for_trade' ? 'Acepta cambios' : status === 'reserved' ? 'Reservada' : 'Colección'
-      setMessage(`"${card.card_name}" ahora está: ${s}.`)
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Error al actualizar el estado')
     }
   }
 
@@ -306,11 +354,20 @@ export default function BinderPage() {
           </select>
 
           <button
-            onClick={handleCreateBinder}
+            onClick={() => setSettingsModal('create')}
             className="h-10 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
           >
             + Nuevo
           </button>
+
+          {binder && (
+            <button
+              onClick={() => setSettingsModal('edit')}
+              className="h-10 rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
+            >
+              Configurar
+            </button>
+          )}
 
           {binder && (
             <button
@@ -350,6 +407,13 @@ export default function BinderPage() {
             Explorar
           </a>
 
+          <a
+            href="/offers"
+            className="flex h-10 items-center rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
+          >
+            Ofertas
+          </a>
+
           <button
             onClick={updatePrices}
             disabled={updating || totalCards === 0}
@@ -374,16 +438,17 @@ export default function BinderPage() {
           >
             Cerrar sesión
           </button>
-
-          <div className="rounded-xl border border-yellow-400/20 bg-slate-900 px-4 py-2 text-right">
-            <p className="text-[10px] uppercase tracking-widest text-yellow-400/50">Valor total</p>
-            <p className="text-lg font-bold text-yellow-400">
-              ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
-              <span className="text-xs font-semibold text-yellow-400/50">USD</span>
-            </p>
-          </div>
         </div>
       </header>
+
+      <div className="mb-6">
+        <ProfileHeaderStats
+          totalCards={totalCards}
+          totalValue={totalValue}
+          saleCount={saleCount}
+          tradeCount={tradeCount}
+        />
+      </div>
 
       {message && (
         <div className="mb-4 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-300">
@@ -395,37 +460,55 @@ export default function BinderPage() {
         <p className="py-20 text-center text-slate-500">Cargando binder…</p>
       ) : (
         <>
-          <div className="grid gap-6 md:grid-cols-2">
-            {[0, 1].map((offset) => {
-              const sheetIndex = currentSheet * 2 + offset
-              const sheetCards = sheets[sheetIndex]
-              return (
-                <BinderSheet
-                  key={sheetIndex}
-                  sheetNumber={sheetIndex + 1}
-                  slots={sheetCards ? padSheet(sheetCards) : Array(9).fill(null)}
-                  onRemoveSlot={removeSlot}
-                  onEmptySlotClick={(slotIndex) => setSlotTarget({ sheetIndex, slotIndex })}
-                  onStatusChange={updateCardStatus}
-                  onSellCard={(card) => {
-                    if (isProfileComplete(profile)) {
-                      setMessage(
-                        `"${card.card_name}" está lista para vender. La publicación y los claims llegan pronto.`
-                      )
-                    } else {
-                      setSellCard(card)
-                    }
-                  }}
-                />
-              )
-            })}
-          </div>
-
-          <SheetPagination
-            current={currentSheet}
-            sheetCount={sheets.length}
-            onChange={setCurrentSheet}
+          <BinderToolbar
+            search={search}
+            onSearchChange={setSearch}
+            saleOnly={saleOnly}
+            onToggleSale={() => setSaleOnly((v) => !v)}
+            tradeOnly={tradeOnly}
+            onToggleTrade={() => setTradeOnly((v) => !v)}
+            pageCount={sheetPageCount(sheets.length)}
+            currentPage={currentSheet}
+            onJumpPage={(n) =>
+              setCurrentSheet(Math.min(sheetPageCount(sheets.length) - 1, Math.max(0, n - 1)))
+            }
+            shownCount={filteredCards.length}
+            totalCount={totalCards}
           />
+
+          {filteredCards.length === 0 && hasActiveFilters ? (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-16 text-center">
+              <p className="text-lg font-semibold text-white">Sin resultados</p>
+              <p className="mt-1 text-sm text-slate-500">
+                Ninguna carta coincide con la búsqueda o los filtros.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-6 md:grid-cols-2">
+                {[0, 1].map((offset) => {
+                  const sheetIndex = currentSheet * 2 + offset
+                  const sheetCards = sheets[sheetIndex]
+                  return (
+                    <BinderSheet
+                      key={sheetIndex}
+                      sheetNumber={sheetIndex + 1}
+                      slots={sheetCards ? padSheet(sheetCards) : Array(9).fill(null)}
+                      onRemoveSlot={removeSlot}
+                      onEmptySlotClick={(slotIndex) => setSlotTarget({ sheetIndex, slotIndex })}
+                      onEditCard={setEditCard}
+                    />
+                  )
+                })}
+              </div>
+
+              <SheetPagination
+                current={currentSheet}
+                sheetCount={sheets.length}
+                onChange={setCurrentSheet}
+              />
+            </>
+          )}
         </>
       )}
 
@@ -451,15 +534,44 @@ export default function BinderPage() {
         />
       )}
 
-      {sellCard && (
+      {editCard && (
+        <EditCardModal
+          card={editCard}
+          profile={profile}
+          onRequireProfile={setRequireProfileFor}
+          onSaved={() => {
+            setMessage(`"${editCard.card_name}" actualizada.`)
+            setEditCard(null)
+            loadBinder()
+          }}
+          onClose={() => setEditCard(null)}
+        />
+      )}
+
+      {requireProfileFor && editCard && (
         <ProfileRequiredModal
-          cardName={sellCard.card_name}
+          cardName={editCard.card_name}
           onComplete={(p) => {
             setProfile(p)
-            setMessage(`"${sellCard.card_name}" está lista para vender. La publicación y los claims llegan pronto.`)
-            setSellCard(null)
+            setRequireProfileFor(null)
           }}
-          onClose={() => setSellCard(null)}
+          onClose={() => setRequireProfileFor(null)}
+        />
+      )}
+
+      {settingsModal && (
+        <BinderSettingsModal
+          binder={settingsModal === 'edit' ? binder : null}
+          cards={cards}
+          onSave={async (values) => {
+            if (settingsModal === 'create') {
+              await handleSaveBinder(values)
+            } else {
+              await handleUpdateBinder(values)
+            }
+            setSettingsModal(null)
+          }}
+          onClose={() => setSettingsModal(null)}
         />
       )}
     </div>

@@ -6,13 +6,7 @@ import PokemonCard from './PokemonCard'
 import CardDetailModal from './CardDetailModal'
 import CardStatusBadge from './CardStatusBadge'
 import ClaimModal from './ClaimModal'
-import {
-  CARD_STATUSES,
-  CARD_STATUS_META,
-  effectivePrice,
-  normalizeStatus,
-  type CardStatus
-} from '@/lib/cardStatus'
+import { effectivePrice, normalizeStatus } from '@/lib/cardStatus'
 import type { SellerInfo } from './SellerInfoBadge'
 
 interface BinderSheetProps {
@@ -20,8 +14,7 @@ interface BinderSheetProps {
   slots: (SlotCard | null)[]
   onRemoveSlot?: (slotId: string) => void
   onEmptySlotClick?: (slotIndex: number) => void
-  onSellCard?: (card: SlotCard) => void
-  onStatusChange?: (card: SlotCard, status: CardStatus, priceOverride: number | null) => void
+  onEditCard?: (card: SlotCard) => void
   seller?: SellerInfo | null
   highlightCardId?: string | null
 }
@@ -31,8 +24,7 @@ export default function BinderSheet({
   slots,
   onRemoveSlot,
   onEmptySlotClick,
-  onSellCard,
-  onStatusChange,
+  onEditCard,
   seller,
   highlightCardId
 }: BinderSheetProps) {
@@ -41,7 +33,7 @@ export default function BinderSheet({
 
   function handleCardClick(card: SlotCard) {
     // En vista pública, las cartas en venta/cambio abren el modal de claim
-    if (!onRemoveSlot && !onStatusChange) {
+    if (!onRemoveSlot && !onEditCard) {
       const s = normalizeStatus(card.status)
       if (s === 'for_sale' || s === 'for_trade') {
         setClaimCard(card)
@@ -81,22 +73,28 @@ export default function BinderSheet({
                   <PokemonCard card={card} />
                 </div>
 
-                {/* Precio efectivo (override o mercado) */}
-                {effectivePrice(card.market_price, card.price_override) != null && (
+                {/* Precio efectivo (precio manual, override o mercado) */}
+                {effectivePrice(card.market_price, card.price_override, card.price) != null && (
                   <div className="pointer-events-none absolute right-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-yellow-400 shadow-md ring-1 ring-yellow-400/30">
                     $
-                    {effectivePrice(card.market_price, card.price_override)?.toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
-                    })}
+                    {effectivePrice(card.market_price, card.price_override, card.price)?.toLocaleString(
+                      'en-US',
+                      {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      }
+                    )}
                   </div>
                 )}
 
-                {/* Badge de estado */}
+                {/* Badge de estado según disponibilidad */}
                 <CardStatusBadge
                   status={card.status}
                   marketPrice={card.market_price}
                   priceOverride={card.price_override}
+                  isForSale={card.is_for_sale}
+                  isForTrade={card.is_for_trade}
+                  price={card.price}
                   className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap"
                 />
 
@@ -115,58 +113,17 @@ export default function BinderSheet({
                   </button>
                 )}
 
-                {onSellCard && (
+                {onEditCard && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      onSellCard(card)
+                      onEditCard(card)
                     }}
-                    className="absolute left-1/2 top-1.5 -translate-x-1/2 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white opacity-0 shadow-md transition-opacity hover:bg-emerald-500 group-hover:opacity-100"
-                    aria-label={`Vender ${card.card_name}`}
+                    className="absolute left-1/2 top-1.5 -translate-x-1/2 rounded-full bg-binder-accent px-2.5 py-1 text-[10px] font-bold text-white opacity-0 shadow-md transition-opacity hover:bg-rose-500 group-hover:opacity-100"
+                    aria-label={`Editar ${card.card_name}`}
                   >
-                    Vender
+                    Editar
                   </button>
-                )}
-
-                {/* Control de estado (solo binder propio) */}
-                {onStatusChange && (
-                  <div className="absolute bottom-1 left-1 right-1 hidden flex-col gap-1 group-hover:flex">
-                    <select
-                      value={normalizeStatus(card.status)}
-                      onChange={(e) =>
-                        onStatusChange(
-                          card,
-                          e.target.value as CardStatus,
-                          card.price_override ?? null
-                        )
-                      }
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-full rounded-lg bg-black/80 px-1.5 py-1 text-[10px] font-semibold text-white"
-                      aria-label={`Estado de ${card.card_name}`}
-                    >
-                      {CARD_STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {CARD_STATUS_META[s].label}
-                        </option>
-                      ))}
-                    </select>
-                    {normalizeStatus(card.status) === 'for_sale' && (
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder={card.price_override != null ? 'Precio manual' : 'Precio manual…'}
-                        defaultValue={card.price_override ?? ''}
-                        onClick={(e) => e.stopPropagation()}
-                        onBlur={(e) => {
-                          const v = e.target.value === '' ? null : Number(e.target.value)
-                          onStatusChange(card, 'for_sale', v)
-                        }}
-                        className="w-full rounded-lg bg-black/80 px-1.5 py-1 text-[10px] font-semibold text-white"
-                        aria-label={`Precio manual de ${card.card_name}`}
-                      />
-                    )}
-                  </div>
                 )}
               </div>
             ) : onEmptySlotClick ? (
