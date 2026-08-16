@@ -58,25 +58,27 @@ export default function MarketGrid({
         return (
           <div
             key={card.id}
-            className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-slate-900/40 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_44px_-12px_rgba(0,0,0,0.65)] ${
+            className={`group relative flex flex-col rounded-2xl border border-slate-800/80 bg-slate-900/40 p-3.5 shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_44px_-12px_rgba(0,0,0,0.65)] ${
               isSale
-                ? 'border-slate-800/80 hover:border-rose-500/40 hover:shadow-rose-900/20'
-                : 'border-slate-800/80 hover:border-blue-500/40 hover:shadow-blue-900/20'
+                ? 'hover:border-rose-500/40 hover:shadow-rose-900/20'
+                : 'hover:border-blue-500/40 hover:shadow-blue-900/20'
             }`}
           >
-            {/* Imagen con deep link al binder/carta */}
-            <Link
-              href={binderHref(card)}
-              className="relative block aspect-[63/88] overflow-hidden bg-slate-950"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={card.image}
-                alt={card.card_name}
-                loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            {/* Marco interno de la carta */}
+            <div className="relative overflow-hidden rounded-xl bg-slate-950/60">
+              <Link
+                href={binderHref(card)}
+                className="relative block aspect-[63/88]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={card.image}
+                  alt={card.card_name}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              </Link>
 
               {/* Badge flotante superior derecha */}
               {isSale ? (
@@ -88,12 +90,12 @@ export default function MarketGrid({
                   🔄 Trade
                 </span>
               )}
-            </Link>
+            </div>
 
-            {/* Footer de la card */}
-            <div className="flex flex-1 flex-col p-3">
+            {/* Info de la carta */}
+            <div className="mt-3">
               <h3
-                className="truncate text-sm font-semibold text-white"
+                className="truncate text-sm font-bold text-white"
                 title={card.card_name}
               >
                 {card.card_name}
@@ -102,46 +104,44 @@ export default function MarketGrid({
                 {card.set_name}
                 {card.rarity ? ` · ${card.rarity}` : ''}
               </p>
+            </div>
 
-              {/* Vendedor */}
-              <div className="mt-3 flex items-center gap-2">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-amber-500 text-[11px] font-bold text-white shadow">
-                  {(card.username[0] ?? 'C').toUpperCase()}
+            {/* Footer del vendedor */}
+            <div className="mt-3 flex flex-1 items-center gap-2">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-amber-500 text-xs font-bold text-white shadow">
+                {(card.username[0] ?? 'C').toUpperCase()}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-slate-200">@{card.username}</p>
+                <p className="truncate text-[11px] text-slate-500">
+                  {location || 'Ubicación no especificada'}
+                </p>
+              </div>
+            </div>
+
+            {/* Acción directa */}
+            <div className="mt-3">
+              {card.whatsapp_number ? (
+                <a
+                  href={claimHref(card)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold shadow-lg transition-all duration-200 ${
+                    isSale
+                      ? 'bg-emerald-500 text-white shadow-emerald-950/40 hover:bg-emerald-400'
+                      : 'border border-blue-500/40 bg-blue-500/10 text-blue-300 hover:bg-blue-500 hover:text-white'
+                  }`}
+                >
+                  {isSale ? '💬 Claim' : '🔄 Swap'}
+                </a>
+              ) : (
+                <span className="block rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-center text-[11px] text-slate-600">
+                  Sin contacto directo ·{' '}
+                  <Link href={binderHref(card)} className="text-slate-400 hover:text-white">
+                    Ver carta
+                  </Link>
                 </span>
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-slate-200">
-                    @{card.username}
-                  </p>
-                  <p className="truncate text-[11px] text-slate-500">
-                    {location || 'Ubicación no especificada'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Acción directa */}
-              <div className="mt-3">
-                {card.whatsapp_number ? (
-                  <a
-                    href={claimHref(card)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white shadow-lg transition-all duration-200 ${
-                      isSale
-                        ? 'bg-emerald-500 shadow-emerald-950/40 hover:bg-emerald-400'
-                        : 'bg-blue-500 shadow-blue-950/40 hover:bg-blue-400'
-                    }`}
-                  >
-                    {isSale ? '💬 Claim por WhatsApp' : '🔄 Swap por WhatsApp'}
-                  </a>
-                ) : (
-                  <span className="block rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-center text-[11px] text-slate-600">
-                    Sin contacto directo ·{' '}
-                    <Link href={binderHref(card)} className="text-slate-400 hover:text-white">
-                      Ver carta
-                    </Link>
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </div>
         )

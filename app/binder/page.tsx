@@ -67,6 +67,7 @@ export default function BinderPage() {
   const [search, setSearch] = useState('')
   const [saleOnly, setSaleOnly] = useState(false)
   const [tradeOnly, setTradeOnly] = useState(false)
+  const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [settingsModal, setSettingsModal] = useState<'create' | 'edit' | null>(null)
 
   const loadBinder = useCallback(async (binderId?: string) => {
@@ -254,6 +255,7 @@ export default function BinderPage() {
     return cards.filter((c) => {
       if (saleOnly && !c.is_for_sale) return false
       if (tradeOnly && !c.is_for_trade) return false
+      if (typeFilter && !(c.types ?? []).includes(typeFilter)) return false
       if (q) {
         const name = c.card_name.toLowerCase()
         const num = String(c.number).toLowerCase()
@@ -261,14 +263,15 @@ export default function BinderPage() {
       }
       return true
     })
-  }, [cards, search, saleOnly, tradeOnly])
+  }, [cards, search, saleOnly, tradeOnly, typeFilter])
 
   // Reiniciar la página al cambiar la búsqueda o los filtros
   useEffect(() => {
     setCurrentSheet(0)
-  }, [search, saleOnly, tradeOnly])
+  }, [search, saleOnly, tradeOnly, typeFilter])
 
-  const hasActiveFilters = search.trim() !== '' || saleOnly || tradeOnly
+  const hasActiveFilters =
+    search.trim() !== '' || saleOnly || tradeOnly || typeFilter !== null
   const sheets = groupIntoSheets(filteredCards)
   // Sin filtros: siempre mostramos una hoja vacía al final para poder agregar
   if (sheets.length === 0 && !hasActiveFilters) sheets.push([])
@@ -335,8 +338,9 @@ export default function BinderPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <header className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+    <div className="min-h-screen bg-[#090d16] text-slate-200">
+      <header className="sticky top-0 z-50 border-b border-slate-800/60 bg-[#090d16]/80 px-4 py-3 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-white">Profesor TCG</h1>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
@@ -489,8 +493,10 @@ export default function BinderPage() {
             <span className="hidden lg:inline">Salir</span>
           </button>
         </div>
+        </div>
       </header>
 
+      <main className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6">
         <ProfileHeaderStats
           totalCards={totalCards}
@@ -541,6 +547,8 @@ export default function BinderPage() {
             onToggleSale={() => setSaleOnly((v) => !v)}
             tradeOnly={tradeOnly}
             onToggleTrade={() => setTradeOnly((v) => !v)}
+            typeFilter={typeFilter}
+            onTypeChange={setTypeFilter}
             pageCount={sheetPageCount(sheets.length)}
             currentPage={currentSheet}
             onJumpPage={(n) =>
@@ -648,6 +656,7 @@ export default function BinderPage() {
           onClose={() => setSettingsModal(null)}
         />
       )}
+      </main>
     </div>
   )
 }

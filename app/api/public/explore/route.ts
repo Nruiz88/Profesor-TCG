@@ -129,6 +129,7 @@ export async function GET(req: Request) {
   const setFilter = searchParams.get('set') ?? ''
   const rarityFilter = searchParams.get('rarity') ?? ''
   const cityFilter = (searchParams.get('city') ?? '').trim()
+  const typeFilter = searchParams.get('type') ?? ''
   const sort = searchParams.get('sort') ?? 'recent'
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '60', 10) || 60, MAX_LIMIT)
 
@@ -151,6 +152,7 @@ export async function GET(req: Request) {
       setFilter,
       rarityFilter,
       cityFilter,
+      typeFilter,
       sort,
       limit
     })
@@ -168,6 +170,7 @@ async function getCards(
     setFilter: string
     rarityFilter: string
     cityFilter: string
+    typeFilter: string
     sort: string
     limit: number
   }
@@ -221,9 +224,10 @@ async function getCards(
     const price = effectivePrice(r.market_price, r.price_override, r.price)
     const rarity = m?.rarity ?? null
 
-    // Filtros que dependen de la metadata (rareza) o del perfil (ciudad)
+    // Filtros que dependen de la metadata (rareza, tipo) o del perfil (ciudad)
     if (opts.rarityFilter && rarity !== opts.rarityFilter) continue
     if (opts.cityFilter && seller?.city !== opts.cityFilter) continue
+    if (opts.typeFilter && !(m?.types ?? []).includes(opts.typeFilter)) continue
 
     enriched.push({
       id: r.id,
