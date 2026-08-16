@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import PokemonCard from '@/components/PokemonCard'
+import MarketplacePreview from '@/components/MarketplacePreview'
 import type { SlotCard } from '@/lib/sheets'
 
 // Cartas de ejemplo para la demo (datos del catálogo, para que los efectos holo apliquen)
@@ -72,9 +73,9 @@ const FEATURES = [
       'Más de 17.000 cartas indexadas. Buscá por nombre, número o set y agregalas al instante.'
   },
   {
-    title: 'Compartí tu colección',
+    title: 'Marketplace de la comunidad',
     description:
-      'Hacé un binder público y compartí el link con cualquiera, sin necesidad de cuenta para verlo.'
+      'Publicá cartas en venta o para intercambio, recibí ofertas de otros coleccionistas y coordiná el trueque por WhatsApp.'
   },
   {
     title: 'Detalle completo en español',
@@ -135,8 +136,9 @@ export default function LandingPage() {
               </span>
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-400">
-              Armá binders virtuales con tus cartas, mirá el precio de mercado de cada una y
-              compartí tu colección con quien quieras. Gratis, en español y con efectos holo.
+              Armá binders virtuales con tus cartas, mirá el precio de mercado de cada una,{' '}
+              <span className="text-slate-200">y conectá con la comunidad para vender o cambiar</span>.
+              Gratis, en español y con efectos holo.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
@@ -153,7 +155,7 @@ export default function LandingPage() {
               </Link>
             </div>
             <p className="mt-6 text-sm text-slate-600">
-              Sin tarjeta · Sin verificación de email · 17.000+ cartas
+              Sin tarjeta · Sin verificación de email · 17.000+ cartas · Marketplace de la comunidad
             </p>
           </div>
 
@@ -172,6 +174,37 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Marketplace preview */}
+      <section className="border-t border-slate-800/60 bg-slate-900/40 py-16">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <p className="text-xs font-bold uppercase tracking-widest text-binder-accent">
+                Marketplace de la comunidad
+              </p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">
+                Cartas en venta e intercambio, ahora mismo
+              </h2>
+              <p className="mt-3 text-slate-400">
+                Lo último que la comunidad publicó para vender o cambiar, con precio en vivo,
+                vendedor verificado por WhatsApp y ofertas de trueque. Entrá, mirá y contactá
+                directo.
+              </p>
+            </div>
+            <Link
+              href="/explore"
+              className="rounded-xl bg-binder-accent px-6 py-3 text-base font-semibold text-white shadow-lg shadow-rose-900/30 transition-colors hover:bg-rose-500"
+            >
+              Explorar el marketplace
+            </Link>
+          </div>
+
+          <div className="mt-10">
+            <MarketplacePreview />
           </div>
         </div>
       </section>
