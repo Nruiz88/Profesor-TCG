@@ -19,10 +19,12 @@ export interface SlotCard extends RawCard {
   image: string
 }
 
-export function toSlotCard(card: RawCard): SlotCard {
+export function toSlotCard(card: RawCard & { image?: string }): SlotCard {
   return {
     ...card,
-    image: `https://images.pokemontcg.io/${card.set_id}/${card.number}_hires.png`
+    // Si la API ya resolvió la imagen (con placeholder para las que no existen),
+    // la usamos; si no, armamos la URL estándar como fallback.
+    image: card.image ?? `https://images.pokemontcg.io/${card.set_id}/${card.number}_hires.png`
   }
 }
 

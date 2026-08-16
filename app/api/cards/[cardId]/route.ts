@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { resolveCardImage } from '@/lib/cardImage'
 
 // Detalle completo de una carta. Intenta la traducción en español de TCGdex
 // (api.tcgdex.net/v2/es) y cae al catálogo local (pokemon-tcg-data, inglés)
@@ -198,7 +199,9 @@ export async function GET(
       ...card,
       setId,
       set_name,
-      image: `https://images.pokemontcg.io/${setId}/${card.number}_hires.png`
+      // pokemontcg.io sirve el reverso en lugar de 404 limpio: resolvemos la
+      // imagen real o un placeholder "Sin imagen"
+      image: await resolveCardImage(setId, card.number)
     }
 
     // Enriquecer con la traducción al español cuando TCGdex la tenga

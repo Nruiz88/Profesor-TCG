@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { SlotCard } from '@/lib/sheets'
 import type { FullCard } from '@/app/api/cards/[cardId]/route'
+import { NO_IMAGE_PLACEHOLDER } from '@/lib/cardImage'
 
 // Íconos SVG de tipos (duiker101/pokemon-type-svg-icons) + color de fondo del tipo
 // (colores del style.css del repo). Los SVG son blancos, para verse sobre el color.
@@ -204,7 +205,15 @@ export default function CardDetailModal({ card, onClose }: CardDetailModalProps)
           {error ? (
             <div className="flex flex-col items-center gap-5 p-6 sm:flex-row">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image} alt={name} className="w-40 rounded-xl shadow-lg" />
+              <img
+                src={image}
+                alt={name}
+                className="w-40 rounded-xl shadow-lg"
+                onError={(e) => {
+                  e.currentTarget.onerror = null
+                  e.currentTarget.src = NO_IMAGE_PLACEHOLDER
+                }}
+              />
               <div>
                 <p className="text-sm font-medium text-slate-200">{name}</p>
                 <p className="mt-1 text-sm text-red-400">{error}</p>
@@ -221,6 +230,10 @@ export default function CardDetailModal({ card, onClose }: CardDetailModalProps)
                   src={image}
                   alt={name}
                   className="aspect-[63/88] w-full rounded-xl shadow-lg"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null
+                    e.currentTarget.src = NO_IMAGE_PLACEHOLDER
+                  }}
                 />
                 {price && (
                   <div className="mt-3 rounded-xl border border-yellow-400/20 bg-slate-950 px-3 py-2 text-center">

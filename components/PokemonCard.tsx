@@ -1,4 +1,5 @@
 import type { SlotCard } from '@/lib/sheets'
+import { NO_IMAGE_PLACEHOLDER } from '@/lib/cardImage'
 
 // Seed determinista por id: el efecto cosmos necesita una posición estable
 // entre el render del servidor (SSR) y la hidratación en el cliente.
@@ -60,6 +61,11 @@ export default function PokemonCard({ card }: { card: SlotCard }) {
               loading="lazy"
               width={660}
               height={921}
+              onError={(e) => {
+                // pokemontcg.io responde 404 con el reverso como body; mostramos un placeholder
+                e.currentTarget.onerror = null
+                e.currentTarget.src = NO_IMAGE_PLACEHOLDER
+              }}
             />
             <div className="card__shine" />
             <div className="card__glare" />
