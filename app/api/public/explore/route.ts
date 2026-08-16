@@ -151,7 +151,7 @@ async function getCards(
       `id, binder_id, card_id, card_name, set_id, number, slot_number,
        market_price, status, price_override, is_for_sale, is_for_trade,
        price, trade_notes, updated_at,
-       binders!inner (
+       binders!binder_cards_binder_id_fkey!inner (
          id, title, user_id
        )`
     )

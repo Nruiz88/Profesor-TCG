@@ -188,22 +188,31 @@ export async function POST(req: Request) {
     // Carta solicitada: debe ser del receptor y estar disponible
     const { data: requested, error: reqError } = await supabase
       .from('binder_cards')
-      .select(`${CARD_FIELDS}, binders!inner(user_id)`)
+      .select(`${CARD_FIELDS}, binders!binder_cards_binder_id_fkey!inner(user_id)`)
       .eq('id', requestedCardId)
       .maybeSingle()
     if (reqError) throw reqError
-    if (!requested || requested.binders?.[0]?.user_id !== receiverId) {
+    const requestedOwner =
+      Array.isArray(requested?.binders)
+        ? requested.binders[0]?.user_id
+        : (requested?.binders as { user_id?: string } | undefined)?.user_id
+    if (!requested || requestedOwner !== receiverId) {
       return NextResponse.json({ error: 'La carta solicitada no pertenece al receptor' }, { status: 400 })
     }
 
     // Cartas ofrecidas: deben ser del sender
     const { data: offeredRows, error: offError } = await supabase
       .from('binder_cards')
-      .select(`${CARD_FIELDS}, binders!inner(user_id)`)
+      .select(`${CARD_FIELDS}, binders!binder_cards_binder_id_fkey!inner(user_id)`)
       .in('id', offeredIds)
     if (offError) throw offError
 
-    const offeredByMe = (offeredRows || []).filter((c) => c.binders?.[0]?.user_id === user.id)
+    const offeredByMe = (offeredRows || []).filter((c) => {
+      const owner = Array.isArray(c.binders)
+        ? c.binders[0]?.user_id
+        : (c.binders as { user_id?: string } | undefined)?.user_id
+      return owner === user.id
+    })
     if (offeredByMe.length !== offeredIds.length) {
       return NextResponse.json({ error: 'Una de las cartas ofrecidas no te pertenece' }, { status: 400 })
     }
