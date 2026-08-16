@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { ArrowRightIcon, SearchIcon, SwapIcon, TagIcon, XIcon } from './icons'
 
 interface BinderToolbarProps {
   search: string
@@ -47,17 +48,7 @@ export default function BinderToolbar({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         {/* Buscador */}
         <div className="relative flex-1">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-            <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             type="search"
             value={search}
@@ -83,9 +74,11 @@ export default function BinderToolbar({
           />
           <button
             onClick={handleJump}
-            className="rounded-xl bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700"
+            className="flex items-center gap-1 rounded-xl bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700"
+            aria-label="Ir a la página"
           >
             Ir
+            <ArrowRightIcon className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -93,22 +86,32 @@ export default function BinderToolbar({
       <div className="flex flex-wrap items-center justify-between gap-2">
         {/* Filtros de disponibilidad */}
         <div className="flex items-center gap-3">
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
+          <label
+            className={`flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
+              saleOnly ? 'bg-emerald-600/15 text-emerald-300' : 'text-slate-300 hover:bg-slate-800'
+            }`}
+          >
             <input
               type="checkbox"
               checked={saleOnly}
               onChange={onToggleSale}
               className="h-4 w-4 rounded border-slate-600 accent-emerald-500"
             />
+            <TagIcon className="h-3.5 w-3.5" />
             En venta
           </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
+          <label
+            className={`flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
+              tradeOnly ? 'bg-sky-600/15 text-sky-300' : 'text-slate-300 hover:bg-slate-800'
+            }`}
+          >
             <input
               type="checkbox"
               checked={tradeOnly}
               onChange={onToggleTrade}
               className="h-4 w-4 rounded border-slate-600 accent-sky-500"
             />
+            <SwapIcon className="h-3.5 w-3.5" />
             Para cambio
           </label>
           {hasFilters && (
@@ -118,8 +121,9 @@ export default function BinderToolbar({
                 if (saleOnly) onToggleSale()
                 if (tradeOnly) onToggleTrade()
               }}
-              className="text-xs font-medium text-slate-500 transition-colors hover:text-white"
+              className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-800 hover:text-white"
             >
+              <XIcon className="h-3.5 w-3.5" />
               Limpiar filtros
             </button>
           )}

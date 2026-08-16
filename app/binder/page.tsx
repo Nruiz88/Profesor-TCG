@@ -11,6 +11,20 @@ import EditCardModal from '@/components/EditCardModal'
 import BinderSettingsModal from '@/components/BinderSettingsModal'
 import BinderToolbar from '@/components/BinderToolbar'
 import ProfileHeaderStats from '@/components/ProfileHeaderStats'
+import {
+  CompassIcon,
+  FolderIcon,
+  GearIcon,
+  GlobeIcon,
+  LockIcon,
+  LogoutIcon,
+  PlusIcon,
+  RefreshIcon,
+  ShareIcon,
+  SwapIcon,
+  TrashIcon,
+  UserIcon
+} from '@/components/icons'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
 import type { Profile } from '@/lib/profile'
@@ -339,87 +353,110 @@ export default function BinderPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <select
-            value={binder?.id ?? ''}
-            onChange={(e) => e.target.value && selectBinder(e.target.value)}
-            className="h-10 rounded-xl border border-slate-800 bg-slate-900 px-3 pr-8 text-sm font-medium text-slate-200 focus:border-binder-accent focus:outline-none"
-          >
-            {binders.length === 0 && <option value="">Sin binder</option>}
-            {binders.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.title}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => setSettingsModal('create')}
-            className="h-10 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
-          >
-            + Nuevo
-          </button>
-
-          {binder && (
-            <button
-              onClick={() => setSettingsModal('edit')}
-              className="h-10 rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Selector de carpeta + crear */}
+          <div className="flex h-10 items-center gap-1 rounded-xl border border-slate-800 bg-slate-900 pr-1">
+            <FolderIcon className="ml-3 h-4 w-4 shrink-0 text-slate-500" />
+            <select
+              value={binder?.id ?? ''}
+              onChange={(e) => e.target.value && selectBinder(e.target.value)}
+              className="h-full max-w-[10rem] bg-transparent pl-1.5 pr-1 text-sm font-medium text-slate-200 focus:outline-none"
             >
-              Configurar
+              {binders.length === 0 && <option value="">Sin binder</option>}
+              {binders.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.title}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setSettingsModal('create')}
+              className="flex h-8 items-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
+              aria-label="Crear carpeta nueva"
+            >
+              <PlusIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Nuevo</span>
             </button>
+          </div>
+
+          <span className="hidden h-6 w-px bg-slate-800 md:block" aria-hidden="true" />
+
+          {/* Acciones de la carpeta actual */}
+          {binder && (
+            <>
+              <button
+                onClick={() => setSettingsModal('edit')}
+                className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
+              >
+                <GearIcon className="h-4 w-4" />
+                <span className="hidden lg:inline">Configurar</span>
+              </button>
+
+              <button
+                onClick={togglePublic}
+                className={`flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors ${
+                  binder.is_public
+                    ? 'bg-emerald-600/15 text-emerald-300 hover:bg-emerald-600/25'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+                aria-label={binder.is_public ? 'Binder público' : 'Binder privado'}
+              >
+                {binder.is_public ? (
+                  <GlobeIcon className="h-4 w-4" />
+                ) : (
+                  <LockIcon className="h-4 w-4" />
+                )}
+                <span className="hidden lg:inline">{binder.is_public ? 'Público' : 'Privado'}</span>
+              </button>
+
+              <button
+                onClick={copyShareLink}
+                className="flex h-10 items-center gap-1.5 rounded-xl bg-binder-accent px-3 text-sm font-semibold text-white transition-colors hover:bg-rose-500"
+              >
+                <ShareIcon className="h-4 w-4" />
+                <span className="hidden lg:inline">Compartir</span>
+              </button>
+
+              <button
+                onClick={handleDeleteBinder}
+                className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-red-600/80 hover:text-white"
+                aria-label="Eliminar carpeta"
+              >
+                <TrashIcon className="h-4 w-4" />
+                <span className="hidden lg:inline">Eliminar</span>
+              </button>
+            </>
           )}
 
-          {binder && (
-            <button
-              onClick={handleDeleteBinder}
-              className="h-10 rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
-            >
-              Eliminar
-            </button>
-          )}
+          <span className="hidden h-6 w-px bg-slate-800 md:block" aria-hidden="true" />
 
-          {binder && (
-            <button
-              onClick={togglePublic}
-              className={`h-10 rounded-xl px-4 text-sm font-semibold transition-colors ${
-                binder.is_public
-                  ? 'bg-slate-800 text-emerald-300 hover:bg-slate-700'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              {binder.is_public ? 'Público' : 'Privado'}
-            </button>
-          )}
-
-          {binder && (
-            <button
-              onClick={copyShareLink}
-              className="h-10 rounded-xl bg-binder-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-rose-500"
-            >
-              Compartir
-            </button>
-          )}
-
+          {/* Navegación */}
           <a
             href="/explore"
-            className="flex h-10 items-center rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
           >
-            Explorar
+            <CompassIcon className="h-4 w-4" />
+            <span className="hidden lg:inline">Explorar</span>
           </a>
 
           <a
             href="/offers"
-            className="flex h-10 items-center rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
           >
-            Ofertas
+            <SwapIcon className="h-4 w-4" />
+            <span className="hidden lg:inline">Ofertas</span>
           </a>
 
+          <span className="hidden h-6 w-px bg-slate-800 md:block" aria-hidden="true" />
+
+          {/* Cuenta */}
           <button
             onClick={updatePrices}
             disabled={updating || totalCards === 0}
-            className="h-10 rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700 disabled:opacity-50"
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700 disabled:opacity-50"
           >
-            {updating ? 'Actualizando…' : 'Actualizar precios'}
+            <RefreshIcon className="h-4 w-4" />
+            <span className="hidden lg:inline">{updating ? 'Actualizando…' : 'Precios'}</span>
           </button>
 
           <button
@@ -427,16 +464,18 @@ export default function BinderPage() {
               if (!profile) loadProfile()
               setShowProfile(true)
             }}
-            className="h-10 rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
           >
-            Perfil
+            <UserIcon className="h-4 w-4" />
+            <span className="hidden lg:inline">Perfil</span>
           </button>
 
           <button
             onClick={logout}
-            className="h-10 rounded-xl px-3 text-sm font-medium text-slate-500 transition-colors hover:text-slate-200"
+            className="flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-red-600/15 hover:text-red-300"
           >
-            Cerrar sesión
+            <LogoutIcon className="h-4 w-4" />
+            <span className="hidden lg:inline">Salir</span>
           </button>
         </div>
       </header>
