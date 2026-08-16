@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveCardImage } from '@/lib/cardImage'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,6 +46,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
       .order('slot_number', { ascending: true })
     if (error) throw error
 
+    // Resolver la imagen server-side (pokemontcg.io devuelve el reverso
+    // para cartas que no tiene; Scrydex es el fallback).
+    const enriched = await Promise.all(
+      (cards || []).map(async (c) => ({
+        ...c,
+        image: await resolveCardImage(c.set_id, c.number)
+      }))
+    )
+
     return NextResponse.json({
       binder: { id: binder.id, title: binder.title },
       owner: {
@@ -53,7 +63,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
         country: profile.country,
         city: profile.city
       },
-      cards: cards || []
+      cards: enriched
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
