@@ -175,10 +175,22 @@ export default function BinderPage() {
 
   async function copyShareLink() {
     if (!binder) return
+    // Si está privado, lo hacemos público automáticamente al compartir
+    if (!binder.is_public) {
+      const res = await fetch('/api/binder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ binderId: binder.id, is_public: true })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error')
+      setBinder(data.binder)
+      setBinders((prev) => prev.map((b) => (b.id === data.binder.id ? data.binder : b)))
+    }
     const url = `${window.location.origin}/b/${binder.id}`
     try {
       await navigator.clipboard.writeText(url)
-      setMessage('Link copiado al portapapeles.')
+      setMessage('Link copiado al portapapeles. El binder ahora es público.')
     } catch {
       window.prompt('Copiá el link:', url)
     }
