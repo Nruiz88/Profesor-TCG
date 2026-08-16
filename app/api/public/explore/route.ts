@@ -1,0 +1,321 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { getCardMetadataMap, getSets } from '@/lib/catalog'
+import { resolveCardImage } from '@/lib/cardImage'
+import { effectivePrice } from '@/lib/cardStatus'
+
+export const dynamic = 'force-dynamic'
+
+const MAX_LIMIT = 120
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>
+
+// Fila cruda de la query anidada binder_cards -> binders
+interface ExploreCardRow {
+  id: string
+  binder_id: string
+  card_id: string
+  card_name: string
+  set_id: string
+  number: string
+  slot_number: number
+  market_price: number | null
+  status: string | null
+  price_override: number | null
+  updated_at: string
+  binders: {
+    id: string
+    title: string
+    user_id: string
+  } | null
+}
+
+// Perfil del vendedor (RLS: lectura pública solo para dueños con binder público)
+interface SellerProfile {
+  username: string
+  city: string | null
+  country: string | null
+  whatsapp_number: string | null
+}
+
+// Perfiles por user_id — consulta aparte porque binders.user_id apunta a
+// auth.users y no hay FK directo hacia profiles (PostgREST no puede anidarlos).
+async function getProfilesByUserId(
+  supabase: SupabaseClient,
+  userIds: string[]
+): Promise<Map<string, SellerProfile>> {
+  if (userIds.length === 0) return new Map()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, city, country, whatsapp_number')
+    .in('id', userIds)
+  if (error) throw error
+  return new Map(
+    (data || []).map((p) => [
+      p.id,
+      {
+        username: p.username,
+        city: p.city,
+        country: p.country,
+        whatsapp_number: p.whatsapp_number
+      }
+    ])
+  )
+}
+
+export interface ExploreCard {
+  id: string
+  binder_id: string
+  card_id: string
+  card_name: string
+  set_id: string
+  set_name: string
+  number: string
+  rarity: string | null
+  status: 'for_sale' | 'for_trade'
+  price: number | null
+  image: string
+  username: string
+  city: string | null
+  country: string | null
+  whatsapp_number: string | null
+  updated_at: string
+}
+
+export interface ExploreFacets {
+  sets: { id: string; name: string }[]
+  rarities: string[]
+  cities: string[]
+}
+
+interface PublicBinderRow {
+  id: string
+  title: string
+  user_id: string
+}
+
+export async function GET(req: Request) {
+  const supabase = await createClient()
+  const { searchParams } = new URL(req.url)
+
+  const view = searchParams.get('view') === 'binders' ? 'binders' : 'cards'
+  const mode = searchParams.get('mode') ?? 'all'
+  const q = (searchParams.get('q') ?? '').trim()
+  const setFilter = searchParams.get('set') ?? ''
+  const rarityFilter = searchParams.get('rarity') ?? ''
+  const cityFilter = (searchParams.get('city') ?? '').trim()
+  const sort = searchParams.get('sort') ?? 'recent'
+  const limit = Math.min(parseInt(searchParams.get('limit') ?? '60', 10) || 60, MAX_LIMIT)
+
+  try {
+    if (view === 'binders') {
+      return await getBinders(supabase)
+    }
+    return await getCards(supabase, {
+      mode,
+      q,
+      setFilter,
+      rarityFilter,
+      cityFilter,
+      sort,
+      limit
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error desconocido'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
+function statusFilter(mode: string): string[] {
+  if (mode === 'for_sale') return ['for_sale']
+  if (mode === 'for_trade') return ['for_trade']
+  return ['for_sale', 'for_trade']
+}
+
+async function getCards(
+  supabase: SupabaseClient,
+  opts: {
+    mode: string
+    q: string
+    setFilter: string
+    rarityFilter: string
+    cityFilter: string
+    sort: string
+    limit: number
+  }
+) {
+  let query = supabase
+    .from('binder_cards')
+    .select(
+      `id, binder_id, card_id, card_name, set_id, number, slot_number,
+       market_price, status, price_override, updated_at,
+       binders!inner (
+         id, title, user_id
+       )`
+    )
+    .in('status', statusFilter(opts.mode))
+
+  if (opts.q) {
+    query = query.ilike('card_name', `%${opts.q}%`)
+  }
+  if (opts.setFilter) {
+    query = query.eq('set_id', opts.setFilter)
+  }
+
+  const { data, error } = await query.limit(MAX_LIMIT)
+  if (error) throw error
+
+  const rows = (data || []) as unknown as ExploreCardRow[]
+
+  // Metadata del catálogo (rareza, etc.), nombres de set y perfiles de vendedores
+  const userIds = [...new Set(rows.map((r) => r.binders?.user_id).filter(Boolean) as string[])]
+  const [meta, sets, profiles] = await Promise.all([
+    getCardMetadataMap(),
+    getSets(),
+    getProfilesByUserId(supabase, userIds)
+  ])
+  const setNameById = new Map(sets.map((s) => [s.id, s.name]))
+
+  const enriched: ExploreCard[] = []
+  for (const r of rows) {
+    const m = meta.get(r.card_id)
+    const seller = r.binders?.user_id ? profiles.get(r.binders.user_id) ?? null : null
+    const status = r.status === 'for_trade' ? 'for_trade' : 'for_sale'
+    const price = effectivePrice(r.market_price, r.price_override)
+    const rarity = m?.rarity ?? null
+
+    // Filtros que dependen de la metadata (rareza) o del perfil (ciudad)
+    if (opts.rarityFilter && rarity !== opts.rarityFilter) continue
+    if (opts.cityFilter && seller?.city !== opts.cityFilter) continue
+
+    enriched.push({
+      id: r.id,
+      binder_id: r.binder_id,
+      card_id: r.card_id,
+      card_name: r.card_name,
+      set_id: r.set_id,
+      set_name: setNameById.get(r.set_id) ?? r.set_id,
+      number: r.number,
+      rarity,
+      status,
+      price,
+      image: await resolveCardImage(r.set_id, r.number),
+      username: seller?.username ?? 'coleccionista',
+      city: seller?.city ?? null,
+      country: seller?.country ?? null,
+      whatsapp_number: seller?.whatsapp_number ?? null,
+      updated_at: r.updated_at
+    })
+  }
+
+  // Ordenamiento
+  if (opts.sort === 'price_asc') {
+    enriched.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity))
+  } else if (opts.sort === 'price_desc') {
+    enriched.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity))
+  } else {
+    enriched.sort((a, b) => (b.updated_at ?? '').localeCompare(a.updated_at ?? ''))
+  }
+
+  const cards = enriched.slice(0, opts.limit)
+
+  // Facets: sets, rarezas y ciudades presentes en el resultado completo
+  const setMap = new Map<string, string>()
+  for (const c of enriched) setMap.set(c.set_id, c.set_name)
+  const rarities = [...new Set(enriched.map((c) => c.rarity).filter(Boolean) as string[])].sort()
+  const cities = [...new Set(enriched.map((c) => c.city).filter(Boolean) as string[])].sort()
+
+  const facets: ExploreFacets = {
+    sets: [...setMap.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    rarities,
+    cities
+  }
+
+  return NextResponse.json({ cards, facets })
+}
+
+export interface ExploreBinder {
+  id: string
+  title: string
+  username: string
+  city: string | null
+  country: string | null
+  whatsapp_number: string | null
+  saleCount: number
+  tradeCount: number
+  totalActive: number
+  coverImage: string
+}
+
+async function getBinders(supabase: SupabaseClient) {
+  // Conteo de cartas activas (venta/cambio) y portada por binder
+  const { data: activeCards, error: cardsError } = await supabase
+    .from('binder_cards')
+    .select('binder_id, set_id, number, status')
+    .in('status', ['for_sale', 'for_trade'])
+    .limit(1000)
+  if (cardsError) throw cardsError
+
+  const byBinder = new Map<
+    string,
+    { sale: number; trade: number; cover: { set_id: string; number: string } | null }
+  >()
+  for (const c of activeCards || []) {
+    const entry = byBinder.get(c.binder_id) ?? {
+      sale: 0,
+      trade: 0,
+      cover: null
+    }
+    if (c.status === 'for_sale') entry.sale++
+    else entry.trade++
+    if (!entry.cover) {
+      entry.cover = { set_id: c.set_id, number: c.number }
+    }
+    byBinder.set(c.binder_id, entry)
+  }
+
+  const binderIds = [...byBinder.keys()]
+  if (binderIds.length === 0) {
+    return NextResponse.json({ binders: [], facets: null })
+  }
+
+  const { data: binders, error } = await supabase
+    .from('binders')
+    .select('id, title, user_id')
+    .in('id', binderIds)
+    .eq('is_public', true)
+  if (error) throw error
+
+  const rows = (binders || []) as unknown as PublicBinderRow[]
+  const profiles = await getProfilesByUserId(
+    supabase,
+    [...new Set(rows.map((r) => r.user_id))]
+  )
+
+  const result: ExploreBinder[] = await Promise.all(
+    rows.map(async (b) => {
+      const stats = byBinder.get(b.id) ?? { sale: 0, trade: 0, cover: null }
+      const seller = profiles.get(b.user_id) ?? null
+      return {
+        id: b.id,
+        title: b.title,
+        username: seller?.username ?? 'coleccionista',
+        city: seller?.city ?? null,
+        country: seller?.country ?? null,
+        whatsapp_number: seller?.whatsapp_number ?? null,
+        saleCount: stats.sale,
+        tradeCount: stats.trade,
+        totalActive: stats.sale + stats.trade,
+        coverImage: stats.cover
+          ? await resolveCardImage(stats.cover.set_id, stats.cover.number)
+          : ''
+      }
+    })
+  )
+
+  result.sort((a, b) => b.totalActive - a.totalActive)
+
+  return NextResponse.json({ binders: result, facets: null })
+}

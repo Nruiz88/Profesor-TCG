@@ -4,7 +4,14 @@ import { useEffect, useState } from 'react'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
-import { computeTotalValue, groupIntoSheets, padSheet, toSlotCard, type SlotCard } from '@/lib/sheets'
+import {
+  computeTotalValue,
+  groupIntoSheets,
+  padSheet,
+  toSlotCard,
+  type RawCard,
+  type SlotCard
+} from '@/lib/sheets'
 
 interface Binder {
   id: string
@@ -23,6 +30,7 @@ export default function PublicBinderByUsernamePage({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentSheet, setCurrentSheet] = useState(0)
+  const [highlightCardId, setHighlightCardId] = useState<string | null>(null)
 
   useEffect(() => {
     params.then(({ username }) => setUsername(username))
@@ -37,7 +45,24 @@ export default function PublicBinderByUsernamePage({
         if (!res.ok) throw new Error(data.error || 'Binder no encontrado')
         setBinder(data.binder)
         setSeller(data.owner ?? null)
-        setCards((data.cards || []).map(toSlotCard))
+        const slotCards = ((data.cards || []) as RawCard[]).map(toSlotCard)
+        setCards(slotCards)
+
+        // Deep-link desde el marketplace: ?card=<id> → hoja + scroll + resaltado
+        const targetId = new URLSearchParams(window.location.search).get('card')
+        if (targetId) {
+          const target = slotCards.find((c) => c.id === targetId)
+          if (target) {
+            const sheetIndex = Math.floor((target.slot_number - 1) / 9)
+            setCurrentSheet(Math.floor(sheetIndex / 2))
+            setHighlightCardId(targetId)
+            setTimeout(() => {
+              document
+                .querySelector(`[data-card-id="${targetId}"]`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }, 400)
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Binder no encontrado')
       } finally {
@@ -106,6 +131,7 @@ export default function PublicBinderByUsernamePage({
                   sheetNumber={sheetIndex + 1}
                   slots={sheetCards ? padSheet(sheetCards) : Array(9).fill(null)}
                   seller={seller}
+                  highlightCardId={highlightCardId}
                 />
               )
             })}

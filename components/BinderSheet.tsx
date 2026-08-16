@@ -23,6 +23,7 @@ interface BinderSheetProps {
   onSellCard?: (card: SlotCard) => void
   onStatusChange?: (card: SlotCard, status: CardStatus, priceOverride: number | null) => void
   seller?: SellerInfo | null
+  highlightCardId?: string | null
 }
 
 export default function BinderSheet({
@@ -32,7 +33,8 @@ export default function BinderSheet({
   onEmptySlotClick,
   onSellCard,
   onStatusChange,
-  seller
+  seller,
+  highlightCardId
 }: BinderSheetProps) {
   const [selected, setSelected] = useState<SlotCard | null>(null)
   const [claimCard, setClaimCard] = useState<SlotCard | null>(null)
@@ -68,7 +70,12 @@ export default function BinderSheet({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleCardClick(card)
                   }}
-                  className="h-full w-full cursor-pointer rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-binder-accent"
+                  data-card-id={card.id}
+                  className={`h-full w-full cursor-pointer rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-binder-accent ${
+                    card.id === highlightCardId
+                      ? 'ring-2 ring-yellow-400 shadow-[0_0_0_4px_rgba(250,204,21,0.25)]'
+                      : ''
+                  }`}
                   aria-label={`Ver detalle de ${card.card_name}`}
                 >
                   <PokemonCard card={card} />

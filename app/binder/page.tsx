@@ -343,6 +343,13 @@ export default function BinderPage() {
             </button>
           )}
 
+          <a
+            href="/explore"
+            className="flex h-10 items-center rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
+          >
+            Explorar
+          </a>
+
           <button
             onClick={updatePrices}
             disabled={updating || totalCards === 0}
