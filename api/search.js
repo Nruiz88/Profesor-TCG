@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Parámetro "q" es requerido' })
   }
 
-  const upstreamUrl = `${POKEWALLET_BASE}/search?q=${encodeURIComponent(q)}&limit=${searchParams.get('limit') || 20}`
+  const upstreamUrl = `${POKEWALLET_BASE}/search?q=${encodeURIComponent(q)}&limit=${searchParams.get('limit') || 10}`
 
   try {
     const upstream = await fetch(upstreamUrl, {

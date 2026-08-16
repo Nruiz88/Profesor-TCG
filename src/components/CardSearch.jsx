@@ -6,6 +6,7 @@ export default function CardSearch({ onSelect }) {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [searched, setSearched] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -15,7 +16,7 @@ export default function CardSearch({ onSelect }) {
     setError(null)
 
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}&limit=20`)
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}&limit=10`)
       const data = await res.json()
 
       if (!res.ok) {
@@ -23,12 +24,23 @@ export default function CardSearch({ onSelect }) {
       }
 
       setResults(data.results || [])
+      setSearched(query.trim())
     } catch (err) {
       setError(err.message)
       setResults([])
     } finally {
       setLoading(false)
     }
+  }
+
+  const price = (card) => {
+    const tcg = card.tcgplayer?.prices?.[0]
+    const cm = card.cardmarket?.prices?.[0]
+    if (tcg?.market_price) return { value: `$${tcg.market_price}`, source: 'TCGPlayer' }
+    if (tcg?.mid_price) return { value: `$${tcg.mid_price}`, source: 'TCGPlayer' }
+    if (cm?.trend) return { value: `€${cm.trend}`, source: 'CardMarket' }
+    if (cm?.avg) return { value: `€${cm.avg}`, source: 'CardMarket' }
+    return null
   }
 
   return (
@@ -48,32 +60,46 @@ export default function CardSearch({ onSelect }) {
 
       {error && <p className="search__error">{error}</p>}
 
+      {loading && <p className="search__loading">Consultando PokéWallet…</p>}
+
+      {!loading && searched && results.length === 0 && !error && (
+        <p className="search__empty">No se encontraron cartas para «{searched}»</p>
+      )}
+
       {results.length > 0 && (
-        <ul className="search__results">
-          {results.map((card) => (
-            <li key={card.id}>
-              <button className="search__card" onClick={() => onSelect(card)}>
-                <img
-                  className="search__card-image"
-                  src={`/api/image?id=${encodeURIComponent(card.id)}`}
-                  alt={card.card_info?.name}
-                  loading="lazy"
-                />
-                <span className="search__card-name">{card.card_info?.name}</span>
-                <span className="search__card-set">
-                  {card.card_info?.set_name} · {card.card_info?.card_number}
-                </span>
-                <span className="search__card-price">
-                  {card.tcgplayer?.prices?.[0]?.market_price
-                    ? `$${card.tcgplayer.prices[0].market_price}`
-                    : card.cardmarket?.prices?.[0]?.trend
-                      ? `€${card.cardmarket.prices[0].trend}`
-                      : 'Sin precio'}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <>
+          <p className="search__count">
+            {results.length} resultados para «{searched}»
+          </p>
+          <ul className="search__results">
+            {results.map((card) => {
+              const p = price(card)
+              return (
+                <li key={card.id}>
+                  <button className="search__card" onClick={() => onSelect(card)}>
+                    <img
+                      className="search__card-image"
+                      src={`/api/image?id=${encodeURIComponent(card.id)}`}
+                      alt={card.card_info?.name}
+                      loading="lazy"
+                    />
+                    <span className="search__card-name">{card.card_info?.name}</span>
+                    <span className="search__card-set">
+                      {card.card_info?.set_name} · {card.card_info?.card_number}
+                    </span>
+                    {p && (
+                      <span className="search__card-price">
+                        <span className="search__card-price-value">{p.value}</span>
+                        <span className="search__card-price-source">{p.source}</span>
+                      </span>
+                    )}
+                    {!p && <span className="search__card-price search__card-price--none">Sin precio</span>}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </>
       )}
     </section>
   )
