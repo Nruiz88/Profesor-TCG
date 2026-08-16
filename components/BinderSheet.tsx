@@ -30,7 +30,7 @@ export default function BinderSheet({ sheetNumber, slots, onRemoveSlot, onEmptyS
         {slots.map((card, i) => (
           <div
             key={i}
-            className="relative aspect-[63/88] overflow-hidden rounded-xl bg-binder-pocket shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),inset_0_2px_8px_rgba(0,0,0,0.5)]"
+            className="group relative aspect-[63/88] overflow-hidden rounded-xl bg-binder-pocket shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),inset_0_2px_8px_rgba(0,0,0,0.5)]"
           >
             {card ? (
               <>
