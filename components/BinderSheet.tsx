@@ -1,0 +1,87 @@
+import Image from 'next/image'
+
+export interface SlotCard {
+  id: string
+  page_id: string
+  slot: number
+  card_id: string
+  card_name: string
+  card_set_id: string
+  card_set_name: string
+  card_number: string
+  card_rarity: string | null
+  card_image: string
+  market_price: number | null
+}
+
+interface BinderSheetProps {
+  name: string
+  slots: (SlotCard | null)[]
+  onRemoveSlot?: (slotId: string) => void
+}
+
+export default function BinderSheet({ name, slots, onRemoveSlot }: BinderSheetProps) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-binder-sheet to-binder-bg p-4 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+      <div className="mb-3 flex items-center justify-between px-1">
+        <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-400">{name}</h3>
+        <div className="h-px flex-1 mx-3 bg-white/10" />
+        <span className="text-xs text-slate-500">{slots.filter(Boolean).length}/9</span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        {slots.map((card, i) => (
+          <div
+            key={i}
+            className="relative aspect-[63/88] overflow-hidden rounded-xl bg-binder-pocket shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),inset_0_2px_8px_rgba(0,0,0,0.5)]"
+          >
+            {card ? (
+              <>
+                <Image
+                  src={card.card_image}
+                  alt={card.card_name}
+                  fill
+                  sizes="(max-width: 640px) 30vw, 180px"
+                  className="object-cover"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2 pb-1 pt-6">
+                  <p className="truncate text-[10px] font-semibold leading-tight text-white">
+                    {card.card_name}
+                  </p>
+                  <p className="truncate text-[9px] text-slate-300">
+                    {card.card_set_name} {card.card_number}
+                  </p>
+                </div>
+
+                {card.market_price != null && (
+                  <div className="absolute right-1 top-1 rounded-full bg-binder-accent px-2 py-0.5 text-[10px] font-bold text-white shadow-lg">
+                    ${card.market_price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                )}
+
+                {onRemoveSlot && (
+                  <button
+                    onClick={() => onRemoveSlot(card.id)}
+                    className="absolute left-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                    aria-label={`Quitar ${card.card_name}`}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                      <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white/10" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M3 10h18" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
