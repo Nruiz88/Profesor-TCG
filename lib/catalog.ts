@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 
 export interface Card {
@@ -72,4 +72,36 @@ export function cardToImage(card: CardData): string {
 
 export function getSetById(sets: SetData[], id: string): SetData | undefined {
   return sets.find((s) => s.id === id)
+}
+
+let indexCache: Array<CardData & { setId: string }> | null = null
+
+async function buildIndex(): Promise<Array<CardData & { setId: string }>> {
+  if (indexCache) return indexCache
+
+  const files = await readdir(CACHE_DIR)
+  const cardFiles = files.filter((f) => f.endsWith('.json') && f !== 'sets.json')
+
+  const all: Array<CardData & { setId: string }> = []
+  for (const file of cardFiles) {
+    const setId = file.replace('.json', '')
+    const content = await readFile(path.join(CACHE_DIR, file), 'utf8')
+    const cards: CardData[] = JSON.parse(content)
+    for (const card of cards) {
+      all.push({ ...card, setId })
+    }
+  }
+
+  indexCache = all
+  return all
+}
+
+export async function searchCards(query: string, limit = 40): Promise<Array<CardData & { setId: string }>> {
+  const q = query.trim().toLowerCase()
+  if (!q) return []
+
+  const index = await buildIndex()
+  return index
+    .filter((c) => c.name.toLowerCase().includes(q))
+    .slice(0, limit)
 }

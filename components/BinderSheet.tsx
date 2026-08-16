@@ -1,5 +1,3 @@
-import Image from 'next/image'
-
 export interface SlotCard {
   id: string
   page_id: string
@@ -18,9 +16,10 @@ interface BinderSheetProps {
   name: string
   slots: (SlotCard | null)[]
   onRemoveSlot?: (slotId: string) => void
+  onEmptySlotClick?: (slot: number) => void
 }
 
-export default function BinderSheet({ name, slots, onRemoveSlot }: BinderSheetProps) {
+export default function BinderSheet({ name, slots, onRemoveSlot, onEmptySlotClick }: BinderSheetProps) {
   return (
     <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-binder-sheet to-binder-bg p-4 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
       <div className="mb-3 flex items-center justify-between px-1">
@@ -37,12 +36,12 @@ export default function BinderSheet({ name, slots, onRemoveSlot }: BinderSheetPr
           >
             {card ? (
               <>
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={card.card_image}
                   alt={card.card_name}
-                  fill
-                  sizes="(max-width: 640px) 30vw, 180px"
-                  className="object-cover"
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2 pb-1 pt-6">
                   <p className="truncate text-[10px] font-semibold leading-tight text-white">
@@ -71,6 +70,19 @@ export default function BinderSheet({ name, slots, onRemoveSlot }: BinderSheetPr
                   </button>
                 )}
               </>
+            ) : onEmptySlotClick ? (
+              <button
+                type="button"
+                onClick={() => onEmptySlotClick(i)}
+                className="flex h-full w-full items-center justify-center transition-colors hover:bg-white/5"
+                aria-label={`Agregar carta al bolsillo ${i + 1}`}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white/20" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M3 10h18" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M12 14v4M10 16h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
             ) : (
               <div className="flex h-full w-full items-center justify-center">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white/10" aria-hidden="true">

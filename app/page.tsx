@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import BinderSheet, { type SlotCard } from '@/components/BinderSheet'
 import AddCardModal from '@/components/AddCardModal'
+import SlotSearchModal, { type SearchResult } from '@/components/SlotSearchModal'
 
 interface Page {
   id: string
@@ -17,6 +18,11 @@ interface PickedCard {
   number: string
   rarity: string | null
   image: string
+}
+
+interface SlotTarget {
+  pageId: string
+  slot: number
 }
 
 const SHEET_SIZE = 9
@@ -34,6 +40,7 @@ export default function BinderPage() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
+  const [slotTarget, setSlotTarget] = useState<SlotTarget | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
   const loadBinder = useCallback(async () => {
@@ -105,6 +112,32 @@ export default function BinderPage() {
     }
   }
 
+  async function addCardToSlot(card: SearchResult) {
+    if (!slotTarget) throw new Error('Sin slot objetivo')
+
+    const setParts = card.id.split('-')
+    const setId = setParts[0]
+
+    const res = await fetch('/api/binder/slots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        page_id: slotTarget.pageId,
+        slot: slotTarget.slot,
+        card_id: card.id,
+        card_name: card.name,
+        card_set_id: setId,
+        card_set_name: card.set_name,
+        card_number: card.number,
+        card_rarity: card.rarity,
+        card_image: card.image
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error al guardar carta')
+    await loadBinder()
+  }
+
   async function addCard(card: PickedCard) {
     const setParts = card.id.split('-')
     const setId = setParts[0]
@@ -166,10 +199,11 @@ export default function BinderPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="rounded-xl border border-white/10 bg-binder-sheet px-4 py-2 text-right">
-            <p className="text-[10px] uppercase tracking-widest text-slate-400">Valor del binder</p>
-            <p className="text-xl font-bold text-binder-accent">
-              ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div className="rounded-xl border border-yellow-400/30 bg-gradient-to-b from-yellow-400/15 to-yellow-400/5 px-4 py-2 text-right">
+            <p className="text-[10px] uppercase tracking-widest text-yellow-300/70">Valor total</p>
+            <p className="text-xl font-bold text-yellow-300">
+              ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+              <span className="text-xs font-semibold text-yellow-300/60">USD</span>
             </p>
           </div>
 
@@ -223,6 +257,7 @@ export default function BinderPage() {
               name={page.name}
               slots={sheetSlots(page.slots)}
               onRemoveSlot={removeSlot}
+              onEmptySlotClick={(slot) => setSlotTarget({ pageId: page.id, slot })}
             />
           ))}
         </div>
@@ -232,6 +267,17 @@ export default function BinderPage() {
         <AddCardModal
           onClose={() => setShowAdd(false)}
           onAdd={addCard}
+        />
+      )}
+
+      {slotTarget && (
+        <SlotSearchModal
+          slotLabel={`Hoja ${(pages.find((p) => p.id === slotTarget.pageId)?.position ?? 0) + 1} · bolsillo ${slotTarget.slot + 1}`}
+          onClose={() => setSlotTarget(null)}
+          onSelect={async (card) => {
+            await addCardToSlot(card)
+            setSlotTarget(null)
+          }}
         />
       )}
     </div>
