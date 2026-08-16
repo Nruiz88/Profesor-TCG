@@ -5,6 +5,7 @@ const API_BASE = 'https://api.tcgdex.net/v2/en/cards'
 const CONCURRENCY = 10
 const MAX_ATTEMPTS = 4
 const BACKOFF_MS = 1000
+const STALE_HOURS = 24
 
 interface PriceEntry {
   card_id: string
@@ -110,79 +111,159 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Binder no encontrado' }, { status: 404 })
     }
 
-    let cardIds = body.cardIds
+    // Todas las filas del binder (datos completos para el upsert batch)
+    const { data: rows, error: rowsError } = await supabase
+      .from('binder_cards')
+      .select('id, card_id, card_name, set_id, number, slot_number, market_price, updated_at')
+      .eq('binder_id', binderId)
+      .order('slot_number', { ascending: true })
+    if (rowsError) throw rowsError
 
-    if (!cardIds || cardIds.length === 0) {
-      const { data, error: readError } = await supabase
-        .from('binder_cards')
-        .select('card_id')
-        .eq('binder_id', binderId)
-      if (readError) throw readError
-      cardIds = (data || []).map((r) => r.card_id)
-    }
-
-    cardIds = [...new Set(cardIds)]
-    if (cardIds.length === 0) {
+    if (!rows || rows.length === 0) {
       return NextResponse.json({ error: 'El binder no tiene cartas' }, { status: 400 })
     }
+
+    // Si el cliente manda cardIds, acotamos a esas cartas
+    let targetRows = rows
+    if (body.cardIds && body.cardIds.length > 0) {
+      const wanted = new Set(body.cardIds)
+      targetRows = rows.filter((r) => wanted.has(r.card_id))
+    }
+    if (targetRows.length === 0) {
+      return NextResponse.json({ error: 'El binder no tiene cartas' }, { status: 400 })
+    }
+
+    // Staleness: solo re-fetcheamos cartas sin precio conocido o actualizadas hace más de STALE_HOURS
+    const staleThreshold = Date.now() - STALE_HOURS * 60 * 60 * 1000
+    const staleRows = targetRows.filter((r) => {
+      const hasPrice = (r.market_price ?? 0) > 0
+      const fresh = new Date(r.updated_at).getTime() >= staleThreshold
+      return !hasPrice || !fresh
+    })
+    const skipped = targetRows.length - staleRows.length
+
+    if (staleRows.length === 0) {
+      return NextResponse.json({
+        success: true,
+        cards: 0,
+        fetched: 0,
+        fromCache: 0,
+        withPrice: 0,
+        withoutPrice: 0,
+        failedCards: 0,
+        skipped,
+        source: 'tcgdex'
+      })
+    }
+
+    const cardIds = [...new Set(staleRows.map((r) => r.card_id))]
     if (cardIds.length > 500) {
       return NextResponse.json({ error: 'Máximo 500 cartas por actualización' }, { status: 400 })
     }
 
-    const results = await mapLimit(cardIds, CONCURRENCY, (cardId) => fetchPriceForCard(cardId))
-
-    const flat: PriceEntry[] = results.filter(
-      (r): r is PriceEntry => r !== null && r !== undefined
-    )
-    const failedCards = cardIds.length - flat.length
-
-    if (flat.length === 0) {
-      return NextResponse.json(
-        { error: `Todas las cartas fallaron (${failedCards}). Reintentá en un momento.` },
-        { status: 502 }
-      )
+    // Consultamos la caché global card_prices antes de pegarle a TCGdex.
+    // Es best-effort: si la tabla no existe o el RLS la bloquea, seguimos sin caché.
+    let cached: Array<{ card_id: string; market_price: number | null; updated_at: string }> | null = null
+    try {
+      const { data, error } = await supabase
+        .from('card_prices')
+        .select('card_id, market_price, updated_at')
+        .in('card_id', cardIds)
+      if (error) throw error
+      cached = data
+    } catch (err) {
+      console.error('[update-prices] caché no disponible, continúo sin ella:', err)
     }
 
-    // Actualizamos market_price en cada fila de binder_cards del binder
-    const priceByCard = new Map(flat.map((p) => [p.card_id, p.market_price]))
-    const cardIdsToUpdate = [...priceByCard.keys()]
+    const priceByCard = new Map<string, number | null>()
+    const cacheThreshold = Date.now() - STALE_HOURS * 60 * 60 * 1000
+    const cachedIds: string[] = []
+    for (const entry of cached ?? []) {
+      const cacheFresh =
+        entry.market_price != null && new Date(entry.updated_at).getTime() >= cacheThreshold
+      if (cacheFresh) {
+        cachedIds.push(entry.card_id)
+        priceByCard.set(entry.card_id, entry.market_price)
+      }
+    }
 
-    const { data: rows, error: rowsError } = await supabase
-      .from('binder_cards')
-      .select('id, card_id')
-      .eq('binder_id', binderId)
-      .in('card_id', cardIdsToUpdate)
-    if (rowsError) throw rowsError
+    // Solo fetch a TCGdex para las que no tienen caché fresca
+    const toFetch = cardIds.filter((id) => !cachedIds.includes(id))
+    let fetched: PriceEntry[] = []
+    let failedCards = 0
+    if (toFetch.length > 0) {
+      const results = await mapLimit(toFetch, CONCURRENCY, (cardId) => fetchPriceForCard(cardId))
+      fetched = results.filter((r): r is PriceEntry => r !== null && r !== undefined)
+      failedCards = toFetch.length - fetched.length
+
+      if (fetched.length === 0) {
+        return NextResponse.json(
+          { error: `Todas las cartas fallaron (${failedCards}). Reintentá en un momento.` },
+          { status: 502 }
+        )
+      }
+
+      // Guardamos lo fetcheado en la caché compartida (best-effort)
+      try {
+        const cacheUpdatedAt = new Date().toISOString()
+        const { error: cacheUpsertError } = await supabase.from('card_prices').upsert(
+          fetched.map((p) => ({
+            card_id: p.card_id,
+            market_price: p.market_price,
+            updated_at: cacheUpdatedAt
+          })),
+          { onConflict: 'card_id' }
+        )
+        if (cacheUpsertError) throw cacheUpsertError
+      } catch (err) {
+        console.error('[update-prices] no se pudo escribir en la caché:', err)
+      }
+
+      for (const p of fetched) {
+        priceByCard.set(p.card_id, p.market_price)
+      }
+    }
 
     const updatedAt = new Date().toISOString()
 
-    const updates = (rows || []).map((row) =>
-      supabase
-        .from('binder_cards')
-        .update({
-          market_price: priceByCard.get(row.card_id) ?? 0,
-          updated_at: updatedAt
-        })
-        .eq('id', row.id)
+    // Un solo upsert batch (PK única: binder_id + slot_number)
+    const { error: upsertError } = await supabase.from('binder_cards').upsert(
+      staleRows.map((row) => ({
+        binder_id: binderId,
+        slot_number: row.slot_number,
+        card_id: row.card_id,
+        card_name: row.card_name,
+        set_id: row.set_id,
+        number: row.number,
+        market_price: priceByCard.get(row.card_id) ?? 0,
+        updated_at: updatedAt
+      })),
+      { onConflict: 'binder_id,slot_number' }
     )
+    if (upsertError) throw upsertError
 
-    const updateResults = await Promise.all(updates)
-    const updateError = updateResults.find((r) => r.error)?.error
-    if (updateError) throw updateError
-
-    const withPrice = flat.filter((p) => p.market_price != null).length
+    const resolved = priceByCard.size
+    const withPrice = [...priceByCard.values()].filter((v) => v != null).length
 
     return NextResponse.json({
       success: true,
-      cards: flat.length,
+      cards: resolved,
+      fetched: fetched.length,
+      fromCache: cachedIds.length,
       withPrice,
-      withoutPrice: flat.length - withPrice,
+      withoutPrice: resolved - withPrice,
       failedCards,
+      skipped,
       source: 'tcgdex'
     })
   } catch (err) {
     console.error('[update-prices] error:', err)
-    const message = err instanceof Error ? err.message : 'Error desconocido'
+    const message =
+      err instanceof Error
+        ? err.message
+        : err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : 'Error desconocido'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import './vendor/pokemon-cards/pokemon-cards.css'
 
 export const metadata: Metadata = {
   title: 'Profesor TCG — Virtual Binder',

@@ -1,14 +1,5 @@
-export interface SlotCard {
-  id: string
-  binder_id: string
-  card_id: string
-  card_name: string
-  set_id: string
-  number: string
-  slot_number: number
-  market_price: number | null
-  image: string
-}
+import type { SlotCard } from '@/lib/sheets'
+import PokemonCard from './PokemonCard'
 
 interface BinderSheetProps {
   sheetNumber: number
@@ -32,24 +23,8 @@ export default function BinderSheet({ sheetNumber, slots, onRemoveSlot, onEmptyS
             className="group relative aspect-[63/88] rounded-xl"
           >
             {card ? (
-              <>
-                <div className="absolute inset-0 rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.5)] ring-1 ring-binder-accent/40 ring-offset-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={card.image}
-                    alt={card.card_name}
-                    loading="lazy"
-                    className="h-full w-full rounded-xl object-cover"
-                  />
-                </div>
-                <div className="absolute inset-x-0 bottom-0 rounded-b-xl bg-gradient-to-t from-black/90 via-black/40 to-transparent px-2 pb-1 pt-6">
-                  <p className="truncate text-[10px] font-semibold leading-tight text-white">
-                    {card.card_name}
-                  </p>
-                  <p className="truncate text-[9px] text-slate-300">
-                    {card.set_id.toUpperCase()} · {card.number}
-                  </p>
-                </div>
+              <div className="relative h-full w-full">
+                <PokemonCard card={card} />
 
                 {card.market_price != null && card.market_price > 0 && (
                   <div className="absolute right-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-yellow-400 shadow-md ring-1 ring-yellow-400/30">
@@ -68,7 +43,7 @@ export default function BinderSheet({ sheetNumber, slots, onRemoveSlot, onEmptyS
                     </svg>
                   </button>
                 )}
-              </>
+              </div>
             ) : onEmptySlotClick ? (
               <button
                 type="button"

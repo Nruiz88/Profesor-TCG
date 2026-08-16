@@ -1,0 +1,58 @@
+export const SLOTS_PER_SHEET = 9
+
+export interface RawCard {
+  id: string
+  binder_id: string
+  card_id: string
+  card_name: string
+  set_id: string
+  number: string
+  slot_number: number
+  market_price: number | null
+  rarity?: string | null
+  supertype?: string | null
+  subtypes?: string[] | null
+  types?: string[] | null
+}
+
+export interface SlotCard extends RawCard {
+  image: string
+}
+
+export function toSlotCard(card: RawCard): SlotCard {
+  return {
+    ...card,
+    image: `https://images.pokemontcg.io/${card.set_id}/${card.number}_hires.png`
+  }
+}
+
+export function groupIntoSheets(cards: SlotCard[]): SlotCard[][] {
+  const sheets: SlotCard[][] = []
+  for (const card of cards) {
+    const sheetIndex = Math.floor((card.slot_number - 1) / SLOTS_PER_SHEET)
+    if (!sheets[sheetIndex]) sheets[sheetIndex] = []
+    sheets[sheetIndex].push(card)
+  }
+  for (let i = 0; i < sheets.length; i++) {
+    if (!sheets[i]) sheets[i] = []
+  }
+  return sheets
+}
+
+export function padSheet(cards: SlotCard[]): (SlotCard | null)[] {
+  const arr: (SlotCard | null)[] = Array(SLOTS_PER_SHEET).fill(null)
+  for (const card of cards) {
+    const idx = (card.slot_number - 1) % SLOTS_PER_SHEET
+    arr[idx] = card
+  }
+  return arr
+}
+
+// Páginas del paginado: 2 hojas visibles por página
+export function sheetPageCount(sheetCount: number): number {
+  return Math.max(1, Math.ceil(sheetCount / 2))
+}
+
+export function computeTotalValue(cards: SlotCard[]): number {
+  return cards.reduce((sum, c) => sum + (c.market_price ?? 0), 0)
+}

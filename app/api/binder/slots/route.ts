@@ -54,6 +54,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Binder no encontrado' }, { status: 404 })
     }
 
+    // Precio desde la caché global card_prices si ya está cargada
+    const { data: priceRow } = await supabase
+      .from('card_prices')
+      .select('market_price')
+      .eq('card_id', body.card_id)
+      .maybeSingle()
+    const marketPrice = priceRow?.market_price ?? 0
+
     const { error } = await supabase.from('binder_cards').upsert(
       {
         binder_id: body.binder_id,
@@ -62,7 +70,7 @@ export async function POST(req: Request) {
         card_name: body.card_name,
         set_id: body.set_id,
         number: body.number,
-        market_price: 0,
+        market_price: marketPrice,
         updated_at: new Date().toISOString()
       },
       { onConflict: 'binder_id,slot_number' }
@@ -71,7 +79,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true }, { status: 201 })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Error desconocido'
+    const message =
+      err instanceof Error
+        ? err.message
+        : err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : 'Error desconocido'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

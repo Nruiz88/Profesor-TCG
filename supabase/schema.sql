@@ -102,3 +102,21 @@ create policy "binder_cards public read" on public.binder_cards
       where b.id = binder_id and b.is_public = true
     )
   );
+
+-- 6) Caché de precios por carta (compartida entre usuarios)
+-- Evita re-fetchear a TCGdex cartas repetidas entre binders y usuarios
+create table if not exists public.card_prices (
+  card_id text primary key,          -- ej: 'base1-4'
+  market_price numeric(10, 2),       -- null = sin precio conocido
+  updated_at timestamptz not null default timezone('utc'::text, now())
+);
+
+alter table public.card_prices enable row level security;
+
+-- Cualquier usuario autenticado puede leer y escribir la caché
+-- (son datos de precios públicos, no sensibles)
+create policy "card_prices read authenticated" on public.card_prices
+  for select using (auth.role() = 'authenticated');
+
+create policy "card_prices write authenticated" on public.card_prices
+  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getCardMetadataMap } from '@/lib/catalog'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,9 +60,22 @@ export async function GET(req: Request) {
       .order('slot_number', { ascending: true })
     if (error) throw error
 
+    // Enriquecer con metadata del catálogo para el render de la carta (rarity, subtypes, etc.)
+    const meta = await getCardMetadataMap()
+    const enriched = (cards || []).map((c) => {
+      const m = meta.get(c.card_id)
+      return {
+        ...c,
+        rarity: m?.rarity ?? null,
+        supertype: m?.supertype ?? null,
+        subtypes: m?.subtypes ?? null,
+        types: m?.types ?? null
+      }
+    })
+
     return NextResponse.json({
       binder,
-      cards: cards || []
+      cards: enriched
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'

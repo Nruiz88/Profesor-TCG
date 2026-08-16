@@ -22,6 +22,7 @@ export interface CardData {
   name: string
   supertype?: string
   subtypes?: string[]
+  types?: string[]
   number: string
   rarity?: string
   images?: { small: string; large: string }
@@ -79,8 +80,17 @@ let indexCache: Array<CardData & { setId: string }> | null = null
 async function buildIndex(): Promise<Array<CardData & { setId: string }>> {
   if (indexCache) return indexCache
 
+  // Índice precompilado por scripts/fetch-catalog.mjs: un solo archivo en vez de leer 174 JSON
+  const indexFile = await readLocal('index.json')
+  if (indexFile) {
+    const parsed = JSON.parse(indexFile) as Array<CardData & { setId: string }>
+    indexCache = parsed
+    return parsed
+  }
+
+  // Fallback: escanear los archivos por set (cache vieja sin index.json)
   const files = await readdir(CACHE_DIR)
-  const cardFiles = files.filter((f) => f.endsWith('.json') && f !== 'sets.json')
+  const cardFiles = files.filter((f) => f.endsWith('.json') && f !== 'sets.json' && f !== 'index.json')
 
   const all: Array<CardData & { setId: string }> = []
   for (const file of cardFiles) {
@@ -96,14 +106,17 @@ async function buildIndex(): Promise<Array<CardData & { setId: string }>> {
   return all
 }
 
-export async function searchCards(query: string, limit = 40): Promise<Array<CardData & { setId: string }>> {
+// Filtrado puro (sin FS ni red): reutilizable por searchCards y testeable
+// Busqueda por nombre, o por número tipo "015/084", "15/84" o "015" (opcionalmente + nombre de set)
+export function filterCards(
+  query: string,
+  index: Array<CardData & { setId: string }>,
+  sets: SetData[],
+  limit = 40
+): Array<CardData & { setId: string }> {
   const q = query.trim().toLowerCase()
   if (!q) return []
 
-  const index = await buildIndex()
-  const sets = await getSets()
-
-  // Busqueda por número tipo "015/084", "15/84" o "015" (opcionalmente + nombre de set)
   const numberMatch = q.match(/^(\d+)(?:\s*\/\s*(\d+))?\s*(.*)$/)
   if (numberMatch) {
     const num = parseInt(numberMatch[1], 10)
@@ -128,4 +141,21 @@ export async function searchCards(query: string, limit = 40): Promise<Array<Card
   return index
     .filter((c) => c.name.toLowerCase().includes(q))
     .slice(0, limit)
+}
+
+let cardByIdMap: Map<string, CardData & { setId: string }> | null = null
+
+// Metadata (rarity, subtypes, supertype, types) por card_id, para enriquecer las cartas del binder
+export async function getCardMetadataMap(): Promise<Map<string, CardData & { setId: string }>> {
+  if (!cardByIdMap) {
+    const index = await buildIndex()
+    cardByIdMap = new Map(index.map((c) => [c.id, c]))
+  }
+  return cardByIdMap
+}
+
+export async function searchCards(query: string, limit = 40): Promise<Array<CardData & { setId: string }>> {
+  const index = await buildIndex()
+  const sets = await getSets()
+  return filterCards(query, index, sets, limit)
 }

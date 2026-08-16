@@ -2,58 +2,25 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import BinderSheet, { type SlotCard } from '@/components/BinderSheet'
+import BinderSheet from '@/components/BinderSheet'
+import SheetPagination from '@/components/SheetPagination'
 import SlotSearchModal, { type SearchResult } from '@/components/SlotSearchModal'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
+import {
+  SLOTS_PER_SHEET,
+  computeTotalValue,
+  groupIntoSheets,
+  padSheet,
+  toSlotCard,
+  type SlotCard
+} from '@/lib/sheets'
 
 interface Binder {
   id: string
   title: string
   is_public?: boolean
   created_at?: string
-}
-
-interface RawCard {
-  id: string
-  binder_id: string
-  card_id: string
-  card_name: string
-  set_id: string
-  number: string
-  slot_number: number
-  market_price: number | null
-}
-
-const SLOTS_PER_SHEET = 9
-
-function toSlotCard(card: RawCard): SlotCard {
-  return {
-    ...card,
-    image: `https://images.pokemontcg.io/${card.set_id}/${card.number}_hires.png`
-  }
-}
-
-function groupIntoSheets(cards: SlotCard[]): SlotCard[][] {
-  const sheets: SlotCard[][] = []
-  for (const card of cards) {
-    const sheetIndex = Math.floor((card.slot_number - 1) / SLOTS_PER_SHEET)
-    if (!sheets[sheetIndex]) sheets[sheetIndex] = []
-    sheets[sheetIndex].push(card)
-  }
-  for (let i = 0; i < sheets.length; i++) {
-    if (!sheets[i]) sheets[i] = []
-  }
-  return sheets
-}
-
-function padSheet(cards: SlotCard[]): (SlotCard | null)[] {
-  const arr: (SlotCard | null)[] = Array(SLOTS_PER_SHEET).fill(null)
-  for (const card of cards) {
-    const idx = (card.slot_number - 1) % SLOTS_PER_SHEET
-    arr[idx] = card
-  }
-  return arr
 }
 
 export default function BinderPage() {
@@ -196,7 +163,7 @@ export default function BinderPage() {
     }
   }
 
-  const totalValue = cards.reduce((sum, c) => sum + (c.market_price ?? 0), 0)
+  const totalValue = computeTotalValue(cards)
   const totalCards = cards.length
 
   const sheets = groupIntoSheets(cards)
@@ -216,7 +183,13 @@ export default function BinderPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error')
-      setMessage(`Precios actualizados: ${data.cards} cartas, ${data.withPrice} con precio.`)
+      setMessage(
+        data.cards === 0
+          ? `Todos los precios ya estaban al día (${data.skipped ?? 0} cartas).`
+          : `Precios actualizados: ${data.cards} cartas, ${data.withPrice} con precio.` +
+            (data.fromCache > 0 ? ` ${data.fromCache} desde caché.` : '') +
+            (data.skipped > 0 ? ` ${data.skipped} ya estaban al día.` : '')
+      )
       await loadBinder()
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Error al actualizar precios')
@@ -381,25 +354,11 @@ export default function BinderPage() {
             })}
           </div>
 
-          <div className="mt-6 flex items-center justify-center gap-4">
-            <button
-              onClick={() => setCurrentSheet((p) => Math.max(0, p - 1))}
-              disabled={currentSheet === 0}
-              className="h-10 rounded-xl bg-slate-800 px-5 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700 disabled:opacity-40"
-            >
-              ◄ Anterior
-            </button>
-            <span className="text-sm font-medium text-slate-500">
-              {currentSheet + 1} / {Math.max(1, Math.ceil(sheets.length / 2))}
-            </span>
-            <button
-              onClick={() => setCurrentSheet((p) => p + 1)}
-              disabled={currentSheet + 1 >= Math.max(1, Math.ceil(sheets.length / 2))}
-              className="h-10 rounded-xl bg-slate-800 px-5 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700 disabled:opacity-40"
-            >
-              Siguiente ►
-            </button>
-          </div>
+          <SheetPagination
+            current={currentSheet}
+            sheetCount={sheets.length}
+            onChange={setCurrentSheet}
+          />
         </>
       )}
 
