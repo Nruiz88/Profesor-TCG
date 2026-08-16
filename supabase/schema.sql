@@ -15,6 +15,7 @@ create table if not exists public.binders (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade not null,
   title text not null default 'Mi Colección',
+  is_public boolean not null default false,
   created_at timestamptz not null default timezone('utc'::text, now())
 );
 
@@ -87,5 +88,17 @@ create policy "binder_cards delete own" on public.binder_cards
     exists (
       select 1 from public.binders b
       where b.id = binder_id and b.user_id = auth.uid()
+    )
+  );
+
+-- 5) Lectura pública de solo lectura: SOLO cuando is_public = true
+create policy "binders public read" on public.binders
+  for select using (is_public = true);
+
+create policy "binder_cards public read" on public.binder_cards
+  for select using (
+    exists (
+      select 1 from public.binders b
+      where b.id = binder_id and b.is_public = true
     )
   );

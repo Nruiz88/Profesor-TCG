@@ -1,0 +1,39 @@
+import { createClient } from '@/lib/supabase/client'
+
+// Obtener todos los binders del usuario activo
+export async function getUserBinders(userId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('binders')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
+// Crear un nuevo binder
+export async function createBinder(userId: string, title: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('binders')
+    .insert({ user_id: userId, title })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+// Eliminar un binder y sus cartas en cascada
+export async function deleteBinder(binderId: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('binders')
+    .delete()
+    .eq('id', binderId)
+
+  if (error) throw error
+  return true
+}
