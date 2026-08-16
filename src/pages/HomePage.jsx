@@ -11,7 +11,7 @@ export default function HomePage() {
       <header className="home__header">
         <div className="home__logo" aria-hidden="true" />
         <h1>Profesor TCG</h1>
-        <p className="home__tagline">Busca cartas de Pokémon TCG con precios de TCGPlayer y CardMarket</p>
+        <p className="home__tagline">Elegí un set y filtrá por nombre — sin límites de búsqueda</p>
       </header>
 
       <main className="home__main">

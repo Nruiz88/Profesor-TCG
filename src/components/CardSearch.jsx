@@ -1,37 +1,77 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './CardSearch.css'
 
 export default function CardSearch({ onSelect }) {
+  const [sets, setSets] = useState([])
+  const [selectedSet, setSelectedSet] = useState('')
+  const [cards, setCards] = useState([])
+  const [setName, setSetName] = useState('')
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loadingSets, setLoadingSets] = useState(true)
+  const [loadingCards, setLoadingCards] = useState(false)
   const [error, setError] = useState(null)
-  const [searched, setSearched] = useState('')
+  const abortRef = useRef(null)
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    if (!query.trim()) return
+  useEffect(() => {
+    async function loadSets() {
+      try {
+        const res = await fetch('/api/sets')
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || `Error ${res.status}`)
+        setSets(data.data || [])
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoadingSets(false)
+      }
+    }
+    loadSets()
+  }, [])
 
-    setLoading(true)
+  async function handleSetChange(e) {
+    const setCode = e.target.value
+    setSelectedSet(setCode)
+    setQuery('')
     setError(null)
 
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}&limit=10`)
-      const data = await res.json()
+    if (!setCode) {
+      setCards([])
+      setSetName('')
+      return
+    }
 
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    setLoadingCards(true)
+    try {
+      const res = await fetch(`/api/set-cards?set=${encodeURIComponent(setCode)}`, {
+        signal: controller.signal
+      })
+      const data = await res.json()
       if (!res.ok) {
+        if (data.matches) {
+          throw new Error('Código de set ambiguo: ' + data.matches.map((m) => m.set_id).join(', '))
+        }
         throw new Error(data.error || `Error ${res.status}`)
       }
-
-      setResults(data.results || [])
-      setSearched(query.trim())
+      setCards(data.cards || [])
+      setSetName(data.set || '')
     } catch (err) {
-      setError(err.message)
-      setResults([])
+      if (err.name !== 'AbortError') setError(err.message)
     } finally {
-      setLoading(false)
+      setLoadingCards(false)
     }
   }
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return []
+    return cards
+      .filter((c) => (c.card_info?.name || '').toLowerCase().includes(q))
+      .slice(0, 30)
+  }, [cards, query])
 
   const price = (card) => {
     const tcg = card.tcgplayer?.prices?.[0]
@@ -45,34 +85,54 @@ export default function CardSearch({ onSelect }) {
 
   return (
     <section className="search">
-      <form className="search__form" onSubmit={handleSubmit}>
+      <div className="search__controls">
+        <select
+          className="search__select"
+          value={selectedSet}
+          onChange={handleSetChange}
+          disabled={loadingSets}
+        >
+          <option value="">
+            {loadingSets ? 'Cargando sets…' : 'Elegí un set…'}
+          </option>
+          {sets.map((s) => (
+            <option key={s.set_id} value={s.set_code || s.set_id}>
+              {s.name} ({s.card_count} cartas)
+            </option>
+          ))}
+        </select>
+
         <input
           className="search__input"
           type="text"
-          placeholder="Buscar carta… ej: charizard ex"
+          placeholder="Filtrar por nombre… ej: charizard"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          disabled={!selectedSet || loadingCards}
         />
-        <button className="search__button" type="submit" disabled={loading}>
-          {loading ? 'Buscando…' : 'Buscar'}
-        </button>
-      </form>
+      </div>
 
       {error && <p className="search__error">{error}</p>}
 
-      {loading && <p className="search__loading">Consultando PokéWallet…</p>}
+      {loadingCards && <p className="search__loading">Descargando cartas del set…</p>}
 
-      {!loading && searched && results.length === 0 && !error && (
-        <p className="search__empty">No se encontraron cartas para «{searched}»</p>
+      {!loadingCards && selectedSet && !error && cards.length === 0 && (
+        <p className="search__empty">Este set no tiene cartas.</p>
       )}
 
-      {results.length > 0 && (
+      {!loadingCards && selectedSet && query.trim() && filtered.length === 0 && (
+        <p className="search__empty">
+          No hay «{query.trim()}» en {setName}
+        </p>
+      )}
+
+      {!loadingCards && selectedSet && query.trim() && filtered.length > 0 && (
         <>
           <p className="search__count">
-            {results.length} resultados para «{searched}»
+            {filtered.length} coincidencia{filtered.length !== 1 ? 's' : ''} para «{query.trim()}» en {setName}
           </p>
           <ul className="search__results">
-            {results.map((card) => {
+            {filtered.map((card) => {
               const p = price(card)
               return (
                 <li key={card.id}>
@@ -85,7 +145,8 @@ export default function CardSearch({ onSelect }) {
                     />
                     <span className="search__card-name">{card.card_info?.name}</span>
                     <span className="search__card-set">
-                      {card.card_info?.set_name} · {card.card_info?.card_number}
+                      {card.card_info?.card_number}
+                      {card.card_info?.rarity ? ` · ${card.card_info.rarity}` : ''}
                     </span>
                     {p && (
                       <span className="search__card-price">
