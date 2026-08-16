@@ -17,11 +17,20 @@ export default function HomePage() {
 
         {selected && (
           <section className="home__detail">
-            <h2>{selected.card_info?.name}</h2>
-            <p>
-              {selected.card_info?.set_name} · {selected.card_info?.card_number}
-              {selected.card_info?.rarity ? ` · ${selected.card_info.rarity}` : ''}
-            </p>
+            <div className="home__detail-top">
+              <img
+                className="home__card-image"
+                src={`/api/image?id=${encodeURIComponent(selected.id)}`}
+                alt={selected.card_info?.name}
+              />
+              <div>
+                <h2>{selected.card_info?.name}</h2>
+                <p>
+                  {selected.card_info?.set_name} · {selected.card_info?.card_number}
+                  {selected.card_info?.rarity ? ` · ${selected.card_info.rarity}` : ''}
+                </p>
+              </div>
+            </div>
             <div className="home__prices">
               {selected.tcgplayer?.prices?.length > 0 && (
                 <div className="price-card">
