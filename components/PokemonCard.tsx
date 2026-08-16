@@ -1,3 +1,5 @@
+'use client'
+
 import type { SlotCard } from '@/lib/sheets'
 import { NO_IMAGE_PLACEHOLDER } from '@/lib/cardImage'
 
