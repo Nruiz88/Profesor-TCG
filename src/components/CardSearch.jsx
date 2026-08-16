@@ -53,6 +53,12 @@ export default function CardSearch({ onSelect }) {
           {results.map((card) => (
             <li key={card.id}>
               <button className="search__card" onClick={() => onSelect(card)}>
+                <img
+                  className="search__card-image"
+                  src={`/api/image?id=${encodeURIComponent(card.id)}`}
+                  alt={card.card_info?.name}
+                  loading="lazy"
+                />
                 <span className="search__card-name">{card.card_info?.name}</span>
                 <span className="search__card-set">
                   {card.card_info?.set_name} · {card.card_info?.card_number}
