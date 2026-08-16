@@ -1,20 +1,42 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
 import type { ExploreCard } from '@/app/api/public/explore/route'
-import { formatLocation } from '@/lib/profile'
-import { ArrowRightIcon } from '@/components/icons'
+import MarketCard, { isRareCard } from '@/components/MarketCard'
 
-// Feed en vivo del marketplace para la home: últimas cartas publicadas por la
-// comunidad en venta o intercambio, con link directo a la ficha del binder.
+type FeedMode = 'all' | 'for_sale' | 'for_trade' | 'rare'
+
+const MODES: { id: FeedMode; label: string }[] = [
+  { id: 'all', label: 'Todas' },
+  { id: 'for_sale', label: '💵 En Venta' },
+  { id: 'for_trade', label: '🔄 Para Cambio' },
+  { id: 'rare', label: '🔥 Cartas Raras' }
+]
+
+function SkeletonCard() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+      <div className="shimmer aspect-[63/88] rounded-t-2xl" />
+      <div className="space-y-2 p-3">
+        <div className="shimmer h-3 w-3/4 rounded" />
+        <div className="shimmer h-2.5 w-1/2 rounded" />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Galería 3D del marketplace en la home: las últimas cartas publicadas por la
+ * comunidad con filtros rápidos client-side, sin recargar la página.
+ */
 export default function LiveMarketFeed() {
   const [cards, setCards] = useState<ExploreCard[] | null>(null)
   const [error, setError] = useState(false)
+  const [mode, setMode] = useState<FeedMode>('all')
 
   useEffect(() => {
     let active = true
-    fetch('/api/public/explore?view=cards&limit=8&sort=recent')
+    fetch('/api/public/explore?view=cards&limit=12&sort=recent')
       .then(async (res) => {
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Error')
@@ -28,87 +50,85 @@ export default function LiveMarketFeed() {
     }
   }, [])
 
-  if (error) return null
-  if (cards === null) {
-    return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-2xl border border-slate-800 bg-slate-900 p-3">
-            <div className="aspect-[63/88] rounded-xl bg-slate-800/60" />
-            <div className="mt-3 h-3 w-3/4 rounded bg-slate-800/60" />
-            <div className="mt-2 h-2.5 w-1/2 rounded bg-slate-800/40" />
-          </div>
-        ))}
-      </div>
-    )
-  }
+  const filtered = useMemo(() => {
+    if (!cards) return []
+    if (mode === 'for_sale') return cards.filter((c) => c.status === 'for_sale')
+    if (mode === 'for_trade') return cards.filter((c) => c.status === 'for_trade')
+    if (mode === 'rare') return cards.filter(isRareCard)
+    return cards
+  }, [cards, mode])
 
-  if (cards.length === 0) {
-    return (
-      <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-12 text-center">
-        <p className="text-lg font-semibold text-white">El marketplace recién arranca</p>
-        <p className="mt-1 text-sm text-slate-500">
-          Publicá tus primeras cartas en venta o para intercambio y aparecen acá para toda la
-          comunidad.
-        </p>
-      </div>
-    )
-  }
+  const counts = useMemo(() => {
+    const base = cards ?? []
+    return {
+      all: base.length,
+      for_sale: base.filter((c) => c.status === 'for_sale').length,
+      for_trade: base.filter((c) => c.status === 'for_trade').length,
+      rare: base.filter(isRareCard).length
+    }
+  }, [cards])
+
+  if (error) return null
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      {cards.map((card) => (
-        <div
-          key={card.id}
-          className="group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-colors hover:border-binder-accent/50"
-        >
-          <Link
-            href={`/binder/${encodeURIComponent(card.username)}?card=${card.id}`}
-            className="relative block aspect-[63/88] overflow-hidden bg-slate-950"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={card.image}
-              alt={card.card_name}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-            {card.status === 'for_sale' && card.price != null ? (
-              <span className="absolute right-2 top-2 rounded-full bg-black/75 px-2.5 py-1 text-xs font-bold text-yellow-400 shadow-md ring-1 ring-yellow-400/30">
-                ${card.price.toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </span>
-            ) : (
-              <span className="absolute right-2 top-2 rounded-full bg-sky-600/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
-                Trade
-              </span>
-            )}
-          </Link>
-          <div className="p-3">
-            <p className="truncate text-sm font-semibold text-white" title={card.card_name}>
-              {card.card_name}
-            </p>
-            <p className="truncate text-xs text-slate-500">
-              {card.set_name}
-              {card.rarity ? ` · ${card.rarity}` : ''}
-            </p>
-            <p className="mt-1 truncate text-xs text-slate-400">
-              <span className="font-medium text-slate-300">@{card.username}</span>
-              {formatLocation(card.city, card.country) &&
-                ` · ${formatLocation(card.city, card.country)}`}
-            </p>
-            <Link
-              href={`/binder/${encodeURIComponent(card.username)}?card=${card.id}`}
-              className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-200 transition-colors hover:border-binder-accent hover:bg-binder-accent/10 hover:text-white"
+    <div>
+      {/* Chips de filtro rápido */}
+      <div className="flex flex-wrap gap-2">
+        {MODES.map((m) => {
+          const active = mode === m.id
+          return (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setMode(m.id)}
+              className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors ${
+                active
+                  ? 'border-binder-accent bg-binder-accent/15 text-binder-accent'
+                  : 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500 hover:text-white'
+              }`}
             >
-              Ver en Binder
-              <ArrowRightIcon width={13} height={13} />
-            </Link>
-          </div>
+              {m.label}
+              {cards && (
+                <span
+                  className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                    active ? 'bg-binder-accent text-white' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  {counts[m.id]}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Grid */}
+      {cards === null ? (
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
-      ))}
+      ) : filtered.length === 0 ? (
+        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 px-6 py-14 text-center">
+          <p className="text-lg font-semibold text-white">
+            {mode === 'all'
+              ? 'El marketplace recién arranca'
+              : 'Sin cartas con ese filtro'}
+          </p>
+          <p className="mt-1 text-sm text-slate-500">
+            {mode === 'all'
+              ? 'Publicá tus primeras cartas en venta o para intercambio y aparecen acá para toda la comunidad.'
+              : 'Probá con otro filtro, o publicá tus cartas para que la comunidad las vea.'}
+          </p>
+        </div>
+      ) : (
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {filtered.map((card) => (
+            <MarketCard key={card.id} card={card} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

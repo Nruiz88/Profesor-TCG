@@ -25,7 +25,14 @@ const EMPTY_FACETS: ExploreFacets = { sets: [], rarities: [], cities: [] }
 export default function ExplorePage() {
   const [view, setView] = useState<View>('cards')
   const [mode, setMode] = useState<Mode>('all')
-  const [q, setQ] = useState('')
+  // El buscador arranca con ?q= (deep-link desde la home: "Buscar este Trade").
+  // También inicializamos debouncedQ con ese valor para que el PRIMER fetch ya
+  // vaya filtrado (evita una carrera donde un fetch sin q pise el resultado).
+  const [initialQ] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return new URLSearchParams(window.location.search).get('q') ?? ''
+  })
+  const [q, setQ] = useState(initialQ)
   const [setFilter, setSetFilter] = useState('')
   const [rarityFilter, setRarityFilter] = useState('')
   const [cityFilter, setCityFilter] = useState('')
@@ -38,7 +45,7 @@ export default function ExplorePage() {
   const [error, setError] = useState<string | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [debouncedQ, setDebouncedQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState(initialQ)
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -276,8 +283,7 @@ export default function ExplorePage() {
       </main>
 
       <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-600">
-        Profesor TCG · Precios de mercado vía TCGdex · Efectos de cartas: pokemon-cards-css · Íconos
-        de tipos: pokemon-type-svg-icons
+        © {new Date().getFullYear()} Profesor TCG · Hecho con ❤️ para coleccionistas
       </footer>
     </div>
   )

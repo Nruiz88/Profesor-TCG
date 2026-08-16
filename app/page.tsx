@@ -2,6 +2,8 @@ import Link from 'next/link'
 import HeroBinderDemo from '@/components/HeroBinderDemo'
 import CommunityStatsBar from '@/components/CommunityStatsBar'
 import LiveMarketFeed from '@/components/LiveMarketFeed'
+import LiveActivityTicker from '@/components/LiveActivityTicker'
+import TradeFairnessWidget from '@/components/TradeFairnessWidget'
 import {
   CardsIcon,
   WalletIcon,
@@ -160,6 +162,9 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Ticker de actividad en vivo */}
+      <LiveActivityTicker />
+
       {/* Métricas de la comunidad */}
       <CommunityStatsBar />
 
@@ -175,7 +180,7 @@ export default function LandingPage() {
               Actividad del mercado en vivo
             </p>
             <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">
-              Cartas en venta e intercambio, ahora mismo
+              Últimas cartas publicadas en la comunidad
             </h2>
             <p className="mt-3 text-slate-400">
               Lo último que la comunidad publicó para vender o cambiar, con precio en vivo,
@@ -193,6 +198,13 @@ export default function LandingPage() {
 
         <div className="mt-10">
           <LiveMarketFeed />
+        </div>
+      </section>
+
+      {/* Calculadora de intercambio justo */}
+      <section className="border-t border-slate-800/60 bg-slate-900/40 py-20">
+        <div className="mx-auto max-w-6xl px-4">
+          <TradeFairnessWidget />
         </div>
       </section>
 
@@ -359,8 +371,7 @@ export default function LandingPage() {
         </div>
         <div className="border-t border-slate-800/60 py-6">
           <div className="mx-auto max-w-6xl px-4 text-center text-xs text-slate-600">
-            Profesor TCG · Precios de mercado vía TCGdex · Efectos de cartas: pokemon-cards-css ·
-            Íconos de tipos: pokemon-type-svg-icons
+            © {new Date().getFullYear()} Profesor TCG · Hecho con ❤️ para coleccionistas
           </div>
         </div>
       </footer>
