@@ -1,83 +1,53 @@
 import Link from 'next/link'
-import PokemonCard from '@/components/PokemonCard'
-import MarketplacePreview from '@/components/MarketplacePreview'
-import type { SlotCard } from '@/lib/sheets'
-
-// Cartas de ejemplo para la demo (datos del catálogo, para que los efectos holo apliquen)
-const DEMO_CARDS: SlotCard[] = [
-  {
-    id: 'sm12-212',
-    binder_id: 'demo',
-    card_id: 'sm12-212',
-    card_name: 'Charizard & Braixen-GX',
-    set_id: 'sm12',
-    number: '212',
-    slot_number: 1,
-    market_price: 86.18,
-    rarity: 'Rare Ultra',
-    supertype: 'Pokémon',
-    subtypes: ['Basic', 'TAG TEAM', 'GX'],
-    types: ['Fire'],
-    image: 'https://images.pokemontcg.io/sm12/212_hires.png'
-  },
-  {
-    id: 'swsh12pt5-156',
-    binder_id: 'demo',
-    card_id: 'swsh12pt5-156',
-    card_name: 'Psychic Energy',
-    set_id: 'swsh12pt5',
-    number: '156',
-    slot_number: 2,
-    market_price: null,
-    supertype: 'Energy',
-    subtypes: ['Basic'],
-    types: ['Psychic'],
-    image: 'https://images.pokemontcg.io/swsh12pt5/156_hires.png'
-  },
-  {
-    id: 'sm4-119',
-    binder_id: 'demo',
-    card_id: 'sm4-119',
-    card_name: 'Silvally-GX',
-    set_id: 'sm4',
-    number: '119',
-    slot_number: 3,
-    market_price: 13.8,
-    rarity: 'Rare Ultra',
-    supertype: 'Pokémon',
-    subtypes: ['Stage 1', 'GX'],
-    types: ['Colorless'],
-    image: 'https://images.pokemontcg.io/sm4/119_hires.png'
-  }
-]
+import HeroBinderDemo from '@/components/HeroBinderDemo'
+import CommunityStatsBar from '@/components/CommunityStatsBar'
+import LiveMarketFeed from '@/components/LiveMarketFeed'
+import {
+  CardsIcon,
+  WalletIcon,
+  SparklesIcon,
+  SearchIcon,
+  SwapIcon,
+  GlobeIcon,
+  ChatIcon,
+  InstagramIcon,
+  GithubIcon,
+  ArrowRightIcon
+} from '@/components/icons'
 
 const FEATURES = [
   {
+    icon: CardsIcon,
     title: 'Binder virtual de 9 bolsillos',
     description:
-      'Organizá tus cartas por hojas como en un binder de verdad, con múltiples binders para tus colecciones.'
+      'Organizá tus cartas por hojas como en un binder de verdad, con múltiples carpetas para tus colecciones.'
   },
   {
+    icon: WalletIcon,
     title: 'Precios de mercado en vivo',
     description:
       'Cada carta muestra su valor de TCGplayer/Cardmarket vía TCGdex. Actualizá los precios con un clic, con caché inteligente.'
   },
   {
+    icon: SparklesIcon,
     title: 'Cartas con efecto holo',
     description:
       'Los efectos de la carta real: holo, ultra, VMAX, arcoíris, radiante y más. Sin imágenes, puro CSS.'
   },
   {
+    icon: SearchIcon,
     title: 'Búsqueda del catálogo completo',
     description:
       'Más de 17.000 cartas indexadas. Buscá por nombre, número o set y agregalas al instante.'
   },
   {
-    title: 'Marketplace de la comunidad',
+    icon: SwapIcon,
+    title: 'Trueques 1 vs 1 con valores',
     description:
-      'Publicá cartas en venta o para intercambio, recibí ofertas de otros coleccionistas y coordiná el trueque por WhatsApp.'
+      'Proponé cambios comparando el valor de cada lado automáticamente, con o sin dinero extra.'
   },
   {
+    icon: GlobeIcon,
     title: 'Detalle completo en español',
     description:
       'Click en cualquier carta para ver ataques, habilidades, debilidad, retirada, ilustrador y legalidad.'
@@ -85,9 +55,24 @@ const FEATURES = [
 ]
 
 const STEPS = [
-  { n: '1', title: 'Creá tu cuenta', text: 'Gratis y sin verificación de email. En segundos tenés tu binder.' },
-  { n: '2', title: 'Agregá tus cartas', text: 'Buscá en el catálogo completo de Pokémon TCG y poné cada carta en su bolsillo.' },
-  { n: '3', title: 'Mirá su valor', text: 'Precios de mercado actualizados al toque, y el total de tu colección siempre visible.' }
+  {
+    n: '1',
+    icon: CardsIcon,
+    title: 'Armá tu Binder 3D',
+    text: 'Digitalizá tu álbum físico en minutos, con precios de mercado en tiempo real.'
+  },
+  {
+    n: '2',
+    icon: SwapIcon,
+    title: 'Publicá o Intercambiá',
+    text: 'Marcá tus cartas en venta o proponé cambios 1v1 comparando valores automáticamente.'
+  },
+  {
+    n: '3',
+    icon: ChatIcon,
+    title: 'Cerrá por WhatsApp',
+    text: 'Un clic para coordinar con el comprador directo, sin comisiones intermedias.'
+  }
 ]
 
 export default function LandingPage() {
@@ -126,105 +111,111 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pb-16 pt-16 sm:pt-24">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(244,63,94,0.12),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(168,85,247,0.08),transparent_55%)]" />
+        <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-16 sm:pt-24 lg:grid-cols-2">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-              Tu colección de Pokémon TCG,{' '}
+            <span className="inline-flex items-center gap-2 rounded-full border border-binder-accent/30 bg-binder-accent/10 px-3 py-1 text-xs font-semibold text-binder-accent">
+              <SparklesIcon width={13} height={13} />
+              Gratis · Español · 17.000+ cartas
+            </span>
+            <h1 className="mt-5 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.4rem] lg:leading-[1.1]">
+              Tu Colección TCG en 3D.{' '}
               <span className="bg-gradient-to-r from-binder-accent to-amber-400 bg-clip-text text-transparent">
-                organizada y valorada
+                Tu Mercado en WhatsApp.
               </span>
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-400">
-              Armá binders virtuales con tus cartas, mirá el precio de mercado de cada una,{' '}
-              <span className="text-slate-200">y conectá con la comunidad para vender o cambiar</span>.
-              Gratis, en español y con efectos holo.
+              Digitalizá tu álbum físico en minutos: precios de mercado en tiempo real, cartas con
+              efecto holo, y la comunidad para{' '}
+              <span className="text-slate-200">vender, cambiar y cerrar el trato directo por WhatsApp</span>.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
                 href="/login"
-                className="rounded-xl bg-binder-accent px-6 py-3 text-base font-semibold text-white shadow-lg shadow-rose-900/30 transition-colors hover:bg-rose-500"
+                className="group inline-flex items-center gap-2 rounded-xl bg-binder-accent px-6 py-3 text-base font-semibold text-white shadow-lg shadow-rose-900/30 transition-colors hover:bg-rose-500"
               >
-                Crear mi binder gratis
+                Crear mi Binder Gratis
+                <ArrowRightIcon width={17} height={17} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/login"
-                className="rounded-xl border border-slate-700 px-6 py-3 text-base font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:text-white"
+                href="/explore"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-6 py-3 text-base font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:text-white"
               >
-                Ya tengo cuenta
+                Explorar Mercado
               </Link>
             </div>
             <p className="mt-6 text-sm text-slate-600">
-              Sin tarjeta · Sin verificación de email · 17.000+ cartas · Marketplace de la comunidad
+              Sin tarjeta · Sin verificación de email ·{' '}
+              <Link href="/login" className="font-medium text-slate-400 underline-offset-4 hover:text-white hover:underline">
+                Ya tengo cuenta
+              </Link>
             </p>
           </div>
 
-          {/* Demo de cartas */}
-          <div className="flex items-center justify-center gap-4 sm:gap-6">
-            {DEMO_CARDS.map((card) => (
-              <div key={card.id} className="w-28 sm:w-36">
-                <PokemonCard card={card} />
-                <div className="mt-3 flex items-center justify-between text-xs">
-                  <span className="truncate font-medium text-slate-300">{card.card_name}</span>
-                  {card.market_price != null && (
-                    <span className="ml-2 shrink-0 font-bold text-yellow-400">
-                      ${card.market_price.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+          {/* Demo 3D interactiva */}
+          <div className="relative mx-auto w-full max-w-md">
+            <HeroBinderDemo />
           </div>
         </div>
       </section>
 
-      {/* Marketplace preview */}
-      <section className="border-t border-slate-800/60 bg-slate-900/40 py-16">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div className="max-w-2xl">
-              <p className="text-xs font-bold uppercase tracking-widest text-binder-accent">
-                Marketplace de la comunidad
-              </p>
-              <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">
-                Cartas en venta e intercambio, ahora mismo
-              </h2>
-              <p className="mt-3 text-slate-400">
-                Lo último que la comunidad publicó para vender o cambiar, con precio en vivo,
-                vendedor verificado por WhatsApp y ofertas de trueque. Entrá, mirá y contactá
-                directo.
-              </p>
-            </div>
-            <Link
-              href="/explore"
-              className="rounded-xl bg-binder-accent px-6 py-3 text-base font-semibold text-white shadow-lg shadow-rose-900/30 transition-colors hover:bg-rose-500"
-            >
-              Explorar el marketplace
-            </Link>
-          </div>
+      {/* Métricas de la comunidad */}
+      <CommunityStatsBar />
 
-          <div className="mt-10">
-            <MarketplacePreview />
+      {/* Marketplace en vivo */}
+      <section className="mx-auto max-w-6xl px-4 py-20">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-binder-accent">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              Actividad del mercado en vivo
+            </p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">
+              Cartas en venta e intercambio, ahora mismo
+            </h2>
+            <p className="mt-3 text-slate-400">
+              Lo último que la comunidad publicó para vender o cambiar, con precio en vivo,
+              vendedor con ubicación y contacto directo por WhatsApp.
+            </p>
           </div>
+          <Link
+            href="/explore"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:border-binder-accent hover:text-white"
+          >
+            Ver todo el mercado
+            <ArrowRightIcon width={15} height={15} />
+          </Link>
+        </div>
+
+        <div className="mt-10">
+          <LiveMarketFeed />
         </div>
       </section>
 
       {/* Features */}
-      <section className="border-t border-slate-800/60 bg-slate-900/40 py-16">
+      <section className="border-t border-slate-800/60 bg-slate-900/40 py-20">
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="text-center text-3xl font-bold tracking-tight text-white">
             Todo lo que necesitás para tu colección
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-slate-400">
-            Pensado para coleccionistas: desde el precio de mercado hasta el efecto holo de cada carta.
+            Pensado para coleccionistas: desde el precio de mercado hasta el efecto holo de cada
+            carta.
           </p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
               <div
                 key={f.title}
-                className="rounded-2xl border border-slate-800 bg-slate-900 p-6 transition-colors hover:border-slate-700"
+                className="rounded-2xl border border-slate-800 bg-slate-900 p-6 transition-colors hover:border-slate-600"
               >
-                <h3 className="text-base font-semibold text-white">{f.title}</h3>
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-binder-accent/10 text-binder-accent">
+                  <f.icon width={20} height={20} />
+                </span>
+                <h3 className="mt-4 text-base font-semibold text-white">{f.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{f.description}</p>
               </div>
             ))}
@@ -233,44 +224,144 @@ export default function LandingPage() {
       </section>
 
       {/* Cómo funciona */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <h2 className="text-center text-3xl font-bold tracking-tight text-white">Empezar es fácil</h2>
-        <div className="mt-12 grid gap-8 sm:grid-cols-3">
+      <section className="mx-auto max-w-6xl px-4 py-20">
+        <h2 className="text-center text-3xl font-bold tracking-tight text-white">
+          Del álbum físico al trato cerrado en 3 pasos
+        </h2>
+        <div className="mt-14 grid gap-10 sm:grid-cols-3">
           {STEPS.map((s) => (
-            <div key={s.n} className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-binder-accent/15 text-lg font-bold text-binder-accent">
-                {s.n}
+            <div key={s.n} className="relative text-center">
+              <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-binder-accent/30 bg-binder-accent/10 text-binder-accent">
+                <s.icon width={26} height={26} strokeWidth={1.7} />
+                <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-binder-accent text-xs font-bold text-white shadow-lg shadow-rose-900/40">
+                  {s.n}
+                </span>
               </div>
-              <h3 className="mt-4 text-base font-semibold text-white">{s.title}</h3>
+              <h3 className="mt-5 text-base font-semibold text-white">{s.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-400">{s.text}</p>
+              {s.n !== '3' && (
+                <span className="absolute right-[-28px] top-8 hidden text-slate-700 sm:block">
+                  <ArrowRightIcon width={22} height={22} />
+                </span>
+              )}
             </div>
           ))}
         </div>
       </section>
 
       {/* CTA final */}
-      <section className="border-t border-slate-800/60 bg-slate-900/40 py-16">
+      <section className="border-t border-slate-800/60 bg-gradient-to-b from-slate-900/60 to-transparent py-20">
         <div className="mx-auto max-w-3xl px-4 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-white">
-            Empezá a organizar tu colección hoy
+            Tu colección merece estar en 3D
           </h2>
           <p className="mt-3 text-slate-400">
-            Creá tu primer binder en menos de un minuto.
+            Creá tu primer binder en menos de un minuto y empezá a vender o cambiar hoy mismo.
           </p>
           <Link
             href="/login"
-            className="mt-8 inline-block rounded-xl bg-binder-accent px-8 py-3 text-base font-semibold text-white shadow-lg shadow-rose-900/30 transition-colors hover:bg-rose-500"
+            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-binder-accent px-8 py-3 text-base font-semibold text-white shadow-lg shadow-rose-900/30 transition-colors hover:bg-rose-500"
           >
-            Crear mi binder gratis
+            Crear mi Binder Gratis
+            <ArrowRightIcon width={17} height={17} />
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/60 py-8">
-        <div className="mx-auto max-w-6xl px-4 text-center text-sm text-slate-600">
-          Profesor TCG · Precios de mercado vía TCGdex · Efectos de cartas: pokemon-cards-css ·
-          Íconos de tipos: pokemon-type-svg-icons
+      <footer className="border-t border-slate-800/60 bg-slate-950">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-binder-accent text-sm font-bold text-white">
+                P
+              </span>
+              <span className="text-lg font-bold tracking-tight text-white">Profesor TCG</span>
+            </div>
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-500">
+              Tu colección TCG en 3D, tu mercado en WhatsApp. Digitalizá, publicá y comerciá con
+              coleccionistas.
+            </p>
+          </div>
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Producto</h3>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              <li>
+                <Link href="/explore" className="text-slate-400 transition-colors hover:text-white">
+                  Marketplace
+                </Link>
+              </li>
+              <li>
+                <Link href="/explore" className="text-slate-400 transition-colors hover:text-white">
+                  Binders destacados
+                </Link>
+              </li>
+              <li>
+                <Link href="/login" className="text-slate-400 transition-colors hover:text-white">
+                  Crear cuenta
+                </Link>
+              </li>
+              <li>
+                <Link href="/login" className="text-slate-400 transition-colors hover:text-white">
+                  Ingresar
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Legal</h3>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              <li>
+                <Link href="#" className="text-slate-400 transition-colors hover:text-white">
+                  Términos de uso
+                </Link>
+              </li>
+              <li>
+                <Link href="#" className="text-slate-400 transition-colors hover:text-white">
+                  Política de privacidad
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Comunidad</h3>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              <li>
+                <a
+                  href="https://wa.me/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-slate-400 transition-colors hover:text-white"
+                >
+                  <ChatIcon width={15} height={15} /> WhatsApp
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/Nruiz88/Profesor-TCG"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-slate-400 transition-colors hover:text-white"
+                >
+                  <GithubIcon width={15} height={15} /> GitHub
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="inline-flex items-center gap-2 text-slate-400 transition-colors hover:text-white"
+                >
+                  <InstagramIcon width={15} height={15} /> Instagram
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-slate-800/60 py-6">
+          <div className="mx-auto max-w-6xl px-4 text-center text-xs text-slate-600">
+            Profesor TCG · Precios de mercado vía TCGdex · Efectos de cartas: pokemon-cards-css ·
+            Íconos de tipos: pokemon-type-svg-icons
+          </div>
         </div>
       </footer>
     </div>

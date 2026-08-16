@@ -4,16 +4,17 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation } from '@/lib/profile'
+import { ArrowRightIcon } from '@/components/icons'
 
-// Preview del marketplace para la home: muestra las últimas cartas de la
+// Feed en vivo del marketplace para la home: últimas cartas publicadas por la
 // comunidad en venta o intercambio, con link directo a la ficha del binder.
-export default function MarketplacePreview() {
+export default function LiveMarketFeed() {
   const [cards, setCards] = useState<ExploreCard[] | null>(null)
   const [error, setError] = useState(false)
 
   useEffect(() => {
     let active = true
-    fetch('/api/public/explore?view=cards&limit=4&sort=recent')
+    fetch('/api/public/explore?view=cards&limit=8&sort=recent')
       .then(async (res) => {
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Error')
@@ -57,12 +58,14 @@ export default function MarketplacePreview() {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
       {cards.map((card) => (
-        <Link
+        <div
           key={card.id}
-          href={`/binder/${encodeURIComponent(card.username)}?card=${card.id}`}
           className="group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-colors hover:border-binder-accent/50"
         >
-          <div className="relative aspect-[63/88] overflow-hidden bg-slate-950">
+          <Link
+            href={`/binder/${encodeURIComponent(card.username)}?card=${card.id}`}
+            className="relative block aspect-[63/88] overflow-hidden bg-slate-950"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={card.image}
@@ -82,7 +85,7 @@ export default function MarketplacePreview() {
                 Trade
               </span>
             )}
-          </div>
+          </Link>
           <div className="p-3">
             <p className="truncate text-sm font-semibold text-white" title={card.card_name}>
               {card.card_name}
@@ -96,8 +99,15 @@ export default function MarketplacePreview() {
               {formatLocation(card.city, card.country) &&
                 ` · ${formatLocation(card.city, card.country)}`}
             </p>
+            <Link
+              href={`/binder/${encodeURIComponent(card.username)}?card=${card.id}`}
+              className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-200 transition-colors hover:border-binder-accent hover:bg-binder-accent/10 hover:text-white"
+            >
+              Ver en Binder
+              <ArrowRightIcon width={13} height={13} />
+            </Link>
           </div>
-        </Link>
+        </div>
       ))}
     </div>
   )

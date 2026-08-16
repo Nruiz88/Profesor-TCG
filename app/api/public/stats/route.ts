@@ -1,0 +1,53 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { getCardMetadataMap } from '@/lib/catalog'
+import { effectivePrice } from '@/lib/cardStatus'
+
+export const dynamic = 'force-dynamic'
+
+// Métricas públicas para la home (barra de prueba social):
+// - catalogCards: tamaño del catálogo indexado (17.000+ cartas).
+// - marketValue:  suma del precio efectivo de las cartas activas del marketplace.
+// - sellers:      cantidad de coleccionistas con publicaciones en venta/cambio.
+export async function GET() {
+  try {
+    const supabase = await createClient()
+    const [catalog, cardsResult] = await Promise.all([
+      getCardMetadataMap(),
+      supabase
+        .from('binder_cards')
+        .select(
+          'price, price_override, market_price, binders!binder_cards_binder_id_fkey!inner(user_id)'
+        )
+        .or('is_for_sale.eq.true,is_for_trade.eq.true')
+        .eq('binders.is_public', true)
+        .limit(1000)
+    ])
+    if (cardsResult.error) throw cardsResult.error
+
+    const rows = (cardsResult.data || []) as unknown as Array<{
+      price: number | null
+      price_override: number | null
+      market_price: number | null
+      binders: { user_id: string } | { user_id: string }[] | null
+    }>
+
+    let marketValue = 0
+    const sellers = new Set<string>()
+    for (const r of rows) {
+      const p = effectivePrice(r.market_price, r.price_override, r.price)
+      if (p != null) marketValue += p
+      const b = Array.isArray(r.binders) ? r.binders[0] : r.binders
+      if (b?.user_id) sellers.add(b.user_id)
+    }
+
+    return NextResponse.json({
+      catalogCards: catalog.size,
+      marketValue,
+      sellers: sellers.size
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error desconocido'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
