@@ -38,9 +38,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-binder-sheet p-8 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
-        <h1 className="text-2xl font-bold tracking-tight">Profesor TCG</h1>
-        <p className="mt-1 text-sm text-slate-400">
+      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+        <h1 className="text-2xl font-bold tracking-tight text-white">Profesor TCG</h1>
+        <p className="mt-1 text-sm text-slate-500">
           {mode === 'login' ? 'Iniciá sesión en tu binder privado' : 'Creá tu cuenta y tu binder privado'}
         </p>
 
@@ -51,7 +51,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@email.com"
-            className="w-full rounded-xl border border-white/10 bg-binder-bg px-4 py-3 text-sm focus:border-binder-accent focus:outline-none"
+            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:border-binder-accent focus:outline-none"
           />
           <input
             type="password"
@@ -60,7 +60,7 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Contraseña (mín. 6 caracteres)"
-            className="w-full rounded-xl border border-white/10 bg-binder-bg px-4 py-3 text-sm focus:border-binder-accent focus:outline-none"
+            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:border-binder-accent focus:outline-none"
           />
 
           {error && (
@@ -81,7 +81,7 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-          className="mt-4 text-sm text-slate-400 hover:text-white"
+          className="mt-4 text-sm text-slate-500 hover:text-slate-200"
         >
           {mode === 'login' ? '¿No tenés cuenta? Registrate' : '¿Ya tenés cuenta? Ingresá'}
         </button>

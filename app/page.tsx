@@ -259,21 +259,30 @@ export default function BinderPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6">
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Profesor TCG</h1>
-          <p className="text-sm text-slate-400">
-            {binder?.title} · {totalCards} cartas en {sheets.length} hoja{sheets.length !== 1 ? 's' : ''}
-            {user?.email ? ` · ${user.email}` : ''}
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <header className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-white">Profesor TCG</h1>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+            <span className="font-medium text-slate-400">{binder?.title ?? '—'}</span>
+            <span className="text-slate-700">•</span>
+            <span>
+              {totalCards} cartas en {sheets.length} hoja{sheets.length !== 1 ? 's' : ''}
+            </span>
+            {user?.email && (
+              <>
+                <span className="text-slate-700">•</span>
+                <span className="truncate text-slate-500">{user.email}</span>
+              </>
+            )}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <select
             value={binder?.id ?? ''}
             onChange={(e) => e.target.value && selectBinder(e.target.value)}
-            className="rounded-xl border border-white/10 bg-binder-sheet px-3 py-2.5 text-sm text-slate-200 focus:border-binder-accent focus:outline-none"
+            className="h-10 rounded-xl border border-slate-800 bg-slate-900 px-3 pr-8 text-sm font-medium text-slate-200 focus:border-binder-accent focus:outline-none"
           >
             {binders.length === 0 && <option value="">Sin binder</option>}
             {binders.map((b) => (
@@ -285,7 +294,7 @@ export default function BinderPage() {
 
           <button
             onClick={handleCreateBinder}
-            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/5"
+            className="h-10 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
           >
             + Nuevo
           </button>
@@ -293,7 +302,7 @@ export default function BinderPage() {
           {binder && (
             <button
               onClick={handleDeleteBinder}
-              className="rounded-xl border border-red-500/30 px-4 py-2.5 text-sm font-semibold text-red-300 transition-colors hover:bg-red-500/10"
+              className="h-10 rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
             >
               Eliminar
             </button>
@@ -302,51 +311,52 @@ export default function BinderPage() {
           {binder && (
             <button
               onClick={togglePublic}
-              className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+              className={`h-10 rounded-xl px-4 text-sm font-semibold transition-colors ${
                 binder.is_public
-                  ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20'
-                  : 'border-white/10 text-slate-300 hover:bg-white/5'
+                  ? 'bg-slate-800 text-emerald-300 hover:bg-slate-700'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
             >
               {binder.is_public ? 'Público' : 'Privado'}
             </button>
           )}
 
-          {binder?.is_public && (
+          {binder && (
             <button
               onClick={copyShareLink}
-              className="rounded-xl bg-binder-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-500"
+              className="h-10 rounded-xl bg-binder-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-rose-500"
             >
               Compartir
             </button>
           )}
 
           <button
-            onClick={logout}
-            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/5"
-          >
-            Cerrar sesión
-          </button>
-          <div className="rounded-xl border border-yellow-400/30 bg-gradient-to-b from-yellow-400/15 to-yellow-400/5 px-4 py-2 text-right">
-            <p className="text-[10px] uppercase tracking-widest text-yellow-300/70">Valor total</p>
-            <p className="text-xl font-bold text-yellow-300">
-              ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
-              <span className="text-xs font-semibold text-yellow-300/60">USD</span>
-            </p>
-          </div>
-
-          <button
             onClick={updatePrices}
             disabled={updating || totalCards === 0}
-            className="rounded-xl bg-binder-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-500 disabled:opacity-50"
+            className="h-10 rounded-xl bg-slate-800 px-4 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700 disabled:opacity-50"
           >
             {updating ? 'Actualizando…' : 'Actualizar precios'}
           </button>
+
+          <button
+            onClick={logout}
+            className="h-10 rounded-xl px-3 text-sm font-medium text-slate-500 transition-colors hover:text-slate-200"
+          >
+            Cerrar sesión
+          </button>
+
+          <div className="rounded-xl border border-yellow-400/20 bg-slate-900 px-4 py-2 text-right">
+            <p className="text-[10px] uppercase tracking-widest text-yellow-400/50">Valor total</p>
+            <p className="text-lg font-bold text-yellow-400">
+              ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+              <span className="text-xs font-semibold text-yellow-400/50">USD</span>
+            </p>
+          </div>
         </div>
       </header>
 
       {message && (
-        <div className="mb-4 rounded-xl border border-white/10 bg-binder-sheet px-4 py-3 text-sm text-slate-300">
+        <div className="mb-4 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-300">
           {message}
         </div>
       )}
@@ -375,17 +385,17 @@ export default function BinderPage() {
             <button
               onClick={() => setCurrentSheet((p) => Math.max(0, p - 1))}
               disabled={currentSheet === 0}
-              className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-40"
+              className="h-10 rounded-xl bg-slate-800 px-5 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700 disabled:opacity-40"
             >
               ◄ Anterior
             </button>
-            <span className="text-sm text-slate-400">
+            <span className="text-sm font-medium text-slate-500">
               {currentSheet + 1} / {Math.max(1, Math.ceil(sheets.length / 2))}
             </span>
             <button
               onClick={() => setCurrentSheet((p) => p + 1)}
               disabled={currentSheet + 1 >= Math.max(1, Math.ceil(sheets.length / 2))}
-              className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-40"
+              className="h-10 rounded-xl bg-slate-800 px-5 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700 disabled:opacity-40"
             >
               Siguiente ►
             </button>

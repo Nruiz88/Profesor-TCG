@@ -72,13 +72,13 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
       <div
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-white/10 bg-binder-bg shadow-2xl"
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
           <div>
-            <h2 className="text-lg font-semibold">Agregar carta · {slotLabel}</h2>
-            <p className="text-xs text-slate-400">Buscá por nombre, número (015/084) o número + set</p>
+            <h2 className="text-lg font-semibold text-white">Agregar carta · {slotLabel}</h2>
+            <p className="text-xs text-slate-500">Buscá por nombre, número (015/084) o número + set</p>
           </div>
           <button
             onClick={onClose}
@@ -95,14 +95,14 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Ej: charizard · 015/084 · 015/084 pitch black"
             autoFocus
-            className="w-full rounded-xl border border-white/10 bg-binder-sheet px-4 py-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition-colors focus:border-binder-accent"
+            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200 placeholder-slate-600 outline-none transition-colors focus:border-binder-accent"
           />
         </div>
 
         {error && <p className="px-5 pb-2 text-sm text-red-400">{error}</p>}
         {loading && <p className="px-5 pb-2 text-sm text-slate-400">Buscando…</p>}
 
-        <div className="min-h-0 flex-1 overflow-y-auto border-t border-white/10 px-5 py-3">
+        <div className="min-h-0 flex-1 overflow-y-auto border-t border-slate-800 px-5 py-3">
           {!loading && query.trim().length >= 2 && results.length === 0 && (
             <p className="py-8 text-center text-sm text-slate-500">Sin resultados para «{query.trim()}»</p>
           )}
@@ -113,7 +113,7 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
                 key={card.id}
                 onClick={() => handleSelect(card)}
                 disabled={saving !== null}
-                className="group relative overflow-hidden rounded-lg border border-white/10 bg-binder-sheet text-left transition-colors hover:border-white/30"
+                className="group relative overflow-hidden rounded-lg border border-slate-800 bg-slate-950 text-left transition-colors hover:border-slate-600"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
