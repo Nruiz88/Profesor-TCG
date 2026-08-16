@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSupabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +13,15 @@ interface SlotInput {
 }
 
 export async function POST(req: Request) {
-  const supabase = getSupabase()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
 
   let body: SlotInput
   try {
@@ -35,6 +43,17 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Verificamos que el binder pertenezca al usuario (RLS no permite lo contrario)
+    const { data: binder } = await supabase
+      .from('binders')
+      .select('id')
+      .eq('id', body.binder_id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (!binder) {
+      return NextResponse.json({ error: 'Binder no encontrado' }, { status: 404 })
+    }
+
     const { error } = await supabase.from('binder_cards').upsert(
       {
         binder_id: body.binder_id,

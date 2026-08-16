@@ -9,6 +9,7 @@
     "fetch-catalog": "node scripts/fetch-catalog.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.47.10",
     "next": "^15.1.3",
     "react": "^19.0.0",

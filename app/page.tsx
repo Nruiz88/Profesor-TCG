@@ -1,8 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import BinderSheet, { type SlotCard } from '@/components/BinderSheet'
 import SlotSearchModal, { type SearchResult } from '@/components/SlotSearchModal'
+import { createClient } from '@/lib/supabase/client'
 
 interface Binder {
   id: string
@@ -49,6 +51,8 @@ function padSheet(cards: SlotCard[]): (SlotCard | null)[] {
 }
 
 export default function BinderPage() {
+  const router = useRouter()
+  const [user, setUser] = useState<{ email: string | undefined } | null>(null)
   const [binder, setBinder] = useState<Binder | null>(null)
   const [cards, setCards] = useState<SlotCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,8 +75,19 @@ export default function BinderPage() {
   }, [])
 
   useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ? { email: data.user.email } : null)
+    })
     loadBinder()
   }, [loadBinder])
+
+  async function logout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   const totalValue = cards.reduce((sum, c) => sum + (c.market_price ?? 0), 0)
   const totalCards = cards.length
@@ -143,10 +158,17 @@ export default function BinderPage() {
           <h1 className="text-2xl font-bold tracking-tight">Profesor TCG</h1>
           <p className="text-sm text-slate-400">
             {binder?.title} · {totalCards} cartas en {sheets.length} hoja{sheets.length !== 1 ? 's' : ''}
+            {user?.email ? ` · ${user.email}` : ''}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={logout}
+            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/5"
+          >
+            Cerrar sesión
+          </button>
           <div className="rounded-xl border border-yellow-400/30 bg-gradient-to-b from-yellow-400/15 to-yellow-400/5 px-4 py-2 text-right">
             <p className="text-[10px] uppercase tracking-widest text-yellow-300/70">Valor total</p>
             <p className="text-xl font-bold text-yellow-300">

@@ -1,20 +1,32 @@
 import { NextResponse } from 'next/server'
-import { getSupabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const supabase = getSupabase()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
 
   try {
-    // Aseguramos un binder por defecto (demo sin auth)
-    const { data: existing } = await supabase.from('binders').select('id, title').limit(1)
+    // Aseguramos el binder del usuario autenticado
+    const { data: existing } = await supabase
+      .from('binders')
+      .select('id, title')
+      .eq('user_id', user.id)
+      .limit(1)
     let binder = existing?.[0] ?? null
 
     if (!binder) {
       const { data: created, error: createError } = await supabase
         .from('binders')
-        .insert({ title: 'Mi Colección' })
+        .insert({ title: 'Mi Colección', user_id: user.id })
         .select('id, title')
         .single()
       if (createError) throw createError

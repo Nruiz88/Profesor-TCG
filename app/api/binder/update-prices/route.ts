@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSupabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 
 const API_BASE = 'https://api.tcgdex.net/v2/en/cards'
 const CONCURRENCY = 10
@@ -88,9 +88,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Falta binderId' }, { status: 400 })
   }
 
-  const supabase = getSupabase()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
 
   try {
+    // Verificamos que el binder pertenezca al usuario (RLS no permite lo contrario)
+    const { data: binder } = await supabase
+      .from('binders')
+      .select('id')
+      .eq('id', binderId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (!binder) {
+      return NextResponse.json({ error: 'Binder no encontrado' }, { status: 404 })
+    }
+
     let cardIds = body.cardIds
 
     if (!cardIds || cardIds.length === 0) {
