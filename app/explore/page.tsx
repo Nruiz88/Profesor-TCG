@@ -4,14 +4,31 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import MarketGrid, { BindersGrid } from '@/components/MarketGrid'
 import type { ExploreBinder, ExploreCard, ExploreFacets } from '@/app/api/public/explore/route'
+import { ChevronDownIcon, SearchIcon, XIcon } from '@/components/icons'
 
 type View = 'cards' | 'binders'
 type Mode = 'all' | 'for_sale' | 'for_trade'
 
-const MODES: { id: Mode; label: string }[] = [
-  { id: 'all', label: 'Todas' },
-  { id: 'for_sale', label: 'En venta' },
-  { id: 'for_trade', label: 'Para intercambio' }
+// Acentos por modo: rose (todas), emerald (venta), blue (intercambio)
+const MODES: { id: Mode; label: string; activeClass: string; dotClass: string }[] = [
+  {
+    id: 'all',
+    label: 'Todas',
+    activeClass: 'bg-rose-500/15 text-rose-400',
+    dotClass: 'bg-rose-400'
+  },
+  {
+    id: 'for_sale',
+    label: 'En venta',
+    activeClass: 'bg-emerald-500/15 text-emerald-400',
+    dotClass: 'bg-emerald-400'
+  },
+  {
+    id: 'for_trade',
+    label: 'Para intercambio',
+    activeClass: 'bg-blue-500/15 text-blue-400',
+    dotClass: 'bg-blue-400'
+  }
 ]
 
 const SORTS = [
@@ -21,6 +38,32 @@ const SORTS = [
 ]
 
 const EMPTY_FACETS: ExploreFacets = { sets: [], rarities: [], cities: [] }
+
+function SelectField({
+  value,
+  onChange,
+  children,
+  label
+}: {
+  value: string
+  onChange: (v: string) => void
+  children: React.ReactNode
+  label: string
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={label}
+        className="w-full cursor-pointer appearance-none rounded-xl border border-slate-800/80 bg-slate-950/70 py-2.5 pl-3 pr-9 text-xs font-medium text-slate-300 outline-none transition-colors hover:border-slate-600 focus:border-rose-500/60"
+      >
+        {children}
+      </select>
+      <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+    </div>
+  )
+}
 
 export default function ExplorePage() {
   const [view, setView] = useState<View>('cards')
@@ -88,31 +131,41 @@ export default function ExplorePage() {
     load()
   }, [load])
 
-  // Limpiar filtros que dependen de facets cuando cambian las cartas
-  const availableSets = new Set(facets.sets.map((s) => s.id))
-  const availableRarities = new Set(facets.rarities)
-  const availableCities = new Set(facets.cities)
+  const hasActiveFilters = !!(q || setFilter || rarityFilter || cityFilter)
+  const activeMode = MODES.find((m) => m.id === mode) ?? MODES[0]
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-slate-200">
-      {/* Header */}
-      <header className="border-b border-slate-800/80 bg-slate-950/60 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-binder-accent/20 text-lg font-black text-binder-accent">
+    <div className="min-h-screen bg-[#090d16] text-slate-200">
+      {/* Header flotante glass */}
+      <header className="sticky top-0 z-40 border-b border-slate-800/60 bg-[#090d16]/70 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5">
+          <Link href="/" className="group flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-rose-600 to-rose-400 text-white shadow-lg shadow-rose-900/40 transition-transform group-hover:scale-105">
               P
             </span>
-            <span className="text-lg font-bold text-white">
-              Profesor TCG <span className="text-slate-500">· Explorar</span>
+            <span className="text-lg font-bold tracking-tight text-white">
+              Profesor TCG{' '}
+              <span className="bg-gradient-to-r from-rose-400 to-rose-500 bg-clip-text font-semibold text-transparent">
+                · Explorar
+              </span>
             </span>
           </Link>
-          <nav className="flex items-center gap-3 text-sm">
-            <Link href="/" className="text-slate-400 transition-colors hover:text-white">
+          <nav className="flex items-center gap-2 text-sm">
+            <Link
+              href="/"
+              className="rounded-lg px-3 py-2 font-medium text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+            >
               Inicio
             </Link>
             <Link
+              href="/explore"
+              className="rounded-lg bg-white/5 px-3 py-2 font-medium text-white"
+            >
+              Explorar
+            </Link>
+            <Link
               href="/login"
-              className="rounded-lg border border-slate-700 px-3 py-1.5 font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+              className="ml-1 rounded-xl bg-rose-600 px-4 py-2 font-semibold text-white shadow-lg shadow-rose-900/40 transition-all hover:bg-rose-500"
             >
               Ingresar
             </Link>
@@ -120,138 +173,146 @@ export default function ExplorePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white">Marketplace de la comunidad</h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-400">
-          Explorá las cartas que la comunidad tiene en venta o acepta como intercambio, y contactá
-          directo por WhatsApp a cada coleccionista.
-        </p>
+      <main className="mx-auto max-w-7xl px-4 py-10">
+        {/* Hero */}
+        <section className="max-w-3xl">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-rose-500">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-400" />
+            </span>
+            Marketplace en vivo · Comunidad TCG
+          </p>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+            Explorá el marketplace{' '}
+            <span className="bg-gradient-to-r from-rose-400 to-amber-400 bg-clip-text text-transparent">
+              de la comunidad
+            </span>
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
+            Cartas en venta e intercambio publicadas por coleccionistas de todo el país. Filtrá,
+            compará y contactá directo por WhatsApp con{' '}
+            <span className="font-semibold text-emerald-400">Claim</span> o{' '}
+            <span className="font-semibold text-blue-400">Swap</span>.
+          </p>
+        </section>
 
-        {/* Tabs */}
-        <div className="mt-6 flex gap-2">
-          {(
-            [
-              { id: 'cards', label: 'Cartas sueltas' },
-              { id: 'binders', label: 'Binders destacados' }
-            ] as { id: View; label: string }[]
-          ).map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setView(t.id)}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
-                view === t.id
-                  ? 'bg-binder-accent/20 text-binder-accent ring-1 ring-binder-accent/40'
-                  : 'border border-slate-800 text-slate-400 hover:border-slate-600 hover:text-white'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        {/* Panel de filtros glass */}
+        <section className="mt-8 rounded-3xl border border-slate-800/80 bg-slate-900/40 p-4 shadow-[0_16px_50px_-20px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-5">
+          {/* Tabs */}
+          <div className="flex gap-1 rounded-2xl bg-slate-950/60 p-1">
+            {(
+              [
+                { id: 'cards', label: '🃏 Cartas sueltas' },
+                { id: 'binders', label: '📚 Binders destacados' }
+              ] as { id: View; label: string }[]
+            ).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setView(t.id)}
+                className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                  view === t.id
+                    ? 'bg-rose-500/15 text-rose-400 shadow-inner ring-1 ring-rose-500/30'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Barra de filtros */}
-        <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-          {/* Buscador */}
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscá por nombre de carta o Pokémon (ej: Charizard, Gengar)…"
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-binder-accent focus:outline-none"
-            aria-label="Buscar cartas"
-          />
+          {/* Buscador con lupa */}
+          <div className="relative mt-4">
+            <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscá por nombre de carta o Pokémon (ej: Charizard, Gengar)…"
+              className="w-full rounded-2xl border border-slate-800/80 bg-slate-950/70 py-3 pl-11 pr-10 text-sm text-white placeholder-slate-600 outline-none backdrop-blur transition-colors focus:border-rose-500/50 focus:ring-2 focus:ring-rose-500/20"
+              aria-label="Buscar cartas"
+            />
+            {q && (
+              <button
+                onClick={() => setQ('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 transition-colors hover:text-white"
+                aria-label="Limpiar búsqueda"
+              >
+                <XIcon width={15} height={15} />
+              </button>
+            )}
+          </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Modo (solo cartas) */}
-            {view === 'cards' && (
-              <div className="flex rounded-xl bg-slate-950 p-1">
+          {/* Chips + selects */}
+          {view === 'cards' && (
+            <div className="mt-4 flex flex-wrap items-center gap-2.5">
+              {/* Chips de modo */}
+              <div className="flex rounded-xl bg-slate-950/60 p-1">
                 {MODES.map((m) => (
                   <button
                     key={m.id}
                     onClick={() => setMode(m.id)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      mode === m.id
-                        ? 'bg-binder-accent/20 text-binder-accent'
-                        : 'text-slate-400 hover:text-white'
+                    aria-pressed={mode === m.id}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                      mode === m.id ? m.activeClass : 'text-slate-400 hover:text-white'
                     }`}
                   >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${mode === m.id ? m.dotClass : 'bg-slate-700'}`}
+                    />
                     {m.label}
                   </button>
                 ))}
               </div>
-            )}
 
-            {/* Set */}
-            {view === 'cards' && (
-              <select
-                value={setFilter}
-                onChange={(e) => setSetFilter(e.target.value)}
-                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300 focus:border-binder-accent focus:outline-none"
-                aria-label="Filtrar por expansión"
-              >
+              {/* Dropdowns compactos */}
+              <SelectField value={setFilter} onChange={setSetFilter} label="Filtrar por expansión">
                 <option value="">Todos los sets</option>
                 {facets.sets.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
                 ))}
-              </select>
-            )}
+              </SelectField>
 
-            {/* Rareza */}
-            {view === 'cards' && (
-              <select
-                value={rarityFilter}
-                onChange={(e) => setRarityFilter(e.target.value)}
-                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300 focus:border-binder-accent focus:outline-none"
-                aria-label="Filtrar por rareza"
-              >
+              <SelectField value={rarityFilter} onChange={setRarityFilter} label="Filtrar por rareza">
                 <option value="">Todas las rarezas</option>
                 {facets.rarities.map((r) => (
                   <option key={r} value={r}>
                     {r}
                   </option>
                 ))}
-              </select>
-            )}
+              </SelectField>
 
-            {/* Ciudad */}
-            {view === 'cards' && (
-              <select
-                value={cityFilter}
-                onChange={(e) => setCityFilter(e.target.value)}
-                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300 focus:border-binder-accent focus:outline-none"
-                aria-label="Filtrar por ciudad"
-              >
+              <SelectField value={cityFilter} onChange={setCityFilter} label="Filtrar por ciudad">
                 <option value="">Todas las ciudades</option>
                 {facets.cities.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
                 ))}
-              </select>
-            )}
+              </SelectField>
 
-            {/* Ordenamiento */}
-            {view === 'cards' && (
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="ml-auto rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300 focus:border-binder-accent focus:outline-none"
-                aria-label="Ordenar"
-              >
-                {SORTS.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
+              <div className="ml-auto">
+                <SelectField value={sort} onChange={setSort} label="Ordenar">
+                  {SORTS.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
+                  ))}
+                </SelectField>
+              </div>
+            </div>
+          )}
 
-          {/* Limpiar filtros */}
-          {(q || setFilter || rarityFilter || cityFilter) && (
-            <div className="flex justify-end">
+          {/* Estado de filtros */}
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-800/60 pt-3">
+            <p className="text-xs text-slate-500">
+              {view === 'cards'
+                ? `${cards.length} carta${cards.length !== 1 ? 's' : ''} · filtro ${activeMode.label.toLowerCase()}`
+                : `${binders.length} binder${binders.length !== 1 ? 's' : ''} destacado${binders.length !== 1 ? 's' : ''}`}
+            </p>
+            {hasActiveFilters && (
               <button
                 onClick={() => {
                   setQ('')
@@ -260,16 +321,17 @@ export default function ExplorePage() {
                   setCityFilter('')
                   setSort('recent')
                 }}
-                className="text-xs font-medium text-slate-500 transition-colors hover:text-white"
+                className="flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-white"
               >
+                <XIcon width={12} height={12} />
                 Limpiar filtros
               </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </section>
 
         {/* Resultados */}
-        <div className="mt-6">
+        <section className="mt-6">
           {error ? (
             <div className="rounded-2xl border border-red-900/50 bg-red-950/30 px-6 py-10 text-center">
               <p className="text-sm font-semibold text-red-400">{error}</p>
@@ -279,10 +341,10 @@ export default function ExplorePage() {
           ) : (
             <BindersGrid binders={binders} loading={loading} />
           )}
-        </div>
+        </section>
       </main>
 
-      <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-600">
+      <footer className="border-t border-slate-800/60 py-6 text-center text-xs text-slate-600">
         © {new Date().getFullYear()} Profesor TCG · Hecho con ❤️ para coleccionistas
       </footer>
     </div>

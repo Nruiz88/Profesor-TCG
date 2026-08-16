@@ -3,7 +3,9 @@
 import Link from 'next/link'
 import type { ExploreBinder, ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
+import { ArrowRightIcon } from '@/components/icons'
 
+// Mensaje pre-armado del claim (mismo formato que el resto de la app)
 function claimHref(card: ExploreCard): string {
   const seller = `@${card.username}`
   const text = encodeURIComponent(
@@ -11,6 +13,16 @@ function claimHref(card: ExploreCard): string {
   )
   return `${whatsAppLink(card.whatsapp_number ?? '')}?text=${text}`
 }
+
+// Deep link: binder completo si es público, si no la vista individual /card/[id]
+function binderHref(card: ExploreCard): string {
+  return card.binder_public
+    ? `/binder/${encodeURIComponent(card.username)}?card=${card.id}`
+    : `/card/${card.id}`
+}
+
+const fmtUsd = (n: number) =>
+  n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function MarketGrid({
   cards,
@@ -21,13 +33,15 @@ export default function MarketGrid({
 }) {
   if (loading) {
     return (
-      <p className="py-20 text-center text-sm text-slate-500">Buscando cartas de la comunidad…</p>
+      <p className="py-20 text-center text-sm text-slate-500">
+        Buscando cartas de la comunidad…
+      </p>
     )
   }
 
   if (cards.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-16 text-center">
+      <div className="rounded-3xl border border-slate-800/80 bg-slate-900/40 px-6 py-16 text-center backdrop-blur-xl">
         <p className="text-lg font-semibold text-white">Sin resultados</p>
         <p className="mt-1 text-sm text-slate-500">
           No hay cartas en venta o intercambio que coincidan con esos filtros.
@@ -38,71 +52,100 @@ export default function MarketGrid({
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-      {cards.map((card) => (
-        <div
-          key={card.id}
-          className="flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-colors hover:border-slate-700"
-        >
-          {/* Imagen con badge flotante */}
-          <div className="relative aspect-[63/88] overflow-hidden bg-slate-950">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={card.image}
-              alt={card.card_name}
-              loading="lazy"
-              className="h-full w-full object-cover"
-            />
-            {card.status === 'for_sale' && card.price != null ? (
-              <span className="absolute right-2 top-2 rounded-full bg-black/75 px-2.5 py-1 text-xs font-bold text-yellow-400 shadow-md ring-1 ring-yellow-400/30">
-                ${card.price.toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </span>
-            ) : (
-              <span className="absolute right-2 top-2 rounded-full bg-sky-600/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
-                Trade
-              </span>
-            )}
-          </div>
+      {cards.map((card) => {
+        const isSale = card.status === 'for_sale' && card.price != null
+        const location = formatLocation(card.city, card.country)
+        return (
+          <div
+            key={card.id}
+            className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-slate-900/40 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_44px_-12px_rgba(0,0,0,0.65)] ${
+              isSale
+                ? 'border-slate-800/80 hover:border-rose-500/40 hover:shadow-rose-900/20'
+                : 'border-slate-800/80 hover:border-blue-500/40 hover:shadow-blue-900/20'
+            }`}
+          >
+            {/* Imagen con deep link al binder/carta */}
+            <Link
+              href={binderHref(card)}
+              className="relative block aspect-[63/88] overflow-hidden bg-slate-950"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={card.image}
+                alt={card.card_name}
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-          {/* Datos */}
-          <div className="flex flex-1 flex-col gap-1 p-3">
-            <h3 className="truncate text-sm font-semibold text-white" title={card.card_name}>
-              {card.card_name}
-            </h3>
-            <p className="truncate text-xs text-slate-500">
-              {card.set_name}
-              {card.rarity ? ` · ${card.rarity}` : ''}
-            </p>
+              {/* Badge flotante superior derecha */}
+              {isSale ? (
+                <span className="absolute right-2.5 top-2.5 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-bold text-emerald-950 shadow-lg shadow-emerald-950/50">
+                  ${fmtUsd(card.price!)}
+                </span>
+              ) : (
+                <span className="absolute right-2.5 top-2.5 rounded-full bg-blue-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg shadow-blue-950/50">
+                  🔄 Trade
+                </span>
+              )}
+            </Link>
 
-            {/* Vendedor */}
-            <p className="mt-1 truncate text-xs text-slate-400">
-              <span className="font-medium text-slate-300">@{card.username}</span>
-              {formatLocation(card.city, card.country) &&
-                ` · ${formatLocation(card.city, card.country)}`}
-            </p>
-
-            {/* Acciones */}
-            <div className="mt-2 flex flex-col gap-1.5">
-              <Link
-                href={`/binder/${encodeURIComponent(card.username)}?card=${card.id}`}
-                className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-center text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+            {/* Footer de la card */}
+            <div className="flex flex-1 flex-col p-3">
+              <h3
+                className="truncate text-sm font-semibold text-white"
+                title={card.card_name}
               >
-                Ver en Binder 3D
-              </Link>
-              <a
-                href={claimHref(card)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-center text-xs font-semibold text-white transition-colors hover:bg-emerald-500"
-              >
-                Claim WhatsApp
-              </a>
+                {card.card_name}
+              </h3>
+              <p className="truncate text-[11px] text-slate-500">
+                {card.set_name}
+                {card.rarity ? ` · ${card.rarity}` : ''}
+              </p>
+
+              {/* Vendedor */}
+              <div className="mt-3 flex items-center gap-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-amber-500 text-[11px] font-bold text-white shadow">
+                  {(card.username[0] ?? 'C').toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-slate-200">
+                    @{card.username}
+                  </p>
+                  <p className="truncate text-[11px] text-slate-500">
+                    {location || 'Ubicación no especificada'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Acción directa */}
+              <div className="mt-3">
+                {card.whatsapp_number ? (
+                  <a
+                    href={claimHref(card)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white shadow-lg transition-all duration-200 ${
+                      isSale
+                        ? 'bg-emerald-500 shadow-emerald-950/40 hover:bg-emerald-400'
+                        : 'bg-blue-500 shadow-blue-950/40 hover:bg-blue-400'
+                    }`}
+                  >
+                    {isSale ? '💬 Claim por WhatsApp' : '🔄 Swap por WhatsApp'}
+                  </a>
+                ) : (
+                  <span className="block rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-center text-[11px] text-slate-600">
+                    Sin contacto directo ·{' '}
+                    <Link href={binderHref(card)} className="text-slate-400 hover:text-white">
+                      Ver carta
+                    </Link>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -122,7 +165,7 @@ export function BindersGrid({
 
   if (binders.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-16 text-center">
+      <div className="rounded-3xl border border-slate-800/80 bg-slate-900/40 px-6 py-16 text-center backdrop-blur-xl">
         <p className="text-lg font-semibold text-white">Todavía no hay binders destacados</p>
         <p className="mt-1 text-sm text-slate-500">
           Cuando alguien publique cartas en venta o intercambio, aparecen acá.
@@ -136,7 +179,7 @@ export function BindersGrid({
       {binders.map((b) => (
         <div
           key={b.id}
-          className="flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-colors hover:border-slate-700"
+          className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/40 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-rose-500/40 hover:shadow-[0_18px_44px_-12px_rgba(0,0,0,0.65)]"
         >
           {/* Portada */}
           <Link
@@ -149,13 +192,13 @@ export function BindersGrid({
                 src={b.coverImage}
                 alt={`Portada de ${b.title}`}
                 loading="lazy"
-                className="h-full w-full object-cover object-top"
+                className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 to-transparent" />
             <div className="absolute bottom-2 left-3 right-3">
               <p className="truncate text-sm font-bold text-white">{b.title}</p>
-              <p className="text-xs text-slate-300">
+              <p className="truncate text-xs text-slate-300">
                 @{b.username} · {formatLocation(b.city, b.country) || 'Ubicación desconocida'}
               </p>
             </div>
@@ -164,13 +207,13 @@ export function BindersGrid({
           {/* Stats + acción */}
           <div className="flex items-center justify-between gap-2 p-3">
             <div className="flex gap-2 text-center">
-              <div className="rounded-lg bg-emerald-600/15 px-2 py-1">
+              <div className="rounded-lg bg-emerald-500/10 px-2 py-1">
                 <p className="text-sm font-bold text-emerald-400">{b.saleCount}</p>
                 <p className="text-[10px] uppercase tracking-wide text-emerald-500/70">Venta</p>
               </div>
-              <div className="rounded-lg bg-sky-600/15 px-2 py-1">
-                <p className="text-sm font-bold text-sky-400">{b.tradeCount}</p>
-                <p className="text-[10px] uppercase tracking-wide text-sky-500/70">Cambio</p>
+              <div className="rounded-lg bg-blue-500/10 px-2 py-1">
+                <p className="text-sm font-bold text-blue-400">{b.tradeCount}</p>
+                <p className="text-[10px] uppercase tracking-wide text-blue-500/70">Cambio</p>
               </div>
             </div>
             <a
@@ -179,9 +222,10 @@ export function BindersGrid({
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-500"
+              className="flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-emerald-950 shadow-lg shadow-emerald-950/40 transition-colors hover:bg-emerald-400"
             >
               WhatsApp
+              <ArrowRightIcon width={12} height={12} />
             </a>
           </div>
         </div>

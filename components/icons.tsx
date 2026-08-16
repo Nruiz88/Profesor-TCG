@@ -209,3 +209,9 @@ export const AlertIcon = (p: IconProps) => (
     <path d="M12 9v4M12 17h.01" />
   </Svg>
 )
+
+export const ChevronDownIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m6 9 6 6 6-6" />
+  </Svg>
+)
