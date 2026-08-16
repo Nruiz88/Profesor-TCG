@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { resolveCardImage } from '@/lib/cardImage'
+import { revertExpiredReservations } from '@/lib/claim'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +13,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
   const supabase = await createClient()
 
   try {
+    // Revertir soft locks de 24h vencidos antes de servir (service role)
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    if (serviceKey && url) {
+      await revertExpiredReservations(createAdminClient(url, serviceKey))
+    }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('id, username, whatsapp_number, country, city')
@@ -40,7 +49,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
     const { data: cards, error } = await supabase
       .from('binder_cards')
       .select(
-        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes'
+        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, reserved_until'
       )
       .eq('binder_id', binder.id)
       .order('slot_number', { ascending: true })

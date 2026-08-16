@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getCardMetadataMap } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
+import { revertExpiredReservations } from '@/lib/claim'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +12,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
   const supabase = await createClient()
 
   try {
+    // Revertir soft locks de 24h vencidos antes de servir (service role)
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    if (serviceKey && url) {
+      await revertExpiredReservations(createAdminClient(url, serviceKey))
+    }
+
     // RLS: solo devuelve el binder si is_public = true (para visitantes anónimos)
     const { data: binder } = await supabase
       .from('binders')
@@ -32,7 +41,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
     const { data: cards, error } = await supabase
       .from('binder_cards')
       .select(
-        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes'
+        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, reserved_until'
       )
       .eq('binder_id', binderId)
       .order('slot_number', { ascending: true })

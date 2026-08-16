@@ -19,6 +19,7 @@ create table if not exists public.profiles (
   whatsapp_number text,
   country text,
   city text,
+  is_admin boolean not null default false,
   created_at timestamptz not null default timezone('utc'::text, now()),
   updated_at timestamptz not null default timezone('utc'::text, now())
 );
@@ -43,6 +44,30 @@ create policy "profiles public read" on public.profiles
       where b.user_id = profiles.id and b.is_public = true
     )
   );
+
+-- El flag is_admin no puede cambiarse por RLS (auto-grant); solo el
+-- SQL Editor / service role (auth.uid() null) pueden tocarlo.
+create or replace function public.prevent_admin_self_grant()
+returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    return new;
+  end if;
+  if new.is_admin is distinct from old.is_admin
+     and coalesce((select is_admin from public.profiles where id = auth.uid()), false) is not true
+  then
+    raise exception 'No tenés permisos para cambiar el rol admin';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_prevent_admin_self_grant on public.profiles;
+create trigger trg_prevent_admin_self_grant
+  before update of is_admin on public.profiles
+  for each row execute function public.prevent_admin_self_grant();
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -105,10 +130,15 @@ create table if not exists public.binder_cards (
   is_for_trade boolean not null default false,  -- acepta intercambio
   price numeric(10, 2),                         -- precio del usuario (prima sobre market_price)
   trade_notes text,                             -- "¿Qué busco a cambio?" (opcional)
+  condition text,                               -- estado físico: Mint / Near Mint / Excellent / etc.
+  reserved_until timestamptz,                   -- fin del soft lock 24h tras un CLAIM
   updated_at timestamptz not null default timezone('utc'::text, now()),
   unique (binder_id, slot_number),
   constraint binder_cards_status_check check (status in ('collection', 'for_sale', 'for_trade', 'reserved'))
 );
+
+create index if not exists idx_binder_cards_reserved_until on public.binder_cards(reserved_until)
+  where status = 'reserved';
 
 create index if not exists idx_binder_cards_availability on public.binder_cards(is_for_sale, is_for_trade);
 

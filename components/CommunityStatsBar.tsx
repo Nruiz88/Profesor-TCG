@@ -7,6 +7,7 @@ interface Stats {
   catalogCards: number
   marketValue: number
   sellers: number
+  users: number | null
 }
 
 // Contador animado con easing al entrar en viewport
@@ -75,9 +76,12 @@ export default function CommunityStatsBar() {
   }, [statsReady])
 
   // Los hooks se llaman siempre (regla de hooks); el early-return va después.
+  // El conteo real de usuarios es la métrica principal; si la API no pudo
+  // obtenerlo (sin service role key), cae a los vendedores activos.
+  const hasUsers = stats?.users != null
   const cards = useCountUp(stats?.catalogCards ?? 0, inView)
   const value = useCountUp(stats?.marketValue ?? 0, inView)
-  const sellers = useCountUp(stats?.sellers ?? 0, inView, 1100)
+  const sellers = useCountUp(stats?.users ?? stats?.sellers ?? 0, inView, 1100)
 
   // Si falla la API, la barra se oculta sin romper la landing
   if (error || stats === null) return null
@@ -98,7 +102,7 @@ export default function CommunityStatsBar() {
     {
       icon: UserIcon,
       value: fmtInt(sellers),
-      label: 'Coleccionistas publicando',
+      label: hasUsers ? 'Coleccionistas registrados' : 'Coleccionistas publicando',
       accent: 'text-amber-400'
     }
   ]

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getCardMetadataMap } from '@/lib/catalog'
 import { effectivePrice } from '@/lib/cardStatus'
 
@@ -9,6 +10,8 @@ export const dynamic = 'force-dynamic'
 // - catalogCards: tamaño del catálogo indexado (17.000+ cartas).
 // - marketValue:  suma del precio efectivo de las cartas activas del marketplace.
 // - sellers:      cantidad de coleccionistas con publicaciones en venta/cambio.
+// - users:        cantidad real de usuarios registrados (vía service role, la RLS
+//                 impide contar perfiles ajenos con el cliente autenticado).
 export async function GET() {
   try {
     const supabase = await createClient()
@@ -23,6 +26,19 @@ export async function GET() {
         .eq('binders.is_public', true)
         .limit(1000)
     ])
+
+    // Conteo real de usuarios registrados (mejor esfuerzo: si falta la service
+    // role key, devolvemos null y la barra muestra los vendedores como fallback).
+    let users: number | null = null
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    if (serviceKey && url) {
+      const admin = createAdminClient(url, serviceKey)
+      const { count } = await admin
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+      users = count ?? null
+    }
     if (cardsResult.error) throw cardsResult.error
 
     const rows = (cardsResult.data || []) as unknown as Array<{
@@ -44,7 +60,8 @@ export async function GET() {
     return NextResponse.json({
       catalogCards: catalog.size,
       marketValue,
-      sellers: sellers.size
+      sellers: sellers.size,
+      users
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'

@@ -9,6 +9,10 @@ import {
   type Availability
 } from '@/lib/cardStatus'
 import { isProfileComplete, type Profile } from '@/lib/profile'
+import ClaimKitModal from './ClaimKitModal'
+
+// Condiciones físicas habituales del TCG (opcional, para el mensaje del claim)
+const CONDITIONS = ['', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Played']
 
 interface EditCardModalProps {
   card: SlotCard
@@ -35,6 +39,8 @@ export default function EditCardModal({
     card.price != null ? String(card.price) : card.price_override != null ? String(card.price_override) : ''
   )
   const [tradeNotes, setTradeNotes] = useState<string>(card.trade_notes ?? '')
+  const [condition, setCondition] = useState<string>(card.condition ?? '')
+  const [showKit, setShowKit] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,6 +82,7 @@ export default function EditCardModal({
         body.price = null
       }
       body.trade_notes = tradeNotes.trim() === '' ? null : tradeNotes.trim()
+      body.condition = condition.trim() === '' ? null : condition.trim()
 
       const res = await fetch(`/api/binder/slots/${card.id}`, {
         method: 'PATCH',
@@ -204,10 +211,53 @@ export default function EditCardModal({
           </div>
         )}
 
+        {/* Condición física (opcional, va en el mensaje del claim) */}
+        {(withSale || withTrade) && (
+          <div className="mt-5">
+            <label
+              htmlFor="edit-condition"
+              className="block text-xs font-semibold uppercase tracking-widest text-slate-400"
+            >
+              Condición (opcional)
+            </label>
+            <select
+              id="edit-condition"
+              value={condition}
+              onChange={(e) => setCondition(e.target.value)}
+              className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-binder-accent focus:outline-none"
+            >
+              {CONDITIONS.map((c) => (
+                <option key={c || 'none'} value={c}>
+                  {c === '' ? 'Sin especificar' : c}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-600">
+              Aparece en el mensaje del claim y en el kit (ej: Near Mint).
+            </p>
+          </div>
+        )}
+
         {error && (
           <p className="mt-4 rounded-xl border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-400">
             {error}
           </p>
+        )}
+
+        {/* Kit de Claim: texto estructurado + imagen 1080x1080 para vender en redes/grupos */}
+        {(withSale || withTrade) && (
+          <div className="mt-5 rounded-xl border border-binder-accent/20 bg-binder-accent/5 p-3">
+            <button
+              onClick={() => setShowKit(true)}
+              className="w-full rounded-xl bg-binder-accent/90 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-binder-accent"
+            >
+              📦 Generar Kit de Claim
+            </button>
+            <p className="mt-2 text-center text-[11px] text-slate-500">
+              Copiá el texto estructurado o generá la imagen 1080×1080 para publicar en grupos y
+              redes.
+            </p>
+          </div>
         )}
 
         <div className="mt-6 flex justify-end gap-3">
@@ -226,6 +276,15 @@ export default function EditCardModal({
           </button>
         </div>
       </div>
+
+      {showKit && (
+        <ClaimKitModal
+          card={card}
+          username={profile?.username}
+          price={withSale && !Number.isNaN(parsePrice()) ? parsePrice() : undefined}
+          onClose={() => setShowKit(false)}
+        />
+      )}
     </div>
   )
 }

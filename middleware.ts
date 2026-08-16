@@ -42,8 +42,10 @@ export async function middleware(request: NextRequest) {
     !user &&
     (isPrivateBinder ||
       pathname === '/offers' ||
+      pathname === '/admin' ||
       pathname.startsWith('/api/binder') ||
       pathname.startsWith('/api/offers') ||
+      pathname.startsWith('/api/admin') ||
       pathname === '/api/profile')
   ) {
     const url = request.nextUrl.clone()

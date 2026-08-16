@@ -21,6 +21,7 @@ import {
   PlusIcon,
   RefreshIcon,
   ShareIcon,
+  ShieldIcon,
   SwapIcon,
   TrashIcon,
   UserIcon
@@ -458,6 +459,16 @@ export default function BinderPage() {
             <RefreshIcon className="h-4 w-4" />
             <span className="hidden lg:inline">{updating ? 'Actualizando…' : 'Precios'}</span>
           </button>
+
+          {profile?.is_admin && (
+            <a
+              href="/admin"
+              className="flex h-10 items-center gap-1.5 rounded-xl bg-violet-600/15 px-3 text-sm font-semibold text-violet-300 transition-colors hover:bg-violet-600/30"
+            >
+              <ShieldIcon className="h-4 w-4" />
+              <span className="hidden lg:inline">Admin</span>
+            </a>
+          )}
 
           <button
             onClick={() => {

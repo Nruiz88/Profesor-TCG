@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { SlotCard } from '@/lib/sheets'
 import type { SellerInfo } from '@/components/SellerInfoBadge'
-import { whatsAppLink } from '@/lib/profile'
+import { buildWhatsAppLink, claimMessage, claimPrice, binderSlotUrl } from '@/lib/claim'
 import { CARD_STATUS_META, normalizeStatus } from '@/lib/cardStatus'
 import MakeTradeOfferModal from './MakeTradeOfferModal'
 
@@ -13,12 +13,18 @@ interface ClaimModalProps {
   onClose: () => void
 }
 
+type ClaimState = 'idle' | 'claiming' | 'ok' | 'taken' | 'error'
+
 export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
   const status = normalizeStatus(card.status)
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
   const [showOffer, setShowOffer] = useState(false)
+  const [claimState, setClaimState] = useState<ClaimState>('idle')
+  const [claimError, setClaimError] = useState<string | null>(null)
 
   const sellerName = seller?.username ? `@${seller.username}` : 'coleccionista'
+  const price = claimPrice(card)
+  const slotUrl = binderSlotUrl(seller?.username, card.id)
 
   // Detectar si hay sesión (para ofrecer un cambio)
   useEffect(() => {
@@ -40,12 +46,45 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
     }
   }, [])
 
-  // Mensaje pre-armado para el claim
-  const claimUrl =
-    whatsAppLink(seller?.whatsapp_number ?? '') +
-    `?text=${encodeURIComponent(
-      `Hola ${sellerName}! Vi tu carta "${card.card_name}" (${card.set_id.toUpperCase()} ${card.number}) en tu binder de Profesor TCG. ¿Sigue disponible? Quiero hacer un claim.`
-    )}`
+  // Mensaje del claim (template con precio, condición y link al slot)
+  const claimUrl = buildWhatsAppLink(
+    seller?.whatsapp_number ?? '',
+    claimMessage({
+      cardName: card.card_name,
+      setId: card.set_id,
+      number: card.number,
+      price,
+      condition: card.condition,
+      binderSlotUrl: slotUrl,
+      sellerName: seller?.username
+    })
+  )
+
+  // 1) Soft lock 24h en Supabase · 2) abre WhatsApp con el mensaje pre-armado
+  async function handleClaim() {
+    if (claimState === 'claiming') return
+    setClaimState('claiming')
+    setClaimError(null)
+    try {
+      const res = await fetch('/api/claims', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ card_id: card.id })
+      })
+      const data = await res.json()
+      if (res.status === 409) {
+        setClaimState('taken')
+        return
+      }
+      if (!res.ok) throw new Error(data.error || 'Error al reclamar')
+      setClaimState('ok')
+      // Abrir el deep link de WhatsApp con el mensaje del claim
+      window.open(claimUrl, '_blank', 'noopener,noreferrer')
+    } catch (err) {
+      setClaimState('error')
+      setClaimError(err instanceof Error ? err.message : 'Error desconocido')
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
@@ -68,6 +107,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
 
         <p className="mt-1 text-sm text-slate-500">
           {card.set_id.toUpperCase()} {card.number}
+          {card.condition && <span className="ml-2 text-slate-400">· {card.condition}</span>}
           {status !== 'collection' && (
             <span className="ml-2 rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300">
               {CARD_STATUS_META[status].label}
@@ -75,16 +115,49 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
           )}
         </p>
 
+        {/* Estado del claim */}
+        {claimState === 'ok' && (
+          <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+            ✅ <strong>¡Claim aplicado!</strong> La carta quedó <strong>reservada 24 horas</strong> para
+            vos. Te abrimos WhatsApp para coordinar con {sellerName}.
+          </div>
+        )}
+        {claimState === 'taken' && (
+          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+            ⏳ Esta carta <strong>ya está reservada</strong> por otro claim. Podés igual escribirle al
+            vendedor para preguntar si sigue disponible.
+          </div>
+        )}
+        {claimState === 'error' && (
+          <div className="mt-4 rounded-xl border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-400">
+            No se pudo aplicar el claim: {claimError}. Igual podés escribirle al vendedor.
+          </div>
+        )}
+
         <div className="mt-6 flex flex-col gap-3">
-          {/* Claim directo */}
-          <a
-            href={claimUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-xl bg-emerald-600 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
+          {/* Claim directo con soft lock */}
+          <button
+            onClick={handleClaim}
+            disabled={claimState === 'claiming' || claimState === 'ok'}
+            className="rounded-xl bg-emerald-600 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-60"
           >
-            Hacer Claim en WhatsApp
-          </a>
+            {claimState === 'claiming'
+              ? 'Reclamando…'
+              : claimState === 'ok'
+                ? '✓ Claim aplicado · abriendo WhatsApp'
+                : '⚡ Hacer Claim / Reclamar'}
+          </button>
+
+          {claimState !== 'ok' && (
+            <a
+              href={claimUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl border border-slate-700 px-4 py-3 text-center text-sm font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+            >
+              Escribir directo por WhatsApp (sin reservar)
+            </a>
+          )}
 
           {/* Proponer intercambio formal (oferta en la bandeja) */}
           {loggedIn === false ? (
@@ -107,6 +180,10 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
             </button>
           )}
         </div>
+
+        <p className="mt-4 text-center text-[11px] text-slate-600">
+          Al hacer claim la carta queda reservada 24&nbsp;h para que coordines con el vendedor.
+        </p>
       </div>
 
       {showOffer && seller && (

@@ -39,6 +39,7 @@ interface PatchBody {
   availability?: unknown
   price?: unknown
   trade_notes?: unknown
+  condition?: unknown
 }
 
 // Actualizar la modalidad de disponibilidad (availability), el precio manual y
@@ -106,6 +107,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
   }
 
+  // Condición física de la carta (Mint / Near Mint / Excellent / …)
+  if (body.condition !== undefined) {
+    const v = body.condition
+    if (v === null || v === '') {
+      updates.condition = null
+    } else if (typeof v === 'string') {
+      updates.condition = v.trim().slice(0, 40)
+    } else {
+      return NextResponse.json({ error: 'Condición inválida' }, { status: 400 })
+    }
+  }
+
   // Backwards-compat: el body viejo seguía enviando status / price_override
   if (body.status !== undefined) {
     if (!isCardStatus(body.status)) {
@@ -137,7 +150,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select(
-        'id, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes'
+        'id, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, reserved_until'
       )
       .single()
     if (error) throw error

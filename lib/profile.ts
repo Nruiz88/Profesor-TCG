@@ -4,6 +4,7 @@ export interface Profile {
   whatsapp_number: string | null
   country: string | null
   city: string | null
+  is_admin?: boolean
   created_at: string
   updated_at: string
 }

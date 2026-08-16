@@ -73,7 +73,7 @@ const STEPS = [
     n: '3',
     icon: ChatIcon,
     title: 'Cerrá por WhatsApp',
-    text: 'Un clic para coordinar con el comprador directo, sin comisiones intermedias.'
+    text: 'Generá tu kit de claim (texto o imagen 1080×1080), compartí el link y coordiná directo con el comprador, sin comisiones.'
   }
 ]
 
@@ -132,6 +132,10 @@ export default function LandingPage() {
               efecto holo, y la comunidad para{' '}
               <span className="text-slate-200">vender, cambiar y cerrar el trato directo por WhatsApp</span>.
             </p>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-sm font-medium text-emerald-300">
+              <ChatIcon width={15} height={15} />
+              Vende en grupos de WhatsApp sin armar listas en texto
+            </div>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
                 href="/login"
