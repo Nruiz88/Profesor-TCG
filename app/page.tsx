@@ -24,37 +24,67 @@ const FEATURES = [
     icon: CardsIcon,
     title: 'Binder virtual de 9 bolsillos',
     description:
-      'Organizá tus cartas por hojas como en un binder de verdad, con múltiples carpetas para tus colecciones.'
+      'Organizá tus cartas por hojas como en un binder de verdad, con carpetas para cada colección.',
+    tag: '9 bolsillos por hoja',
+    href: '/binder',
+    cta: 'Armar mi binder',
+    gradient: 'from-rose-500 to-orange-400',
+    glow: 'hover:shadow-rose-500/15'
   },
   {
     icon: WalletIcon,
     title: 'Precios de mercado en vivo',
     description:
-      'Cada carta muestra su valor de TCGplayer/Cardmarket vía TCGdex. Actualizá los precios con un clic, con caché inteligente.'
+      'Cada carta muestra su valor de TCGplayer/Cardmarket vía TCGdex, con caché inteligente y actualización en un clic.',
+    tag: 'TCGplayer · Cardmarket',
+    href: '/explore',
+    cta: 'Ver el mercado',
+    gradient: 'from-emerald-500 to-teal-400',
+    glow: 'hover:shadow-emerald-500/15'
   },
   {
     icon: SparklesIcon,
     title: 'Cartas con efecto holo',
     description:
-      'Los efectos de la carta real: holo, ultra, VMAX, arcoíris, radiante y más. Sin imágenes, puro CSS.'
+      'Holo, ultra, VMAX, arcoíris, radiante y más: el efecto real de la carta, sin imágenes, puro CSS.',
+    tag: 'Efectos CSS puros',
+    href: '/binder',
+    cta: 'Ver el efecto',
+    gradient: 'from-amber-500 to-yellow-400',
+    glow: 'hover:shadow-amber-500/15'
   },
   {
     icon: SearchIcon,
     title: 'Búsqueda del catálogo completo',
     description:
-      'Más de 17.000 cartas indexadas. Buscá por nombre, número o set y agregalas al instante.'
+      'Más de 17.000 cartas indexadas. Buscá por nombre, número o set y agregalas al instante.',
+    tag: '+17.000 cartas',
+    href: '/explore',
+    cta: 'Buscar cartas',
+    gradient: 'from-sky-500 to-cyan-400',
+    glow: 'hover:shadow-sky-500/15'
   },
   {
     icon: SwapIcon,
     title: 'Trueques 1 vs 1 con valores',
     description:
-      'Proponé cambios comparando el valor de cada lado automáticamente, con o sin dinero extra.'
+      'Proponé cambios comparando el valor de cada lado automáticamente, con o sin dinero extra.',
+    tag: 'Ofertas con valor',
+    href: '/explore',
+    cta: 'Proponer un trueque',
+    gradient: 'from-violet-500 to-purple-400',
+    glow: 'hover:shadow-violet-500/15'
   },
   {
     icon: GlobeIcon,
     title: 'Detalle completo en español',
     description:
-      'Click en cualquier carta para ver ataques, habilidades, debilidad, retirada, ilustrador y legalidad.'
+      'Click en cualquier carta para ver ataques, habilidades, debilidad, retirada, ilustrador y legalidad.',
+    tag: 'Todo el detalle',
+    href: '/explore',
+    cta: 'Explorar detalles',
+    gradient: 'from-fuchsia-500 to-pink-400',
+    glow: 'hover:shadow-fuchsia-500/15'
   }
 ]
 
@@ -219,27 +249,65 @@ export default async function LandingPage() {
       </section>
 
       {/* Features */}
-      <section className="border-t border-slate-800/60 bg-slate-900/40 py-20">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-white">
-            Todo lo que necesitás para tu colección
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-slate-400">
-            Pensado para coleccionistas: desde el precio de mercado hasta el efecto holo de cada
-            carta.
-          </p>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="relative overflow-hidden border-t border-slate-800/60 bg-slate-900/40 py-20 sm:py-24">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(244,63,94,0.07),transparent_55%)]"
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto max-w-6xl px-4">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-binder-accent">
+              <SparklesIcon width={14} height={14} />
+              Características
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Todo lo que necesitás para tu{' '}
+              <span className="bg-gradient-to-r from-binder-accent to-amber-400 bg-clip-text text-transparent">
+                colección
+              </span>
+            </h2>
+            <p className="mt-4 leading-relaxed text-slate-400">
+              Pensado para coleccionistas: desde el precio de mercado hasta el efecto holo de cada
+              carta, todo en un solo lugar y sin comisiones.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
-              <div
+              <Link
                 key={f.title}
-                className="rounded-2xl border border-slate-800 bg-slate-900 p-6 transition-colors hover:border-slate-600"
+                href={f.href}
+                className={`group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-slate-600 hover:shadow-2xl ${f.glow}`}
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-binder-accent/10 text-binder-accent">
-                  <f.icon width={20} height={20} />
+                {/* Glow difuso de la esquina al hover */}
+                <div
+                  className={`pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${f.gradient} opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-25`}
+                  aria-hidden="true"
+                />
+
+                <div className="flex items-start justify-between">
+                  <span
+                    className={`inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${f.gradient} text-white shadow-lg`}
+                  >
+                    <f.icon width={22} height={22} />
+                  </span>
+                  <span className="rounded-full border border-slate-700/70 bg-slate-800/60 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                    {f.tag}
+                  </span>
+                </div>
+
+                <h3 className="mt-5 text-base font-semibold text-white">{f.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{f.description}</p>
+
+                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-binder-accent transition-colors group-hover:text-rose-400">
+                  {f.cta}
+                  <ArrowRightIcon
+                    width={15}
+                    height={15}
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  />
                 </span>
-                <h3 className="mt-4 text-base font-semibold text-white">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-400">{f.description}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
