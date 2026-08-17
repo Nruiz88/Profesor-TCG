@@ -32,7 +32,11 @@ export async function generateMetadata({
     `${data.completedClaims} transacciones`,
     `${data.totalCards} cartas en el binder`
   ].join(' · ')
-  const description = `${stats}. ${data.city || data.country ? `Ubicado en ${[data.city, data.country].filter(Boolean).join(', ')}. ` : ''}Coleccionista de Profesor TCG — conocé su colección y coordina por WhatsApp.`
+  const wants =
+    data.wantlistCount > 0
+      ? ` Busca ${data.wantlistCount} carta${data.wantlistCount !== 1 ? 's' : ''}.`
+      : ''
+  const description = `${stats}.${wants} ${data.city || data.country ? `Ubicado en ${[data.city, data.country].filter(Boolean).join(', ')}. ` : ''}Coleccionista de Profesor TCG — conocé su colección y coordina por WhatsApp.`
   return {
     title,
     description,

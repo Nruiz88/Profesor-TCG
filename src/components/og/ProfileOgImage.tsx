@@ -132,24 +132,33 @@ export default function ProfileOgImage({ data }: { data: OgProfileData | null })
 
         {/* Colección */}
         <div style={{ display: 'flex', alignItems: 'center', margin: '30px 0 0' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', marginRight: 44 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', marginRight: 32 }}>
             <p style={{ fontSize: 38, fontWeight: 800, margin: 0 }}>{data.totalCards}</p>
             <p style={{ fontSize: 17, color: '#94a3b8', margin: '4px 0 0' }}>cartas en el binder</p>
           </div>
           <div style={{ width: 2, height: 58, background: 'rgba(148,163,184,0.25)' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 44 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', margin: '0 32px' }}>
             <p style={{ fontSize: 38, fontWeight: 800, color: '#f472b6', margin: 0 }}>
               {data.pokedexCaptured != null ? data.pokedexCaptured : '—'}
               {data.pokedexTotal != null ? `/${data.pokedexTotal}` : ''}
             </p>
+            <p style={{ fontSize: 17, color: '#94a3b8', margin: '4px 0 0' }}>Pokémon capturados</p>
+          </div>
+          <div style={{ width: 2, height: 58, background: 'rgba(148,163,184,0.25)' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 32 }}>
+            <p style={{ fontSize: 38, fontWeight: 800, color: '#e879f9', margin: 0 }}>
+              {data.wantlistCount}
+            </p>
             <p style={{ fontSize: 17, color: '#94a3b8', margin: '4px 0 0' }}>
-              Pokémon capturados{data.activeListings > 0 ? ` · ${data.activeListings} en venta` : ''}
+              carta{data.wantlistCount !== 1 ? 's' : ''} buscada{data.wantlistCount !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
 
         <p style={{ fontSize: 20, color: '#64748b', margin: '32px 0 0' }}>
-          Coleccionista de Profesor TCG · Binder y mercado por WhatsApp
+          {data.activeListings > 0
+            ? `Coleccionista · ${data.activeListings} carta${data.activeListings !== 1 ? 's' : ''} en venta · mercado por WhatsApp`
+            : 'Coleccionista de Profesor TCG · Binder y mercado por WhatsApp'}
         </p>
       </div>
     </div>

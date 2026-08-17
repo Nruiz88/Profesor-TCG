@@ -86,18 +86,27 @@ export default function BinderOgImage({ data }: { data: OgBinderData | null }) {
         </p>
 
         <div style={{ display: 'flex', alignItems: 'center', margin: '34px 0 0' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', marginRight: 44 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', marginRight: 32 }}>
             <p style={{ fontSize: 40, fontWeight: 800, margin: 0 }}>{data.cardCount}</p>
             <p style={{ fontSize: 18, color: '#94a3b8', margin: '4px 0 0' }}>
               carta{data.cardCount !== 1 ? 's' : ''}
             </p>
           </div>
           <div style={{ width: 2, height: 64, background: 'rgba(148,163,184,0.25)' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 44 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', margin: '0 32px' }}>
             <p style={{ fontSize: 40, fontWeight: 800, color: '#fbbf24', margin: 0 }}>
               {fmt(data.totalValue)}
             </p>
             <p style={{ fontSize: 18, color: '#94a3b8', margin: '4px 0 0' }}>valor total</p>
+          </div>
+          <div style={{ width: 2, height: 64, background: 'rgba(148,163,184,0.25)' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 32 }}>
+            <p style={{ fontSize: 40, fontWeight: 800, color: '#e879f9', margin: 0 }}>
+              {data.wantlistCount}
+            </p>
+            <p style={{ fontSize: 18, color: '#94a3b8', margin: '4px 0 0' }}>
+              buscada{data.wantlistCount !== 1 ? 's' : ''}
+            </p>
           </div>
         </div>
 

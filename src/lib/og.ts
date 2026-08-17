@@ -19,6 +19,8 @@ export interface OgBinderData {
   username: string | null
   cardCount: number
   totalValue: number
+  /** Cartas en la lista de buscadas del dueño (binder de buscados). */
+  wantlistCount: number
   /** Imagen de portada del binder (cover_card_id o primera carta). */
   coverImage: string | null
   coverCardName: string | null
@@ -43,6 +45,7 @@ export interface OgProfileData {
   completedClaims: number
   activeListings: number
   totalCards: number
+  wantlistCount: number
   pokedexCaptured: number | null
   pokedexTotal: number | null
   city: string | null
@@ -95,6 +98,7 @@ export async function getBinderOgData(
 
   let binderId: string | null = null
   let ownerUsername: string | null = null
+  let ownerUserId: string | null = null
 
   if ('username' in by) {
     const { data: profile } = await supabase
@@ -104,6 +108,7 @@ export async function getBinderOgData(
       .maybeSingle()
     if (!profile) return null
     ownerUsername = profile.username
+    ownerUserId = profile.id
     const { data: binder } = await supabase
       .from('binders')
       .select('id')
@@ -122,6 +127,7 @@ export async function getBinderOgData(
       .maybeSingle()
     if (!binder) return null
     binderId = binder.id
+    ownerUserId = binder.user_id
     const { data: owner } = await supabase
       .from('profiles')
       .select('username')
@@ -150,12 +156,24 @@ export async function getBinderOgData(
 
   const cover = await pickCover(supabase, binderId, rows)
 
+  // Binder de buscados: cantidad de cartas que el dueño está buscando
+  // (wantlist_cards es pública por RLS, igual que en /api/public/binder).
+  let wantlistCount = 0
+  if (ownerUserId) {
+    const { count } = await supabase
+      .from('wantlist_cards')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', ownerUserId)
+    wantlistCount = count ?? 0
+  }
+
   return {
     title: binder.title ?? 'Mi Binder',
     username: ownerUsername,
     cardCount: rows.length,
     // Mismo cálculo que el header de la página pública (computeTotalValue)
     totalValue: rows.reduce((sum, c) => sum + (c.market_price ?? 0), 0),
+    wantlistCount,
     coverImage: cover.image,
     coverCardName: cover.cardName
   }
@@ -230,7 +248,8 @@ export async function getProfileOgData(username: string): Promise<OgProfileData 
     { data: reviewRows },
     { count: completedClaims },
     { count: totalCards },
-    { count: activeListings }
+    { count: activeListings },
+    { count: wantlistCount }
   ] = await Promise.all([
     admin.from('reviews').select('rating').eq('reviewed_user_id', profile.id),
     admin
@@ -250,7 +269,11 @@ export async function getProfileOgData(username: string): Promise<OgProfileData 
           .select('id', { count: 'exact', head: true })
           .in('binder_id', binderIds)
           .or('is_for_sale.eq.true,is_for_trade.eq.true')
-      : Promise.resolve({ count: 0 })
+      : Promise.resolve({ count: 0 }),
+    admin
+      .from('wantlist_cards')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', profile.id)
   ])
 
   const ratings = (reviewRows || []).map((r) => r.rating as number)
@@ -284,6 +307,7 @@ export async function getProfileOgData(username: string): Promise<OgProfileData 
     completedClaims: completedClaims ?? 0,
     activeListings: activeListings ?? 0,
     totalCards: totalCards ?? 0,
+    wantlistCount: wantlistCount ?? 0,
     pokedexCaptured,
     pokedexTotal,
     city: profile.city,

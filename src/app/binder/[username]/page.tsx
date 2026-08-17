@@ -20,7 +20,11 @@ export async function generateMetadata({
   }
   const owner = data.username ? `@${data.username}` : 'Profesor TCG'
   const title = `${data.title} · Profesor TCG`
-  const description = `${data.cardCount} carta${data.cardCount !== 1 ? 's' : ''} · ${fmt(data.totalValue)} USD en el binder de ${owner}. Vende y cambia directo por WhatsApp.`
+  const wants =
+    data.wantlistCount > 0
+      ? ` Busca ${data.wantlistCount} carta${data.wantlistCount !== 1 ? 's' : ''}.`
+      : ''
+  const description = `${data.cardCount} carta${data.cardCount !== 1 ? 's' : ''} · ${fmt(data.totalValue)} USD en el binder de ${owner}.${wants} Vende y cambia directo por WhatsApp.`
   return {
     title,
     description,
