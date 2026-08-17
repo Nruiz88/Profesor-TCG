@@ -20,6 +20,7 @@ import {
 } from '@/components/icons'
 import { formatLocation } from '@/lib/profile'
 import AdminIntegrations from '@/components/AdminIntegrations'
+import AdminActivityChart from '@/components/AdminActivityChart'
 
 interface Overview {
   generatedAt: string
@@ -55,6 +56,7 @@ interface Overview {
     updated_at: string
     username: string
   }>
+  activity: Array<{ date: string; count: number }>
 }
 
 const fmtUsd = (n: number) =>
@@ -170,7 +172,7 @@ export default function AdminPage() {
     )
   }
 
-  const { users, cards, binders, offers, marketValue, recent } = data
+  const { users, cards, binders, offers, marketValue, recent, activity } = data
 
   // Filtro client-side de usuarios (nombre o ubicación) para tablas largas
   const q = search.trim().toLowerCase()
@@ -458,9 +460,12 @@ export default function AdminPage() {
         </section>
       )}
 
-      {/* Actividad reciente: tabla con scroll interno */}
+      {/* Actividad reciente: gráfico + tabla con scroll interno */}
       {tab === 'activity' && (
-        <section className="mt-6">
+        <section className="mt-6 space-y-6">
+          <AdminActivityChart data={activity} />
+
+          <div>
           <div className="mb-3 flex items-center gap-2">
             <ActivityIcon className="h-4 w-4 text-slate-400" />
             <h2 className="text-lg font-bold text-white">Actividad reciente</h2>
@@ -508,6 +513,7 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+          </div>
           </div>
         </section>
       )}

@@ -140,6 +140,25 @@ export async function GET() {
       if (o.status in offerCounts) offerCounts[o.status as keyof typeof offerCounts]++
     }
 
+    // Actividad por día: cartas agregadas en los últimos 14 días (para el
+    // gráfico del panel). Se agrupa en JS para no depender de una vista/RPC.
+    const dayCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+    const { data: activityRows } = await admin
+      .from('binder_cards')
+      .select('created_at')
+      .gte('created_at', dayCutoff)
+
+    const countByDay = new Map<string, number>()
+    for (const r of activityRows || []) {
+      const day = r.created_at ? String(r.created_at).slice(0, 10) : ''
+      if (day) countByDay.set(day, (countByDay.get(day) || 0) + 1)
+    }
+    const activity: Array<{ date: string; count: number }> = []
+    for (let i = 13; i >= 0; i--) {
+      const day = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+      activity.push({ date: day, count: countByDay.get(day) || 0 })
+    }
+
     // Actividad reciente (últimas 15 cartas tocadas) con username del dueño
     const { data: recentCards } = await admin
       .from('binder_cards')
@@ -175,7 +194,8 @@ export async function GET() {
       binders: { total: binders.length, public: binders.filter((b) => b.is_public).length },
       offers: offerCounts,
       marketValue,
-      recent
+      recent,
+      activity
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
