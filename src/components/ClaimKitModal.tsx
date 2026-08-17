@@ -312,22 +312,19 @@ export default function ClaimKitModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+      className="modal-overlay z-[60]"
       onClick={onClose}
     >
       <div
-        className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl"
+        className="modal-card modal-card--lg modal-card--scroll"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={`Kit de claim para ${card.card_name}`}
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">📦 Kit de Claim</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/20"
-          >
+        <div className="modal-header">
+          <h2 className="modal-title">📦 Kit de Claim</h2>
+          <button onClick={onClose} className="modal-close">
             Cerrar
           </button>
         </div>
@@ -376,15 +373,13 @@ export default function ClaimKitModal({
             />
             <button
               onClick={copyText}
-              className={`mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-                copied
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-binder-accent text-white hover:bg-rose-500'
+              className={`btn-claim mt-3 w-full ${
+                copied ? 'btn-claim--emerald' : 'btn-claim--accent'
               }`}
             >
               {copied ? '✓ ¡Copiado! Pegalo en tu grupo de WhatsApp' : 'Copiar texto estructurado'}
             </button>
-            <p className="mt-2 text-center text-[11px] text-slate-600">
+            <p className="note mt-2">
               Listo para pegar en chats y grupos: nombre, set, precio y el link a tu Binder 3D.
             </p>
           </div>
@@ -404,7 +399,7 @@ export default function ClaimKitModal({
                 />
                 <button
                   onClick={download}
-                  className="mt-3 w-full rounded-xl bg-binder-accent px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-rose-500"
+                  className="btn-claim btn-claim--accent mt-3 w-full"
                 >
                   ⬇️ Descargar PNG 1080×1080
                 </button>
@@ -416,7 +411,7 @@ export default function ClaimKitModal({
                 texto estructurado, que incluye el link a tu Binder.
               </div>
             )}
-            <p className="mt-2 text-center text-[11px] text-slate-600">
+            <p className="note mt-2">
               Lista para publicar en Instagram, Facebook o grupos: 1080×1080 con precio y marca de
               agua.
             </p>

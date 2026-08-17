@@ -1,0 +1,116 @@
+/* ============================================================================
+   Circuito de Claim — CSS separado por función
+   ============================================================================
+   Estilos compartidos por los componentes del claim (compra/venta por
+   WhatsApp): modal, encabezado, banners de estado, botones y notas. Viven acá
+   para no repetir cadenas de utilidades Tailwind en cada componente.
+   Un componente combina varias clases; los estilos exclusivos de una pieza
+   (p. ej. el canvas del kit, el selector de estrellas) quedan inline.
+
+   Nota de arquitectura: este archivo no usa @layer components porque Tailwind
+   solo permite capas en el archivo que declara @tailwind (globals.css). Las
+   reglas quedan fuera de capas y las variantes del mismo archivo se resuelven
+   por orden de definición (las que van después ganan sobre las mismas
+   propiedades, p. ej. btn-claim--compact sobre btn-claim).
+   ========================================================================== */
+
+/* ---- Modal: overlay y tarjeta -------------------------------------------- */
+/* El z-index se mantiene inline en cada uso (z-50 / z-[60]) según la capa. */
+.modal-overlay {
+  @apply fixed inset-0 flex items-center justify-center bg-black/70 p-4;
+}
+
+.modal-card {
+  @apply rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl;
+}
+
+.modal-card--md {
+  @apply w-full max-w-md p-6;
+}
+
+.modal-card--lg {
+  @apply w-full max-w-lg p-6;
+}
+
+.modal-card--xl {
+  @apply w-full max-w-3xl p-6;
+}
+
+.modal-card--scroll {
+  @apply max-h-[92vh] overflow-y-auto;
+}
+
+.modal-card--panel {
+  @apply flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden;
+}
+
+/* ---- Encabezado del modal ------------------------------------------------- */
+.modal-header {
+  @apply flex items-center justify-between;
+}
+
+.modal-header--bordered {
+  @apply border-b border-slate-800 px-5 py-4;
+}
+
+.modal-title {
+  @apply text-lg font-semibold text-white;
+}
+
+.modal-close {
+  @apply rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/20;
+}
+
+/* ---- Banners de estado ---------------------------------------------------- */
+/* Los márgenes (mt-4, mb-3…) se aplican inline según el contexto. */
+.banner {
+  @apply rounded-xl px-4 py-3 text-sm;
+}
+
+.banner--ok {
+  @apply border border-emerald-500/30 bg-emerald-500/10 text-emerald-300;
+}
+
+.banner--warn {
+  @apply border border-amber-500/30 bg-amber-500/10 text-amber-300;
+}
+
+.banner--error {
+  @apply border border-red-900/50 bg-red-950/30 text-red-400;
+}
+
+/* ---- Botones del circuito -------------------------------------------------- */
+.btn-claim {
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors;
+}
+
+/* Variante más compacta (panel de transacciones, barras de acción) */
+.btn-claim--compact {
+  @apply px-4 py-2.5;
+}
+
+/* Variante ancha para botones sueltos (ej. "Listo" del ofertador) */
+.btn-claim--wide {
+  @apply px-6;
+}
+
+.btn-claim--emerald {
+  @apply bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-60;
+}
+
+.btn-claim--sky {
+  @apply bg-sky-600 text-white hover:bg-sky-500 disabled:opacity-60;
+}
+
+.btn-claim--accent {
+  @apply bg-binder-accent text-white hover:bg-rose-500 disabled:opacity-60;
+}
+
+.btn-claim--ghost {
+  @apply border border-slate-700 font-medium text-slate-300 hover:border-slate-500 hover:text-white;
+}
+
+/* ---- Nota al pie ------------------------------------------------------------ */
+.note {
+  @apply text-center text-[11px] text-slate-600;
+}

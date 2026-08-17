@@ -41,7 +41,7 @@ export default function ReservedClaimsBanner({ cards, onShowClaims }: ReservedCl
   const extra = reserved.length - 2
 
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+    <div className="banner banner--warn mb-4 flex flex-wrap items-center justify-between gap-3">
       <div className="min-w-0">
         <p className="flex flex-wrap items-center gap-x-2 text-sm font-semibold text-amber-200">
           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
@@ -63,7 +63,7 @@ export default function ReservedClaimsBanner({ cards, onShowClaims }: ReservedCl
       </div>
       <button
         onClick={onShowClaims}
-        className="shrink-0 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-amber-400"
+        className="btn-claim btn-claim--compact shrink-0 bg-amber-500 text-black hover:bg-amber-400"
       >
         Ver transacciones
       </button>

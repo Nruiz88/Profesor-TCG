@@ -90,25 +90,22 @@ export default function ClaimsPanel({ onClose }: ClaimsPanelProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+      className="modal-overlay z-[60]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Mis transacciones"
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl"
+        className="modal-card modal-card--panel"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+        <div className="modal-header modal-header--bordered">
           <div className="flex items-center gap-2">
             <SwapIcon className="h-4 w-4 text-sky-400" />
-            <h2 className="text-lg font-semibold text-white">Mis transacciones</h2>
+            <h2 className="modal-title">Mis transacciones</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/20"
-          >
+          <button onClick={onClose} className="modal-close">
             Cerrar
           </button>
         </div>
@@ -123,9 +120,7 @@ export default function ClaimsPanel({ onClose }: ClaimsPanelProps) {
           )}
 
           {error && (
-            <p className="rounded-xl border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-400">
-              {error}
-            </p>
+            <p className="banner banner--error">{error}</p>
           )}
 
           {!claims && !error && (
@@ -176,7 +171,7 @@ export default function ClaimsPanel({ onClose }: ClaimsPanelProps) {
                   {(c.status === 'pending' || (c.status === 'completed' && !c.reviewedByMe)) && (
                     <button
                       onClick={() => setConfirming(c)}
-                      className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
+                      className="btn-claim btn-claim--compact btn-claim--emerald mt-3 w-full"
                     >
                       {c.status === 'completed'
                         ? '⭐ Calificar y cerrar'

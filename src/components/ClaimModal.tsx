@@ -105,20 +105,15 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+    <div className="modal-overlay z-50" onClick={onClose}>
+      <div className="modal-card modal-card--md" onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={`Acciones para ${card.card_name}`}
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">{card.card_name}</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/20"
-          >
+        <div className="modal-header">
+          <h2 className="modal-title">{card.card_name}</h2>
+          <button onClick={onClose} className="modal-close">
             Cerrar
           </button>
         </div>
@@ -135,7 +130,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
 
         {/* Estado del claim */}
         {claimState === 'ok' && (
-          <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+          <div className="banner banner--ok mt-4">
             ✅ <strong>¡Claim aplicado!</strong> La carta quedó reservada para vos{" "}
             {reservedUntil ? (
               <strong>hasta {formatReservedUntil(reservedUntil)}</strong>
@@ -154,13 +149,13 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
           </a>
         )}
         {claimState === 'taken' && (
-          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          <div className="banner banner--warn mt-4">
             ⏳ Esta carta <strong>ya está reservada</strong> por otro claim. Podés igual escribirle al
             vendedor para preguntar si sigue disponible.
           </div>
         )}
         {claimState === 'error' && (
-          <div className="mt-4 rounded-xl border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-400">
+          <div className="banner banner--error mt-4">
             No se pudo aplicar el claim: {claimError}. Igual podés escribirle al vendedor.
           </div>
         )}
@@ -170,7 +165,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
           <button
             onClick={handleClaim}
             disabled={claimState === 'claiming' || claimState === 'ok'}
-            className="rounded-xl bg-emerald-600 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-60"
+            className="btn-claim btn-claim--emerald"
           >
             {claimState === 'claiming'
               ? 'Reclamando…'
@@ -184,7 +179,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
               href={claimUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-xl border border-slate-700 px-4 py-3 text-center text-sm font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+              className="btn-claim btn-claim--ghost"
             >
               Escribir directo por WhatsApp (sin reservar)
             </a>
@@ -194,7 +189,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
           {loggedIn === false ? (
             <a
               href="/login"
-              className="rounded-xl border border-slate-700 px-4 py-3 text-center text-sm font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+              className="btn-claim btn-claim--ghost"
             >
               Iniciá sesión para proponer un cambio
             </a>
@@ -205,14 +200,14 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
           ) : (
             <button
               onClick={() => setShowOffer(true)}
-              className="rounded-xl bg-sky-600 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-sky-500"
+              className="btn-claim btn-claim--sky"
             >
               Proponer cambio con mi binder
             </button>
           )}
         </div>
 
-        <p className="mt-4 text-center text-[11px] text-slate-600">
+        <p className="note mt-4">
           Al hacer claim la carta queda reservada 24&nbsp;h para que coordines con el vendedor.
         </p>
       </div>

@@ -106,22 +106,16 @@ export default function ReviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+      className="modal-overlay z-[60]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Calificar transacción"
     >
-      <div
-        className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Confirmar transacción</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/20"
-          >
+      <div className="modal-card modal-card--md" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">Confirmar transacción</h2>
+          <button onClick={onClose} className="modal-close">
             Cerrar
           </button>
         </div>
@@ -190,20 +184,18 @@ export default function ReviewModal({
         </div>
 
         {error && (
-          <p className="mt-3 rounded-xl border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs text-red-400">
-            {error}
-          </p>
+          <p className="banner banner--error mt-3">{error}</p>
         )}
 
         <button
           onClick={handleSubmit}
           disabled={submitting}
-          className="mt-4 w-full rounded-xl bg-binder-accent px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-rose-500 disabled:opacity-60"
+          className="btn-claim btn-claim--accent mt-4 w-full"
         >
           {submitting ? 'Enviando reseña…' : '💬 Enviar reseña y confirmar'}
         </button>
 
-        <p className="mt-3 text-center text-[11px] text-slate-600">
+        <p className="note mt-3">
           Al confirmar, la transacción queda cerrada y tu calificación actualiza la
           reputación de {`@${reviewedUser.username}`}.
         </p>

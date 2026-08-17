@@ -112,22 +112,19 @@ export default function MakeTradeOfferModal({ card, seller, onClose }: MakeTrade
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="modal-overlay z-50"
       onClick={onClose}
     >
       <div
-        className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl"
+        className="modal-card modal-card--xl modal-card--scroll"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={`Proponer intercambio por ${card.card_name}`}
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Proponer intercambio</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/20"
-          >
+        <div className="modal-header">
+          <h2 className="modal-title">Proponer intercambio</h2>
+          <button onClick={onClose} className="modal-close">
             Cerrar
           </button>
         </div>
@@ -141,7 +138,7 @@ export default function MakeTradeOfferModal({ card, seller, onClose }: MakeTrade
             </p>
             <button
               onClick={onClose}
-              className="mt-6 rounded-xl bg-binder-accent px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-500"
+              className="btn-claim btn-claim--accent btn-claim--compact btn-claim--wide mt-6"
             >
               Listo
             </button>
@@ -280,22 +277,20 @@ export default function MakeTradeOfferModal({ card, seller, onClose }: MakeTrade
             )}
 
             {error && (
-              <p className="mt-4 rounded-xl border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-400">
-                {error}
-              </p>
+              <p className="banner banner--error mt-4">{error}</p>
             )}
 
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={onClose}
-                className="rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+                className="btn-claim btn-claim--compact btn-claim--ghost"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSend}
                 disabled={saving || selected.size === 0}
-                className="rounded-xl bg-binder-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-500 disabled:opacity-50"
+                className="btn-claim btn-claim--compact btn-claim--accent disabled:opacity-50"
               >
                 {saving ? 'Enviando…' : 'Enviar oferta'}
               </button>
