@@ -10,7 +10,8 @@ import {
 } from '@/lib/cardStatus'
 import { isProfileComplete, type Profile } from '@/lib/profile'
 import { normalizeLanguage, type CardLanguage } from '@/lib/cardLanguage'
-import LanguagePills from './LanguagePills'
+import { normalizeCurrency, type Currency } from '@/lib/priceGuide'
+import PriceInputWithGuide from './PriceInputWithGuide'
 import ClaimKitModal from './ClaimKitModal'
 
 // Condiciones físicas habituales del TCG (opcional, para el mensaje del claim)
@@ -21,6 +22,8 @@ interface EditCardModalProps {
   profile: Profile | null
   onRequireProfile: (availability: Availability) => void
   onSaved: () => void
+  /** Refresca el binder sin cerrar el modal (tras guardar el precio manual) */
+  onRefresh?: () => void
   onClose: () => void
 }
 
@@ -32,14 +35,22 @@ export default function EditCardModal({
   profile,
   onRequireProfile,
   onSaved,
+  onRefresh,
   onClose
 }: EditCardModalProps) {
   const [availability, setAvailability] = useState<Availability>(() =>
     availabilityFromFlags(card.is_for_sale, card.is_for_trade)
   )
   const [priceInput, setPriceInput] = useState<string>(
-    card.price != null ? String(card.price) : card.price_override != null ? String(card.price_override) : ''
+    card.manual_price != null
+      ? String(card.manual_price)
+      : card.price != null
+        ? String(card.price)
+        : card.price_override != null
+          ? String(card.price_override)
+          : ''
   )
+  const [currency, setCurrency] = useState<Currency>(() => normalizeCurrency(card.currency))
   const [tradeNotes, setTradeNotes] = useState<string>(card.trade_notes ?? '')
   const [condition, setCondition] = useState<string>(card.condition ?? '')
   const [language, setLanguage] = useState<CardLanguage>(() => normalizeLanguage(card.language))
@@ -87,6 +98,7 @@ export default function EditCardModal({
       body.trade_notes = tradeNotes.trim() === '' ? null : tradeNotes.trim()
       body.condition = condition.trim() === '' ? null : condition.trim()
       body.language = language
+      body.currency = currency
 
       const res = await fetch(`/api/binder/slots/${card.id}`, {
         method: 'PATCH',
@@ -129,18 +141,15 @@ export default function EditCardModal({
           {card.card_name} · {card.set_id.toUpperCase()} {card.number}
         </p>
 
-        {/* Idioma de la copia física */}
+        {/* Idioma + precio manual con guía de referencia externa */}
         <div className="mt-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-            Idioma de tu copia
-          </p>
-          <div className="mt-2">
-            <LanguagePills value={language} onChange={setLanguage} />
-          </div>
-          <p className="mt-1.5 text-xs text-slate-600">
-            El idioma figura en el slot y en el kit de claim, para que los compradores sepan
-            exactamente qué copia ofrecés.
-          </p>
+          <PriceInputWithGuide
+            card={card}
+            onLanguageChange={setLanguage}
+            onPriceInputChange={setPriceInput}
+            onCurrencyChange={setCurrency}
+            onSaved={onRefresh}
+          />
         </div>
 
         {/* Selector de modalidad */}
@@ -176,35 +185,11 @@ export default function EditCardModal({
           </div>
         </div>
 
-        {/* Precio (solo si acepta venta) */}
-        {withSale && (
-          <div className="mt-5">
-            <label
-              htmlFor="edit-price"
-              className="block text-xs font-semibold uppercase tracking-widest text-slate-400"
-            >
-              Precio (USD)
-            </label>
-            <input
-              id="edit-price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={priceInput}
-              onChange={(e) => setPriceInput(e.target.value)}
-              placeholder={
-                card.market_price != null
-                  ? `Mercado: $${card.market_price.toFixed(2)}`
-                  : 'Ej: 15.00'
-              }
-              className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-binder-accent focus:outline-none"
-            />
-            <p className="mt-1 text-xs text-slate-600">
-              {card.market_price != null
-                ? `Referencia de mercado: $${card.market_price.toFixed(2)}`
-                : 'Sin precio de mercado disponible: fijá el tuyo.'}
-            </p>
-          </div>
+        {/* Recordatorio: el precio manual se guarda en la sección superior */}
+        {withSale && priceInput.trim() === '' && (
+          <p className="mt-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            Para poner la carta en venta fijá el precio en «Precio manual» (sección superior).
+          </p>
         )}
 
         {/* Notas de intercambio (solo si acepta cambio) */}

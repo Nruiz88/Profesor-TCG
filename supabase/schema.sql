@@ -132,6 +132,9 @@ create table if not exists public.binder_cards (
   trade_notes text,                             -- "¿Qué busco a cambio?" (opcional)
   condition text,                               -- estado físico: Mint / Near Mint / Excellent / etc.
   language text not null default 'ES',          -- idioma de la copia: ES | EN | JP | KO | ZH
+  manual_price numeric(10, 2),                  -- precio cargado a mano (sin valor automático)
+  currency text not null default 'USD',         -- moneda del precio manual: USD | EUR | ARS
+  is_user_reported boolean not null default false, -- true si el precio lo reportó el usuario
   reserved_until timestamptz,                   -- fin del soft lock 24h tras un CLAIM
   updated_at timestamptz not null default timezone('utc'::text, now()),
   unique (binder_id, slot_number),

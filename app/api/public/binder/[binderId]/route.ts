@@ -41,7 +41,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
     const { data: cards, error } = await supabase
       .from('binder_cards')
       .select(
-        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, language, reserved_until'
+        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, reserved_until'
       )
       .eq('binder_id', binderId)
       .order('slot_number', { ascending: true })

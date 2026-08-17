@@ -7,6 +7,7 @@ import {
   statusFromAvailability
 } from '@/lib/cardStatus'
 import { isCardLanguage } from '@/lib/cardLanguage'
+import { isCurrency } from '@/lib/priceGuide'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,6 +40,8 @@ interface PatchBody {
   price_override?: unknown
   availability?: unknown
   price?: unknown
+  manual_price?: unknown
+  currency?: unknown
   trade_notes?: unknown
   condition?: unknown
   language?: unknown
@@ -80,21 +83,46 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     updates.status = statusFromAvailability(body.availability)
   }
 
-  // Precio manual (nuevo) y price_override (legacy, se mantiene en sync)
-  if (body.price !== undefined) {
-    const v = body.price
-    if (v === null || v === '') {
+  // Precio manual: tanto `price` (formulario clásico) como `manual_price`
+  // (carga manual con guía externa) convergen acá. Se sincronizan
+  // price/price_override (legacy) y manual_price, y se marca
+  // is_user_reported = true para distinguirlo del valor automático.
+  const applyManualPrice = (value: unknown): string | null => {
+    if (value === null || value === '') {
       updates.price = null
       updates.price_override = null
-    } else {
-      const num = Number(v)
-      if (!Number.isFinite(num) || num < 0 || num > 999999) {
-        return NextResponse.json({ error: 'Precio inválido' }, { status: 400 })
-      }
-      const rounded = Math.round(num * 100) / 100
-      updates.price = rounded
-      updates.price_override = rounded
+      updates.manual_price = null
+      updates.is_user_reported = false
+      return null
     }
+    const num = Number(value)
+    if (!Number.isFinite(num) || num < 0 || num > 999999) {
+      return 'Precio inválido'
+    }
+    const rounded = Math.round(num * 100) / 100
+    updates.price = rounded
+    updates.price_override = rounded
+    updates.manual_price = rounded
+    updates.is_user_reported = true
+    return null
+  }
+
+  if (body.price !== undefined) {
+    const err = applyManualPrice(body.price)
+    if (err) return NextResponse.json({ error: err }, { status: 400 })
+  }
+
+  if (body.manual_price !== undefined) {
+    const err = applyManualPrice(body.manual_price)
+    if (err) return NextResponse.json({ error: err }, { status: 400 })
+  }
+
+  // Moneda del precio manual (USD por defecto)
+  if (body.currency !== undefined) {
+    if (!isCurrency(body.currency)) {
+      return NextResponse.json({ error: 'Moneda inválida' }, { status: 400 })
+    }
+    updates.currency = body.currency
   }
 
   // Notas de intercambio ("¿Qué busco a cambio?")
@@ -160,7 +188,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select(
-        'id, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, reserved_until'
+        'id, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, reserved_until'
       )
       .single()
     if (error) throw error

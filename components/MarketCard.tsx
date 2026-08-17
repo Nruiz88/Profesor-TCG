@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
 import { CARD_LANGUAGE_META, normalizeLanguage } from '@/lib/cardLanguage'
+import { formatPrice } from '@/lib/priceGuide'
 import { ArrowRightIcon, ChatIcon } from '@/components/icons'
 
 // Mensaje pre-armado del claim (mismo formato que MarketGrid/ClaimModal)
@@ -100,8 +101,15 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
           {/* Badge superior glassmorphism */}
           <div className="absolute left-2 top-2">
             {isSale ? (
-              <span className="flex items-center gap-1 rounded-full border border-white/20 bg-black/40 px-2.5 py-1 text-[11px] font-bold text-emerald-300 backdrop-blur-md shadow-lg">
-                💵 ${card.price!.toFixed(2)} USD
+              <span
+                title={
+                  card.is_user_reported
+                    ? 'Precio reportado por el usuario'
+                    : 'Precio de mercado'
+                }
+                className="flex items-center gap-1 rounded-full border border-white/20 bg-black/40 px-2.5 py-1 text-[11px] font-bold text-emerald-300 backdrop-blur-md shadow-lg"
+              >
+                💵 {formatPrice(card.price!, card.currency)}
               </span>
             ) : (
               <span className="flex items-center gap-1 rounded-full border border-white/20 bg-black/40 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-sky-300 backdrop-blur-md shadow-lg">

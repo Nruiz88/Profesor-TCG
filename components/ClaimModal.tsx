@@ -56,6 +56,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
       price,
       condition: card.condition,
       language: card.language ?? null,
+      currency: card.currency ?? null,
       binderSlotUrl: slotUrl,
       sellerName: seller?.username
     })

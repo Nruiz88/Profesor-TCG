@@ -587,6 +587,7 @@ export default function BinderPage() {
             setEditCard(null)
             loadBinder()
           }}
+          onRefresh={() => loadBinder()}
           onClose={() => setEditCard(null)}
         />
       )}

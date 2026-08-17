@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import SiteNav from '@/components/SiteNav'
 import LanguageBadge from '@/components/LanguageBadge'
+import { formatPrice } from '@/lib/priceGuide'
 import PokemonCard from '@/components/PokemonCard'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
 import ClaimModal from '@/components/ClaimModal'
@@ -24,6 +25,9 @@ interface PublicCard {
   status: string
   condition: string | null
   language: string | null
+  manual_price: number | null
+  currency: string
+  is_user_reported: boolean
   is_for_sale: boolean
   is_for_trade: boolean
   trade_notes: string | null
@@ -37,9 +41,6 @@ interface PublicCardResponse {
   binder: { id: string; title: string; is_public: boolean }
   owner: SellerInfo | null
 }
-
-const fmtUsd = (n: number) =>
-  n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function PublicCardPage({
   params
@@ -119,6 +120,9 @@ export default function PublicCardPage({
     trade_notes: card.trade_notes,
     condition: card.condition,
     language: card.language,
+    manual_price: card.manual_price,
+    currency: card.currency,
+    is_user_reported: card.is_user_reported,
     reserved_until: card.reserved_until,
     rarity: card.rarity,
     supertype: card.supertype,
@@ -176,8 +180,10 @@ export default function PublicCardPage({
           <div className="mt-5 rounded-2xl border border-emerald-500/25 bg-slate-900 p-4">
             <p className="text-[10px] uppercase tracking-widest text-emerald-500/60">Precio</p>
             <p className="text-3xl font-bold text-emerald-400">
-              {card.price != null ? `$${fmtUsd(card.price)}` : 'Consultar'}
-              <span className="text-sm font-semibold text-emerald-400/50"> USD</span>
+              {card.price != null ? formatPrice(card.price, card.currency) : 'Consultar'}
+              {card.is_user_reported && (
+                <span className="ml-2 text-xs font-semibold text-emerald-400/60">★ manual</span>
+              )}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               {card.is_for_sale && card.is_for_trade

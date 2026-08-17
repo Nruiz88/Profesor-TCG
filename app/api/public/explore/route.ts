@@ -36,6 +36,9 @@ interface ExploreCardRow {
   price: number | null
   trade_notes: string | null
   language: string | null
+  manual_price: number | null
+  currency: string | null
+  is_user_reported: boolean | null
   updated_at: string
   binders: {
     id: string
@@ -97,6 +100,8 @@ export interface ExploreCard {
   number: string
   rarity: string | null
   language: string | null
+  currency: string | null
+  is_user_reported: boolean | null
   status: 'for_sale' | 'for_trade'
   price: number | null
   image: string
@@ -184,7 +189,8 @@ async function getCards(
     .select(
       `id, binder_id, card_id, card_name, set_id, number, slot_number,
        market_price, status, price_override, is_for_sale, is_for_trade,
-       price, trade_notes, condition, language, updated_at,
+       price, trade_notes, condition, language, manual_price, currency,
+       is_user_reported, updated_at,
        binders!binder_cards_binder_id_fkey!inner (
          id, title, user_id, is_public
        )`
@@ -241,6 +247,8 @@ async function getCards(
       number: r.number,
       rarity,
       language: r.language ?? null,
+      currency: r.currency ?? 'USD',
+      is_user_reported: r.is_user_reported ?? false,
       status,
       price,
       image: await resolveCardImage(r.set_id, r.number),

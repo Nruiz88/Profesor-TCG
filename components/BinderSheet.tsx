@@ -7,6 +7,7 @@ import CardDetailModal from './CardDetailModal'
 import CardStatusBadge from './CardStatusBadge'
 import ClaimModal from './ClaimModal'
 import { effectivePrice, normalizeStatus } from '@/lib/cardStatus'
+import { formatPrice } from '@/lib/priceGuide'
 import LanguageBadge from './LanguageBadge'
 import type { SellerInfo } from './SellerInfoBadge'
 
@@ -80,19 +81,24 @@ export default function BinderSheet({
                   className="absolute left-1.5 top-1.5"
                 />
 
-                {/* Precio efectivo (precio manual, override o mercado) */}
-                {effectivePrice(card.market_price, card.price_override, card.price) != null && (
-                  <div className="pointer-events-none absolute right-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-yellow-400 shadow-md ring-1 ring-yellow-400/30">
-                    $
-                    {effectivePrice(card.market_price, card.price_override, card.price)?.toLocaleString(
-                      'en-US',
-                      {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
+                {/* Precio efectivo (manual del usuario o mercado) */}
+                {(() => {
+                  const price = effectivePrice(card.market_price, card.price_override, card.price)
+                  if (price == null) return null
+                  return (
+                    <div
+                      title={
+                        card.is_user_reported
+                          ? 'Precio reportado por el usuario'
+                          : 'Precio de mercado'
                       }
-                    )}
-                  </div>
-                )}
+                      className="pointer-events-none absolute right-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-yellow-400 shadow-md ring-1 ring-yellow-400/30"
+                    >
+                      {formatPrice(price, card.currency)}
+                      {card.is_user_reported ? ' ★' : ''}
+                    </div>
+                  )
+                })()}
 
                 {/* Badge de estado según disponibilidad */}
                 <CardStatusBadge

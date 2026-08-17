@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { effectivePrice } from '@/lib/cardStatus'
 import { CARD_LANGUAGE_META, normalizeLanguage } from '@/lib/cardLanguage'
+import { formatPrice } from '@/lib/priceGuide'
 
 // ---------------------------------------------------------------------------
 // WhatsApp Claim — lógica compartida del circuito de compra/venta:
@@ -18,14 +19,13 @@ export interface ClaimParams {
   price: number | null
   condition?: string | null
   language?: string | null
+  currency?: string | null
   binderSlotUrl: string
   sellerName?: string | null
 }
 
-const fmtPrice = (n: number | null) =>
-  n != null
-    ? `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : 'consultar precio'
+const fmtPrice = (n: number | null, currency?: string | null) =>
+  n != null ? formatPrice(n, currency) : 'consultar precio'
 
 // Mensaje del comprador → vendedor (se abre en WhatsApp tras el CLAIM).
 // Placeholders: {CARD_NAME} {SET_NUMBER} {PRICE} {CONDITION} {BINDER_SLOT_URL}
@@ -35,7 +35,7 @@ export function claimMessage(p: ClaimParams): string {
   const lang = p.language ? ` (Idioma: ${CARD_LANGUAGE_META[normalizeLanguage(p.language)].label})` : ''
   return [
     `¡Hola ${seller}! Vengo de tu Binder en Profesor TCG.`,
-    `Hice el CLAIM de la carta *${p.cardName}* (#${p.setId.toUpperCase()} ${p.number})${cond}${lang} por ${fmtPrice(p.price)}.`,
+    `Hice el CLAIM de la carta *${p.cardName}* (#${p.setId.toUpperCase()} ${p.number})${cond}${lang} por ${fmtPrice(p.price, p.currency)}.`,
     '¿Cómo coordinamos el pago y el envío? 🚀'
   ].join('\n')
 }
@@ -50,7 +50,7 @@ export function sellerKitText(p: ClaimParams): string {
   lines.push(`🃏 *${p.cardName}*`)
   lines.push(`📚 Set ${p.setId.toUpperCase()} · #${p.number}`)
   if (p.language) lines.push(`🌐 Idioma: ${CARD_LANGUAGE_META[normalizeLanguage(p.language)].label}`)
-  lines.push(`🏷️ Precio: 💵 *${fmtPrice(p.price)}* USD`)
+  lines.push(`🏷️ Precio: 💵 *${fmtPrice(p.price, p.currency)}*`)
   if (p.condition) lines.push(`✨ Estado: ${p.condition}`)
   lines.push('')
   lines.push(`🔗 Mirala en mi Binder 3D: ${p.binderSlotUrl}`)
