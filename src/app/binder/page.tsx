@@ -22,6 +22,7 @@ import { GlobeIcon, LockIcon, PlusIcon, SparklesIcon } from '@/components/icons'
 import type { WantlistCard } from '@/types/wantlist'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
+import { fetchJson } from '@/lib/utils'
 import type { Profile } from '@/lib/profile'
 import { effectivePrice, type Availability } from '@/lib/cardStatus'
 import {
@@ -365,7 +366,7 @@ export default function BinderPage() {
 
     const slotNumber = slotTarget.sheetIndex * SLOTS_PER_SHEET + slotTarget.slotIndex + 1
 
-    const res = await fetch('/api/binder/slots', {
+    await fetchJson('/api/binder/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -378,8 +379,6 @@ export default function BinderPage() {
         language
       })
     })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Error al guardar carta')
     await loadBinder()
   }
 
@@ -390,7 +389,7 @@ export default function BinderPage() {
     if (!binder) throw new Error('Sin binder')
 
     const slotNumber = findNextEmptySlot(cards)
-    const res = await fetch('/api/binder/slots', {
+    await fetchJson('/api/binder/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -403,8 +402,6 @@ export default function BinderPage() {
         language
       })
     })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Error al guardar carta')
     await loadBinder()
     setMessage(`"${card.name}" agregada a tu binder en el bolsillo #${slotNumber}.`)
   }

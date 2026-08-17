@@ -5,6 +5,7 @@ import { ArrowRightIcon, SearchIcon, SwapIcon, TagIcon, XIcon } from './icons'
 import { ENERGY_TYPES, TypeIcon } from './TypeIcon'
 import LanguagePills from './LanguagePills'
 import SearchResultCard from './SearchResultCard'
+import { fetchJson, SessionExpiredError } from '@/lib/utils'
 import type { SearchResult } from '@/types'
 import type { CardLanguage } from '@/lib/cardLanguage'
 
@@ -68,9 +69,9 @@ export default function BinderToolbar({
 
     timerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error || 'Error al buscar')
+        const data = await fetchJson<{ results: SearchResult[] }>(
+          `/api/search?q=${encodeURIComponent(q)}`
+        )
         setResults(data.results || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error al buscar')
@@ -95,6 +96,11 @@ export default function BinderToolbar({
       setResults([])
       setOpen(false)
     } catch (err) {
+      if (err instanceof SessionExpiredError) {
+        // Sesión vencida: volvé a login para renovarla y seguí en el binder
+        window.location.assign('/login?next=/binder')
+        return
+      }
       setError(err instanceof Error ? err.message : 'Error al agregar la carta')
     } finally {
       setSaving(null)
