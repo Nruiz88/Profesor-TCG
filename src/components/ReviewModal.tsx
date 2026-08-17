@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { REVIEW_TAGS } from '@/lib/reputation'
-import { submitReviewAction } from '@/app/actions/reviews'
+import { createReviewAction } from '@/app/actions/reviews'
 
 interface ReviewModalProps {
   claimId: string
@@ -48,7 +48,7 @@ function Stars({
 
 // Modal de confirmación + calificación: se dispara al pulsar
 // "Confirmar Transacción". Envía la reseña con la server action
-// submitReviewAction (inserta review, cierra el claim, recalcula reputación).
+// createReviewAction (inserta review, cierra el claim, recalcula reputación).
 export default function ReviewModal({
   claimId,
   reviewedUser,
@@ -88,7 +88,7 @@ export default function ReviewModal({
     }
     setSubmitting(true)
     setError(null)
-    const result = await submitReviewAction({
+    const result = await createReviewAction({
       claimId,
       reviewedUserId: reviewedUser.id,
       rating,

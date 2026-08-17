@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { isValidWhatsApp } from '@/lib/profile'
+import { sanitizePlainText } from '@/lib/sanitize'
 
 export const dynamic = 'force-dynamic'
 
@@ -92,9 +93,9 @@ export async function PATCH(req: Request) {
   const updates: Record<string, string | null> = {}
   let missing: string | null = null
 
-  // username: requerido, único
+  // username: requerido, único (se sanitiza como texto plano antes de validar)
   if (body.username !== undefined) {
-    const username = body.username.trim()
+    const username = sanitizePlainText(body.username)
     if (username.length < 3 || username.length > 30) {
       missing = 'El nombre de usuario debe tener entre 3 y 30 caracteres'
     } else if (!/^[a-z0-9_.-]+$/i.test(username)) {
@@ -116,8 +117,9 @@ export async function PATCH(req: Request) {
     }
   }
 
-  if (body.city !== undefined) updates.city = body.city?.trim() || null
-  if (body.country !== undefined) updates.country = body.country?.trim() || null
+  // Ubicación: libre, se neutraliza cualquier intento de markup.
+  if (body.city !== undefined) updates.city = sanitizePlainText(body.city) || null
+  if (body.country !== undefined) updates.country = sanitizePlainText(body.country) || null
 
   if (missing) {
     return NextResponse.json({ error: missing }, { status: 400 })

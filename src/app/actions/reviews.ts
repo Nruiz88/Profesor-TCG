@@ -3,18 +3,23 @@
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { isReviewTag } from '@/lib/reputation'
+import { sanitizeComment } from '@/lib/sanitize'
 
 // ============================================================================
-// submitReviewAction — cierra una transacción con reseña:
+// createReviewAction — cierra una transacción con reseña:
 //   1. Inserta el registro en `reviews` (una por transacción y participante).
 //   2. Marca el `claims` como 'completed'.
 //   3. Recalcula rating_avg e incrementa total_sales / total_trades del
 //      usuario calificado (sale si el claim era de venta, trade si era cambio).
 // Todo se valida en el servidor: participación real, sin auto-calificación,
 // rating 1-5 y tags permitidos.
+//
+// Seguridad: el comentario se sanitiza del lado del servidor con
+// sanitizeComment (escape de <>"'& + máx 500) JUSTO ANTES del .insert(),
+// garantizando que la base de datos almacene únicamente contenido neutralizado.
 // ============================================================================
 
-export interface SubmitReviewInput {
+export interface CreateReviewInput {
   claimId: string
   reviewedUserId: string
   rating: number
@@ -22,11 +27,11 @@ export interface SubmitReviewInput {
   comment?: string
 }
 
-export type SubmitReviewResult = { ok: true } | { ok: false; error: string }
+export type CreateReviewResult = { ok: true } | { ok: false; error: string }
 
-export async function submitReviewAction(
-  input: SubmitReviewInput
-): Promise<SubmitReviewResult> {
+export async function createReviewAction(
+  input: CreateReviewInput
+): Promise<CreateReviewResult> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -73,9 +78,10 @@ export async function submitReviewAction(
     const tags = (Array.isArray(input.tags) ? input.tags : [])
       .filter((t): t is string => typeof t === 'string' && isReviewTag(t))
       .slice(0, 6)
-    const comment = typeof input.comment === 'string' && input.comment.trim() !== ''
-      ? input.comment.trim().slice(0, 500)
-      : null
+    const comment =
+      typeof input.comment === 'string' && input.comment.trim() !== ''
+        ? sanitizeComment(input.comment)
+        : null
 
     // Conteo previo de reseñas del usuario calificado (para el promedio)
     const { count: prevCount } = await admin
