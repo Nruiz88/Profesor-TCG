@@ -12,10 +12,13 @@ import ProfileRequiredModal from '@/components/ProfileRequiredModal'
 import EditCardModal from '@/components/EditCardModal'
 import BinderSettingsModal from '@/components/BinderSettingsModal'
 import BinderToolbar from '@/components/BinderToolbar'
+import BinderTabs, { type BinderTab } from '@/components/binder/BinderTabs'
+import WantlistSlot from '@/components/binder/WantlistSlot'
 import ProfileHeaderStats from '@/components/ProfileHeaderStats'
 import ClaimsPanel from '@/components/ClaimsPanel'
 import SellerReputationCard from '@/components/SellerReputationCard'
-import { GlobeIcon, LockIcon } from '@/components/icons'
+import { GlobeIcon, LockIcon, PlusIcon, SparklesIcon } from '@/components/icons'
+import type { WantlistCard } from '@/types/wantlist'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
 import type { Profile } from '@/lib/profile'
@@ -59,6 +62,10 @@ export default function BinderPage() {
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [settingsModal, setSettingsModal] = useState<'create' | 'edit' | null>(null)
   const [showClaims, setShowClaims] = useState(false)
+  const [tab, setTab] = useState<BinderTab>('collection')
+  const [wantlist, setWantlist] = useState<WantlistCard[]>([])
+  const [wantlistLoading, setWantlistLoading] = useState(false)
+  const [showWantlistSearch, setShowWantlistSearch] = useState(false)
 
   const loadBinder = useCallback(async (binderId?: string) => {
     try {
@@ -96,6 +103,64 @@ export default function BinderPage() {
     }
   }, [])
 
+  const loadWantlist = useCallback(async () => {
+    setWantlistLoading(true)
+    try {
+      const res = await fetch('/api/wantlist')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error')
+      setWantlist(data.wantlist || [])
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Error al cargar tus buscadas')
+    } finally {
+      setWantlistLoading(false)
+    }
+  }, [])
+
+  async function addToWantlist(card: SearchResult) {
+    const res = await fetch('/api/wantlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        card_id: card.id,
+        card_name: card.name,
+        set_id: card.set_id,
+        set_name: card.set_name,
+        number: card.number
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error al guardar en buscadas')
+    setMessage(`"${card.name}" agregada a tus Cartas Buscadas.`)
+    await loadWantlist()
+  }
+
+  async function removeFromWantlist(id: string) {
+    try {
+      const res = await fetch(`/api/wantlist/${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error')
+      await loadWantlist()
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Error al quitar carta de buscadas')
+    }
+  }
+
+  async function updateWantlistBudget(id: string, maxBudget: number | null) {
+    try {
+      const res = await fetch(`/api/wantlist/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ max_budget: maxBudget })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error')
+      await loadWantlist()
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Error al actualizar el presupuesto')
+    }
+  }
+
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
@@ -105,7 +170,8 @@ export default function BinderPage() {
     })
     loadBinder()
     loadProfile()
-  }, [loadBinder, loadBinders, loadProfile])
+    loadWantlist()
+  }, [loadBinder, loadBinders, loadProfile, loadWantlist])
 
   async function selectBinder(binderId: string) {
     setLoading(true)
@@ -398,6 +464,10 @@ export default function BinderPage() {
         />
       </div>
 
+      <div className="mb-6">
+        <BinderTabs active={tab} onChange={setTab} wantlistCount={wantlist.length} />
+      </div>
+
       {/* Reputación propia: rating, reseñas, claims y badge (misma ficha que ven los demás) */}
       {profile?.username && <SellerReputationCard username={profile.username} className="mb-6" />}
 
@@ -433,6 +503,58 @@ export default function BinderPage() {
 
       {loading ? (
         <p className="py-20 text-center text-slate-500">Cargando binder…</p>
+      ) : tab === 'wantlist' ? (
+        <>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/5 px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold text-fuchsia-200">
+                {wantlist.length} carta{wantlist.length !== 1 ? 's' : ''} en tu lista de buscadas
+              </p>
+              <p className="text-xs text-slate-400">
+                Quien tenga estas cartas puede ofrecerte un Swap directo por WhatsApp.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowWantlistSearch(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-fuchsia-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-fuchsia-600"
+            >
+              <PlusIcon width={15} height={15} />
+              Agregar carta buscada
+            </button>
+          </div>
+
+          {wantlistLoading ? (
+            <p className="py-16 text-center text-slate-500">Cargando buscadas…</p>
+          ) : wantlist.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-fuchsia-500/40 bg-slate-900 px-6 py-16 text-center">
+              <SparklesIcon className="mx-auto h-8 w-8 text-fuchsia-400" />
+              <p className="mt-3 text-lg font-semibold text-white">Tu lista de buscadas está vacía</p>
+              <p className="mt-1 text-sm text-slate-500">
+                Agregá las cartas que estás buscando para que otros coleccionistas puedan
+                ofrecerte un Swap por WhatsApp.
+              </p>
+              <button
+                onClick={() => setShowWantlistSearch(true)}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-fuchsia-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-fuchsia-600"
+              >
+                <PlusIcon width={15} height={15} />
+                Agregar carta buscada
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+              {wantlist.map((w) => (
+                <WantlistSlot
+                  key={w.id}
+                  entry={w}
+                  owner
+                  onRemove={removeFromWantlist}
+                  onBudgetChange={updateWantlistBudget}
+                />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
         <>
           <BinderToolbar
@@ -497,6 +619,21 @@ export default function BinderPage() {
           onSelect={async (card, language) => {
             await addCardToSlot(card, language)
             setSlotTarget(null)
+          }}
+        />
+      )}
+
+      {showWantlistSearch && (
+        <SlotSearchModal
+          slotLabel="a buscar"
+          onClose={() => setShowWantlistSearch(false)}
+          onSelect={async (card) => {
+            try {
+              await addToWantlist(card)
+            } catch (err) {
+              setMessage(err instanceof Error ? err.message : 'Error al agregar a buscadas')
+            }
+            setShowWantlistSearch(false)
           }}
         />
       )}

@@ -6,6 +6,12 @@ import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
 import SellerReputationCard from '@/components/SellerReputationCard'
+import BinderTabs, { type BinderTab } from '@/components/binder/BinderTabs'
+import WantlistSlot from '@/components/binder/WantlistSlot'
+import { SparklesIcon } from '@/components/icons'
+import { buildSwapOfferUrl } from '@/lib/matchmaking'
+import { createClient } from '@/lib/supabase/client'
+import type { WantlistCard } from '@/types/wantlist'
 import {
   computeTotalValue,
   groupIntoSheets,
@@ -27,6 +33,11 @@ export default function PublicBinderPage({ params }: { params: Promise<{ binderI
   const [error, setError] = useState<string | null>(null)
   const [currentSheet, setCurrentSheet] = useState(0)
   const [seller, setSeller] = useState<SellerInfo | null>(null)
+  const [tab, setTab] = useState<BinderTab>('collection')
+  const [wantlist, setWantlist] = useState<WantlistCard[]>([])
+  const [viewer, setViewer] = useState<{ username?: string; slotByCardId: Record<string, string> } | null>(null)
+  const [matchCount, setMatchCount] = useState(0)
+  const [matchSellerUsername, setMatchSellerUsername] = useState<string | null>(null)
 
   useEffect(() => {
     params.then(({ binderId }) => setBinderId(binderId))
@@ -42,6 +53,7 @@ export default function PublicBinderPage({ params }: { params: Promise<{ binderI
         setBinder(data.binder)
         setCards((data.cards || []).map(toSlotCard))
         setSeller(data.owner ?? null)
+        setWantlist(data.wantlist || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Binder no encontrado')
       } finally {
@@ -49,6 +61,78 @@ export default function PublicBinderPage({ params }: { params: Promise<{ binderI
       }
     })()
   }, [binderId])
+
+  // Sesión del visitante: permite armar el deep link "¡Yo la tengo!" apuntando
+  // a su propio binder, y matchear su wantlist contra las cartas del vendedor.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase.auth.getUser()
+        if (!data.user || cancelled) return
+
+        const [profileRes, binderRes] = await Promise.all([
+          fetch('/api/profile'),
+          fetch('/api/binder?all=1')
+        ])
+        const profileData = await profileRes.json()
+        const binderData = await binderRes.json()
+        if (cancelled) return
+
+        const username = profileRes.ok ? profileData.profile?.username : undefined
+        const slotByCardId: Record<string, string> = {}
+        for (const c of binderData.cards || []) {
+          if (!slotByCardId[c.card_id]) slotByCardId[c.card_id] = c.id
+        }
+        setViewer({ username, slotByCardId })
+      } catch {
+        // visitante sin sesión: la wantlist se ve sin botón de oferta
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Banner de matchmaking: cartas del vendedor que coinciden con mi wantlist
+  useEffect(() => {
+    if (!seller?.id) return
+    ;(async () => {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase.auth.getUser()
+        if (!data.user || !seller?.id) return
+        const res = await fetch(`/api/matchmaking?sellerId=${encodeURIComponent(seller.id)}`)
+        const data2 = await res.json()
+        if (res.ok && data2.count > 0) {
+          setMatchCount(data2.count)
+          setMatchSellerUsername(data2.sellerUsername ?? null)
+        }
+      } catch {
+        // sin banner si falla el matchmaking
+      }
+    })()
+  }, [seller])
+
+  function buildOfferUrl(w: WantlistCard): string | null {
+    if (!viewer || !seller?.whatsapp_number) return null
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const base = viewer.username
+      ? `${origin}/binder/${encodeURIComponent(viewer.username)}`
+      : `${origin}/binder`
+    const slotUrl = viewer.slotByCardId[w.card_id]
+      ? `${base}?card=${viewer.slotByCardId[w.card_id]}`
+      : base
+    return buildSwapOfferUrl({
+      sellerUsername: seller.username ?? '',
+      sellerPhone: seller.whatsapp_number ?? '',
+      cardName: w.card_name,
+      setName: w.set_name || w.set_id,
+      cardNumber: w.number,
+      slotUrl
+    })
+  }
 
   const totalValue = computeTotalValue(cards)
   const sheets = groupIntoSheets(cards)
@@ -102,8 +186,39 @@ export default function PublicBinderPage({ params }: { params: Promise<{ binderI
         <SellerReputationCard username={seller?.username} />
       </div>
 
+      {matchCount > 0 && (
+        <div className="mb-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
+          <p className="text-sm font-semibold text-emerald-300">
+            🎯 ¡Tienen cartas compatibles! @{matchSellerUsername ?? 'vendedor'} tiene{' '}
+            {matchCount} carta{matchCount !== 1 ? 's' : ''} de tu lista de buscadas.
+          </p>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <BinderTabs active={tab} onChange={setTab} wantlistCount={wantlist.length} />
+      </div>
+
       {loading ? (
         <p className="py-20 text-center text-slate-500">Cargando binder…</p>
+      ) : tab === 'wantlist' ? (
+        wantlist.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-fuchsia-500/40 bg-slate-900 px-6 py-16 text-center">
+            <SparklesIcon className="mx-auto h-8 w-8 text-fuchsia-400" />
+            <p className="mt-3 text-lg font-semibold text-white">
+              @{seller?.username ?? 'Este coleccionista'} no tiene cartas en su lista de buscadas
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              Cuando agregue cartas a su Wantlist, vas a poder ofrecerle un Swap directo por WhatsApp.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+            {wantlist.map((w) => (
+              <WantlistSlot key={w.id} entry={w} offerUrl={buildOfferUrl(w) ?? undefined} />
+            ))}
+          </div>
+        )
       ) : (
         <>
           <div className="grid gap-6 md:grid-cols-2">

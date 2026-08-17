@@ -38,6 +38,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
       .eq('id', binder.user_id)
       .maybeSingle()
 
+    // Wantlist del dueño (pública por RLS) para la pestaña "Cartas Buscadas"
+    const { data: wantlist, error: wantlistError } = await supabase
+      .from('wantlist_cards')
+      .select('id, card_id, card_name, set_id, set_name, number, max_budget, currency')
+      .eq('user_id', binder.user_id)
+      .order('created_at', { ascending: false })
+    if (wantlistError) throw wantlistError
+
     const { data: cards, error } = await supabase
       .from('binder_cards')
       .select(
@@ -65,10 +73,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
       })
     )
 
+    const wantlistEnriched = await Promise.all(
+      (wantlist || []).map(async (w) => ({
+        ...w,
+        image: await resolveCardImage(w.set_id, w.number)
+      }))
+    )
+
     return NextResponse.json({
       binder: { id: binder.id, title: binder.title },
       owner,
-      cards: enriched
+      cards: enriched,
+      wantlist: wantlistEnriched
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'

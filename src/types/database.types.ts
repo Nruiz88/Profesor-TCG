@@ -174,6 +174,34 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['reviews']['Insert']>
         Relationships: []
       }
+      wantlist_cards: {
+        Row: {
+          id: string
+          user_id: string
+          card_id: string
+          card_name: string
+          set_id: string
+          set_name: string | null
+          number: string
+          max_budget: number | null
+          currency: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          card_id: string
+          card_name: string
+          set_id: string
+          set_name?: string | null
+          number: string
+          max_budget?: number | null
+          currency?: string
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['wantlist_cards']['Insert']>
+        Relationships: []
+      }
       trade_offers: {
         Row: {
           id: string
