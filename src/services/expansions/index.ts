@@ -27,6 +27,7 @@ import type { ExpansionData, ExpansionSource } from './types'
 export type { ExpansionData, ExpansionSource } from './types'
 
 const IMAGES_BASE = 'https://images.pokemontcg.io'
+const SCRYDEX_BASE = 'https://images.scrydex.com/pokemon'
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 interface LocalSetLike {
@@ -112,12 +113,12 @@ async function fromLocalCatalog(setId: string): Promise<ExpansionSource | null> 
 }
 
 // ---------------------------------------------------------------------------
-// Imágenes: assets locales primero, CDN de pokemontcg.io después, verificado
-// server-side. Si no hay nada, '' y el componente muestra su placeholder
-// temático. Ojo: pokemontcg.io responde 404 con el REVERSO de la carta como
-// body cuando no tiene el asset — el navegador lo renderiza igual y onError
-// nunca dispara. Por eso verificamos la existencia con HEAD antes de usar el
-// URL del CDN.
+// Imágenes: assets locales primero, CDN de pokemontcg.io después y Scrydex
+// como última fuente, todo verificado server-side. Si no hay nada, '' y el
+// componente muestra su placeholder temático. Ojo: pokemontcg.io responde 404
+// con el REVERSO de la carta como body cuando no tiene el asset — el navegador
+// lo renderiza igual y onError nunca dispara. Por eso verificamos la
+// existencia con HEAD antes de usar el URL del CDN.
 // ---------------------------------------------------------------------------
 async function urlExists(url: string): Promise<boolean> {
   try {
@@ -140,13 +141,28 @@ async function resolveLogoUrl(setId: string): Promise<string> {
     `${setId}.png`
   )
   if (existsSync(local)) return `/expansions/logos/${setId}.png`
-  const url = `${IMAGES_BASE}/${setId}/logo.png`
-  return (await urlExists(url)) ? url : ''
+
+  // pokemontcg.io primero; Scrydex cubre los sets que esa CDN no tiene
+  // (ej. McDonald's me5 "Pitch Black": su logo vive en Scrydex).
+  const candidates = [
+    `${IMAGES_BASE}/${setId}/logo.png`,
+    `${SCRYDEX_BASE}/${setId}-logo/logo`
+  ]
+  for (const url of candidates) {
+    if (await urlExists(url)) return url
+  }
+  return ''
 }
 
 async function resolveSymbolUrl(setId: string): Promise<string> {
-  const url = `${IMAGES_BASE}/${setId}/symbol.png`
-  return (await urlExists(url)) ? url : ''
+  const candidates = [
+    `${IMAGES_BASE}/${setId}/symbol.png`,
+    `${SCRYDEX_BASE}/${setId}-symbol/symbol`
+  ]
+  for (const url of candidates) {
+    if (await urlExists(url)) return url
+  }
+  return ''
 }
 
 // ---------------------------------------------------------------------------
