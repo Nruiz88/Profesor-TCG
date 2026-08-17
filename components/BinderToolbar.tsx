@@ -111,15 +111,16 @@ export default function BinderToolbar({
               <button
                 key={t.id}
                 onClick={() => onTypeChange(active ? null : t.id)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-xl border bg-slate-950 px-3 py-2 text-xs font-semibold transition-all ${
+                title={t.label}
+                aria-label={t.label}
+                className={`flex shrink-0 items-center justify-center rounded-xl border bg-slate-950 p-2 transition-all ${
                   active
-                    ? 'scale-105 ring-2 ring-rose-500/60 ' + t.borderClass.replace('border-', 'border-')
-                    : t.borderClass + ' text-slate-300 hover:border-slate-500'
+                    ? 'scale-105 ring-2 ring-rose-500/60 ' + t.borderClass
+                    : t.borderClass + ' hover:brightness-125'
                 }`}
                 aria-pressed={active}
               >
-                <TypeIcon type={t.id} small />
-                <span className={active ? 'text-white' : ''}>{t.label}</span>
+                <TypeIcon type={t.id} lg />
               </button>
             )
           })}

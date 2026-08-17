@@ -23,9 +23,17 @@ export const TYPE_ICONS: Record<string, { icon: string; bg: string }> = {
   Normal: { icon: 'normal.svg', bg: '#A0A29F' }
 }
 
-export function TypeIcon({ type, small }: { type: string; small?: boolean }) {
+export function TypeIcon({
+  type,
+  small,
+  lg
+}: {
+  type: string
+  small?: boolean
+  lg?: boolean
+}) {
   const meta = TYPE_ICONS[type]
-  const size = small ? 'h-4 w-4' : 'h-5 w-5'
+  const size = lg ? 'h-[26px] w-[26px]' : small ? 'h-4 w-4' : 'h-5 w-5'
   if (!meta) {
     // Tipo desconocido: círculo gris con la inicial
     return (

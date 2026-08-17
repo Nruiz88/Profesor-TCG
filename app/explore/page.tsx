@@ -271,14 +271,15 @@ export default function ExplorePage() {
                         key={t.id}
                         onClick={() => setTypeFilter(active ? '' : t.id)}
                         aria-pressed={active}
-                        className={`flex shrink-0 items-center gap-1.5 rounded-xl border bg-slate-950 px-3 py-2 text-xs font-semibold transition-all ${
+                        title={t.label}
+                        aria-label={t.label}
+                        className={`flex shrink-0 items-center justify-center rounded-xl border bg-slate-950 p-2 transition-all ${
                           active
-                            ? `scale-105 ring-2 ring-rose-500/60 ${t.borderClass} text-white`
-                            : `border-slate-800 text-slate-400 hover:${t.borderClass.replace('40', '70')} hover:text-white`
+                            ? `scale-105 ring-2 ring-rose-500/60 ${t.borderClass}`
+                            : `border-slate-800 hover:${t.borderClass.replace('40', '70')} hover:brightness-125`
                         }`}
                       >
-                        <TypeIcon type={t.id} small />
-                        {t.label}
+                        <TypeIcon type={t.id} lg />
                       </button>
                     )
                   })}
