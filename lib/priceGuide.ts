@@ -46,3 +46,21 @@ export function buildPriceChartingUrl(opts: {
     .join(' ')
   return `https://www.pricecharting.com/search-products?q=${encodeURIComponent(q)}`
 }
+
+// Mismo concepto para TCGplayer: nombre + número (ej: Charizard 151) y el
+// calificador de idioma cuando corresponde.
+export function buildTcgplayerUrl(opts: {
+  cardName: string
+  setId: string
+  number: string
+  language?: string | null
+}): string {
+  const q = [
+    opts.cardName,
+    opts.number,
+    opts.language === 'JP' ? 'Japanese' : ''
+  ]
+    .filter(Boolean)
+    .join(' ')
+  return `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(q)}`
+}

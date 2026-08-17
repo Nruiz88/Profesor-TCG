@@ -4,7 +4,13 @@ import { useState } from 'react'
 import type { SlotCard } from '@/lib/sheets'
 import type { CardLanguage } from '@/lib/cardLanguage'
 import { normalizeLanguage } from '@/lib/cardLanguage'
-import { buildPriceChartingUrl, CURRENCIES, normalizeCurrency, type Currency } from '@/lib/priceGuide'
+import {
+  buildPriceChartingUrl,
+  buildTcgplayerUrl,
+  CURRENCIES,
+  normalizeCurrency,
+  type Currency
+} from '@/lib/priceGuide'
 import LanguagePills from './LanguagePills'
 
 interface PriceInputWithGuideProps {
@@ -47,6 +53,12 @@ export default function PriceInputWithGuide({
   const hasAutoPrice = card.market_price != null && card.market_price > 0
 
   const guideUrl = buildPriceChartingUrl({
+    cardName: card.card_name,
+    setId: card.set_id,
+    number: card.number,
+    language
+  })
+  const tcgUrl = buildTcgplayerUrl({
     cardName: card.card_name,
     setId: card.set_id,
     number: card.number,
@@ -118,18 +130,28 @@ export default function PriceInputWithGuide({
         <LanguagePills value={language} onChange={handleLanguage} />
       </div>
 
-      {/* B. Guía de referencia externa (PriceCharting) */}
-      <a
-        href={guideUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-3 flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-2.5 text-sm font-semibold text-sky-300 transition-colors hover:bg-sky-500/20"
-      >
-        🔍 Ver precio de referencia en PriceCharting ↗
-      </a>
+      {/* B. Guía de referencia externa: PriceCharting + TCGplayer */}
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <a
+          href={guideUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-2.5 text-sm font-semibold text-sky-300 transition-colors hover:bg-sky-500/20"
+        >
+          🔍 Ver en PriceCharting ↗
+        </a>
+        <a
+          href={tcgUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-2.5 text-sm font-semibold text-sky-300 transition-colors hover:bg-sky-500/20"
+        >
+          🛒 Ver en TCGplayer ↗
+        </a>
+      </div>
       <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
-        Abre la búsqueda de tu carta exacta (nombre, set y número) para copiar el precio de
-        referencia.
+        Abren la búsqueda de tu carta exacta (nombre, set y número) en cada referencia para copiar
+        el precio.
       </p>
 
       {/* C. Precio manual + moneda + guardado */}
