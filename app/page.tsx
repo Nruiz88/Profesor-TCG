@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import SiteNav from '@/components/SiteNav'
 import SiteFooter from '@/components/SiteFooter'
+import FeaturesStatsBar from '@/components/FeaturesStatsBar'
 import HeroBinderDemo from '@/components/HeroBinderDemo'
 import CommunityStatsBar from '@/components/CommunityStatsBar'
 import LiveMarketFeed from '@/components/LiveMarketFeed'
@@ -310,6 +311,9 @@ export default async function LandingPage() {
               </Link>
             ))}
           </div>
+
+          {/* Franja de stats: catálogo, coleccionistas y ofertas activas */}
+          <FeaturesStatsBar />
         </div>
       </section>
 

@@ -57,11 +57,27 @@ export async function GET() {
       if (b?.user_id) sellers.add(b.user_id)
     }
 
+    // Conteo exacto de ofertas activas (cartas en venta/cambio de binders
+    // públicos). Mejor esfuerzo: si el conteo falla, usamos el total de la
+    // query limitada como aproximación.
+    let activeListings = rows.length
+    try {
+      const { count } = await supabase
+        .from('binder_cards')
+        .select('id', { count: 'exact', head: true })
+        .or('is_for_sale.eq.true,is_for_trade.eq.true')
+        .eq('binders.is_public', true)
+      if (count != null) activeListings = count
+    } catch {
+      // fallback al conteo limitado
+    }
+
     return NextResponse.json({
       catalogCards: catalog.size,
       marketValue,
       sellers: sellers.size,
-      users
+      users,
+      activeListings
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
