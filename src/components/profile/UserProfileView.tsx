@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import SiteNav from '@/components/SiteNav'
 import MarketCard from '@/components/MarketCard'
 import WantlistSlot from '@/components/binder/WantlistSlot'
@@ -30,9 +31,23 @@ export interface ProfileInfo {
   city: string | null
   country: string | null
   isVerified: boolean
+  created_at?: string
 }
 
-type ProfileTab = 'sale' | 'wantlist' | 'reviews'
+type ProfileTab = 'sale' | 'wantlist' | 'reviews' | 'settings'
+
+// La sección de configuración (edición + cambio de contraseña) se carga solo
+// cuando el dueño del perfil abre su pestaña: bundle aparte, carga inicial
+// más liviana.
+const ProfileSettingsSection = dynamic(
+  () => import('./ProfileSettingsSection'),
+  {
+    ssr: false,
+    loading: () => (
+      <p className="py-16 text-center text-sm text-slate-500">Cargando configuración…</p>
+    )
+  }
+)
 
 interface UserProfileViewProps {
   profile: ProfileInfo
@@ -120,7 +135,13 @@ export default function UserProfileView({
   matchCount,
   isOwnProfile
 }: UserProfileViewProps) {
-  const [tab, setTab] = useState<ProfileTab>('sale')
+  // Tab inicial desde la URL (?tab=settings) para que "Configurar perfil"
+  // aterrice directo en la configuración del perfil propio.
+  const [tab, setTab] = useState<ProfileTab>(() => {
+    if (typeof window === 'undefined') return 'sale'
+    const t = new URLSearchParams(window.location.search).get('tab')
+    return t === 'settings' && isOwnProfile ? 'settings' : 'sale'
+  })
   const [copied, setCopied] = useState(false)
   const [viewer, setViewer] = useState<{
     username?: string
@@ -370,6 +391,20 @@ export default function UserProfileView({
               {reviews.length}
             </span>
           </button>
+          {isOwnProfile && (
+            <button
+              type="button"
+              onClick={() => setTab('settings')}
+              aria-pressed={tab === 'settings'}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                tab === 'settings'
+                  ? 'bg-binder-accent text-white shadow'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+              }`}
+            >
+              ⚙️ Configuración
+            </button>
+          )}
         </div>
 
         {/* Contenido de la pestaña activa */}
@@ -402,6 +437,8 @@ export default function UserProfileView({
               ))}
             </div>
           ))}
+
+        {tab === 'settings' && <ProfileSettingsSection profile={profile} />}
 
         {tab === 'reviews' &&
           (reviews.length === 0 ? (

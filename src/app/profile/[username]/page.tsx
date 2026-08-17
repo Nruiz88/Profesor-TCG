@@ -217,7 +217,8 @@ export default async function UserProfilePage({
         whatsapp_number: profile.whatsapp_number,
         city: profile.city,
         country: profile.country,
-        isVerified: rep.isVerified || !!profile.is_verified
+        isVerified: rep.isVerified || !!profile.is_verified,
+        created_at: profile.created_at
       }}
       ratingAvg={rep.ratingAvg}
       reviewCount={rep.reviewCount}

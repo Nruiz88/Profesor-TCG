@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import SiteNav from '@/components/SiteNav'
 import BinderSidebar from '@/components/BinderSidebar'
 import BinderSheet from '@/components/BinderSheet'
@@ -8,7 +9,6 @@ import SheetPagination from '@/components/SheetPagination'
 import SlotSearchModal from '@/components/SlotSearchModal'
 import type { SearchResult } from '@/types'
 import type { CardLanguage } from '@/lib/cardLanguage'
-import ProfileSettings from '@/components/ProfileSettings'
 import ProfileRequiredModal from '@/components/ProfileRequiredModal'
 import EditCardModal from '@/components/EditCardModal'
 import BinderSettingsModal from '@/components/BinderSettingsModal'
@@ -45,6 +45,7 @@ interface Binder {
 }
 
 export default function BinderPage() {
+  const router = useRouter()
   const [user, setUser] = useState<{ email: string | undefined; id: string } | null>(null)
   const [binders, setBinders] = useState<Binder[]>([])
   const [binder, setBinder] = useState<Binder | null>(null)
@@ -56,7 +57,6 @@ export default function BinderPage() {
   const [currentSheet, setCurrentSheet] = useState(0)
   const [activeBinderId, setActiveBinderId] = useState<string | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [showProfile, setShowProfile] = useState(false)
   const [editCard, setEditCard] = useState<SlotCard | null>(null)
   const [requireProfileFor, setRequireProfileFor] = useState<Availability | null>(null)
   const [saleOnly, setSaleOnly] = useState(false)
@@ -95,14 +95,18 @@ export default function BinderPage() {
     }
   }, [])
 
-  const loadProfile = useCallback(async () => {
+  const loadProfile = useCallback(async (): Promise<Profile | null> => {
     try {
       const res = await fetch('/api/profile')
       const data = await res.json()
-      if (res.ok && data.profile) setProfile(data.profile)
+      if (res.ok && data.profile) {
+        setProfile(data.profile)
+        return data.profile
+      }
     } catch {
-      // perfil no disponible: se reintenta al abrir configuración
+      // perfil no disponible
     }
+    return null
   }, [])
 
   const loadWantlist = useCallback(async () => {
@@ -433,9 +437,15 @@ export default function BinderPage() {
               onDeleteBinder={handleDeleteBinder}
               onRefreshPrices={updatePrices}
               onShowClaims={() => setShowClaims(true)}
-              onShowProfile={() => {
-                if (!profile) loadProfile()
-                setShowProfile(true)
+              onShowProfile={async () => {
+                // El perfil completo (con su pestaña Configuración y cambio de
+                // clave) vive en la página /profile/[username]. Acá solo navegamos.
+                const p = profile ?? (await loadProfile())
+                if (p?.username) {
+                  router.push(`/profile/${encodeURIComponent(p.username)}?tab=settings`)
+                } else {
+                  setMessage('No se pudo abrir tu perfil. Intentalo de nuevo.')
+                }
               }}
             />
           </div>
@@ -653,17 +663,6 @@ export default function BinderPage() {
             }
             setShowWantlistSearch(false)
           }}
-        />
-      )}
-
-      {showProfile && (
-        <ProfileSettings
-          profile={profile}
-          onSaved={(p) => {
-            setProfile(p)
-            setShowProfile(false)
-          }}
-          onClose={() => setShowProfile(false)}
         />
       )}
 
