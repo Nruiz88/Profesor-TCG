@@ -7,7 +7,7 @@
 // con el código existente: `import { CardStatus } from '@/lib/cardStatus'`
 // sigue funcionando.
 //
-// Forma los card_id: `${setId}-${number}` (ej: base1-4, swshp-SWSH076).
+// Forma canónica de los card_id: `${setCode}-${cardNumber}` (ej: base1-4).
 // ============================================================================
 
 // ---------------------------------------------------------------------------
@@ -31,98 +31,40 @@ export type CardLanguage = 'ES' | 'EN' | 'JP' | 'KO' | 'ZH'
 export type Currency = 'USD' | 'EUR' | 'ARS'
 
 // ---------------------------------------------------------------------------
-// Formas de la carta en el catálogo (pokemon-tcg-data / TCGdex)
-// ---------------------------------------------------------------------------
-
-export interface CardImages {
-  small: string
-  large: string
-}
-
-export interface CardAttack {
-  name: string
-  cost?: string[]
-  convertedEnergyCost?: number
-  damage?: string
-  text?: string
-}
-
-export interface CardAbility {
-  name: string
-  text: string
-  type?: string
-}
-
-export interface CardWeaknessResistance {
-  type: string
-  value: string
-}
-
-/** Identidad de la carta dentro del catálogo (lo que resuelve /api/cards/:id). */
-export interface CardCatalogInfo {
-  id: string
-  name: string
-  supertype?: string
-  subtypes?: string[]
-  hp?: string
-  types?: string[]
-  evolvesFrom?: string
-  evolvesTo?: string[]
-  attacks?: CardAttack[]
-  abilities?: CardAbility[]
-  weaknesses?: CardWeaknessResistance[]
-  resistances?: CardWeaknessResistance[]
-  retreatCost?: string[]
-  convertedRetreatCost?: number
-  number: string
-  artist?: string
-  rarity?: string
-  flavorText?: string
-  nationalPokedexNumbers?: number[]
-  legalities?: Record<string, string>
-  set_id: string
-  set_name: string
-  image: string
-  images?: CardImages
-}
-
-// ---------------------------------------------------------------------------
-// Estado de listado dentro de un binder (SQL binder_cards)
-// ---------------------------------------------------------------------------
-
-/** Columnas de binder_cards relevantes para precio, venta y estado. */
-export interface CardListingInfo {
-  market_price: number | null
-  price_override: number | null
-  price: number | null
-  manual_price: number | null
-  currency: Currency
-  is_user_reported: boolean
-  status: CardStatus
-  is_for_sale: boolean
-  is_for_trade: boolean
-  availability: Availability
-  condition?: string | null
-  trade_notes?: string | null
-  language: CardLanguage
-  reserved_until: string | null
-  updated_at: string
-}
-
-// ---------------------------------------------------------------------------
 // UnifiedCard — contrato normalizado que consumen componentes, APIs y páginas.
 // ---------------------------------------------------------------------------
 
 /**
- * Carta unificada: identidad de catálogo + estado de listado + ubicación en el
- * binder. Todo módulo que necesite "una carta" debe tipar contra este contrato
- * y recibirlo por props (los componentes nunca hacen fetch directo).
+ * Carta unificada y normalizada, independiente de la fuente de datos
+ * (TCGdex, pokemon-tcg-data, filas de Supabase o entrada del usuario).
  *
- * `effectivePrice` es el precio a mostrar: user price > override > mercado
- * (ver effectivePrice en lib/cardStatus).
+ * `normalizeCard()` (lib/normalizeCard) garantiza que cualquier respuesta de
+ * API se transforme a esta forma. Los componentes reciben este contrato por
+ * props (nunca hacen fetch directo).
  */
-export interface UnifiedCard extends CardCatalogInfo, CardListingInfo {
-  binder_id: string
-  slot_number: number
-  effectivePrice: number | null
+export interface UnifiedCard {
+  /** Identificador único normalizado: `${setCode}-${cardNumber}`. */
+  id: string
+  /** Nombre de la carta (traducido si el proveedor lo entrega). */
+  name: string
+  /** Nombre de la expansión (ej: "Scarlet & Violet: 151"). */
+  setName: string
+  /** Código de la expansión (ej: "sv3pt5"). */
+  setCode: string
+  /** Número de la carta dentro de la expansión (ej: "6"). */
+  cardNumber: string
+  /** Idioma de la copia física. Default: 'ES'. */
+  language?: CardLanguage
+  /** Rareza de la carta. null si el proveedor no la reporta. */
+  rarity?: string | null
+  /** URL de la imagen de la carta. Vacío si no hay imagen resuelta. */
+  imageUrl?: string
+  /** Estado físico: Mint, Near Mint, Excellent, Good, Played, etc. */
+  condition?: string | null
+  /** Precio efectivo a mostrar. null = sin precio conocido / consultar. */
+  price?: number | null
+  /** Moneda del precio. Default: 'USD'. */
+  currency?: Currency
+  /** true si los datos provienen del usuario y no del catálogo. */
+  isUserCustom?: boolean
 }
