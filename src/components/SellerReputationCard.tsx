@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import type { ReputationInfo } from '@/lib/reputation'
 import { formatReputationLocation, levelBadge } from '@/lib/reputation'
 
@@ -89,7 +90,15 @@ export default function SellerReputationCard({
       <Avatar username={reputation.username} verified={reputation.isVerified} />
 
       <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-white">@{reputation.username}</p>
+        <p className="truncate font-semibold text-white">
+          <Link
+            href={`/profile/${encodeURIComponent(reputation.username)}`}
+            className="transition-colors hover:text-rose-300"
+            title="Ver perfil público"
+          >
+            @{reputation.username}
+          </Link>
+        </p>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm">
           {reputation.ratingAvg != null ? (
             <span className="flex items-center gap-1 font-bold text-yellow-400">

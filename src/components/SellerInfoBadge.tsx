@@ -1,3 +1,6 @@
+'use client'
+
+import Link from 'next/link'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
 
 export interface SellerInfo {
@@ -20,7 +23,15 @@ export default function SellerInfoBadge({ seller }: { seller: SellerInfo | null 
         {(seller.username[0] ?? '?').toUpperCase()}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-white">@{seller.username}</p>
+        <p className="truncate text-sm font-semibold text-white">
+          <Link
+            href={`/profile/${encodeURIComponent(seller.username)}`}
+            className="transition-colors hover:text-rose-300"
+            title="Ver perfil público"
+          >
+            @{seller.username}
+          </Link>
+        </p>
         <p className="truncate text-xs text-slate-500">{location || 'Ubicación no especificada'}</p>
       </div>
       {wa && (

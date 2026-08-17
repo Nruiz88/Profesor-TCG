@@ -112,7 +112,15 @@ export default function MarketGrid({
                 {(card.username[0] ?? 'C').toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-slate-200">@{card.username}</p>
+                <p className="truncate text-xs font-semibold text-slate-200">
+                  <Link
+                    href={`/profile/${encodeURIComponent(card.username)}`}
+                    className="transition-colors hover:text-rose-300"
+                    title="Ver perfil público"
+                  >
+                    @{card.username}
+                  </Link>
+                </p>
                 <p className="truncate text-[11px] text-slate-500">
                   {location || 'Ubicación no especificada'}
                 </p>

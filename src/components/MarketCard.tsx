@@ -166,7 +166,13 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
               {card.card_name}
             </p>
             <p className="truncate text-xs text-slate-500">
-              @{card.username}
+              <Link
+                href={`/profile/${encodeURIComponent(card.username)}`}
+                className="font-semibold text-slate-300 transition-colors hover:text-rose-300"
+                title="Ver perfil público"
+              >
+                @{card.username}
+              </Link>
               {card.ratingAvg != null && (
                 <span className="ml-1 font-bold text-yellow-400">★ {card.ratingAvg.toFixed(1)}</span>
               )}

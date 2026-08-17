@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   AlertIcon,
+  ArrowRightIcon,
   CardsIcon,
   CheckIcon,
   FolderIcon,
@@ -85,6 +87,9 @@ export default function BinderSidebar({
   const initial = (profile?.username?.[0] ?? user?.email?.[0] ?? '?').toUpperCase()
   const location = formatLocation(profile?.city ?? null, profile?.country ?? null)
   const displayName = profile?.username ? `@${profile.username}` : user?.email ?? 'Mi Binder'
+  const profileUrl = profile?.username
+    ? `/profile/${encodeURIComponent(profile.username)}`
+    : null
   const fmt = (n: number) =>
     n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -108,7 +113,17 @@ export default function BinderSidebar({
           {initial}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-white">{displayName}</p>
+          {profileUrl ? (
+            <Link
+              href={profileUrl}
+              className="block truncate text-sm font-semibold text-white transition-colors hover:text-rose-300"
+              title="Ver mi perfil público"
+            >
+              {displayName}
+            </Link>
+          ) : (
+            <p className="truncate text-sm font-semibold text-white">{displayName}</p>
+          )}
           <p className="truncate text-xs text-slate-500">
             {binder?.title ?? `${totalCards} cartas`}
           </p>
@@ -129,19 +144,43 @@ export default function BinderSidebar({
           <div className="overflow-hidden rounded-3xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
             {/* Perfil */}
             <div className="border-b border-slate-800/80 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-600 to-rose-400 text-base font-bold text-white shadow-lg shadow-rose-900/40">
-                  {initial}
+              {profileUrl ? (
+                <Link
+                  href={profileUrl}
+                  title="Ver mi perfil público"
+                  className="group -m-1 flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-white/5"
+                >
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-600 to-rose-400 text-base font-bold text-white shadow-lg shadow-rose-900/40">
+                    {initial}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-white" title={displayName}>
+                      {displayName}
+                    </p>
+                    <p className="truncate text-xs text-slate-500" title={location || undefined}>
+                      {location || 'Agregá tu ubicación'}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-rose-400/80 transition-colors group-hover:text-rose-300">
+                      <ArrowRightIcon className="h-3 w-3" />
+                      Ver perfil público
+                    </p>
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-600 to-rose-400 text-base font-bold text-white shadow-lg shadow-rose-900/40">
+                    {initial}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-white" title={displayName}>
+                      {displayName}
+                    </p>
+                    <p className="truncate text-xs text-slate-500" title={location || undefined}>
+                      {location || 'Agregá tu ubicación'}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-white" title={displayName}>
-                    {displayName}
-                  </p>
-                  <p className="truncate text-xs text-slate-500" title={location || undefined}>
-                    {location || 'Agregá tu ubicación'}
-                  </p>
-                </div>
-              </div>
+              )}
 
               {!isProfileComplete(profile) && (
                 <button
@@ -274,6 +313,12 @@ export default function BinderSidebar({
                   <SwapIcon className="h-4 w-4 text-sky-400" />
                   Mis transacciones
                 </button>
+                {profileUrl && (
+                  <Link href={profileUrl} className={`${MENU_BTN} ${MENU_NEUTRAL}`}>
+                    <ArrowRightIcon className="h-4 w-4 text-rose-400" />
+                    Ver mi perfil público
+                  </Link>
+                )}
                 {profile?.is_admin && (
                   <a href="/admin" className={`${MENU_BTN} ${MENU_NEUTRAL}`}>
                     <ShieldIcon className="h-4 w-4 text-violet-400" />
