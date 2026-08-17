@@ -5,6 +5,8 @@ import { getCardMetadataMap, getSets } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
 import { effectivePrice } from '@/lib/cardStatus'
 import { isCardLanguage } from '@/lib/cardLanguage'
+import { speciesFromCardName } from '@/lib/pokedex'
+import { computeTrainerScore } from '@/lib/trainer'
 
 export const dynamic = 'force-dynamic'
 
@@ -122,6 +124,8 @@ export interface ExploreCard {
   binder_public: boolean
   /** true si la carta está en la wantlist del usuario con sesión (badge 🔔). */
   onWantlist?: boolean
+  /** Rango de Entrenador del vendedor (XP unificada). */
+  trainerRank?: { icon: string; name: string } | null
   updated_at: string
 }
 
@@ -285,6 +289,92 @@ async function getCards(
     }
   }
 
+  // Rango de Entrenador por vendedor: misma fórmula que el perfil público
+  // (capturas + ventas + cambios + compras + reseñas). Decorativo: si falla,
+  // las tarjetas simplemente no muestran el rango.
+  const trainerRankByUser = new Map<string, { icon: string; name: string }>()
+  if (userIds.length > 0) {
+    try {
+      const userIdSet = new Set(userIds)
+      const { data: sellerBinders } = await supabase
+        .from('binders')
+        .select('id, user_id')
+        .in('user_id', userIds)
+      const binderIdsByUser = new Map<string, string[]>()
+      for (const b of sellerBinders || []) {
+        const row = b as { id: string; user_id: string }
+        const list = binderIdsByUser.get(row.user_id) ?? []
+        list.push(row.id)
+        binderIdsByUser.set(row.user_id, list)
+      }
+      const allBinderIds = [...binderIdsByUser.values()].flat()
+
+      const [{ data: completedClaims }, { data: captureRows }] = await Promise.all([
+        supabase
+          .from('claims')
+          .select('kind, buyer_id, seller_id')
+          .eq('status', 'completed')
+          .or(`seller_id.in.(${userIds.join(',')}),buyer_id.in.(${userIds.join(',')})`),
+        allBinderIds.length
+          ? supabase
+              .from('binder_cards')
+              .select('card_id, binder_id')
+              .in('binder_id', allBinderIds)
+              .limit(2000)
+          : Promise.resolve({ data: [] })
+      ])
+
+      // Especies capturadas por vendedor (misma lógica que la Pokédex)
+      const speciesByUser = new Map<string, Set<string>>()
+      const userByBinderId = new Map<string, string>()
+      for (const [uid, ids] of binderIdsByUser) {
+        for (const id of ids) userByBinderId.set(id, uid)
+      }
+      for (const r of captureRows || []) {
+        const row = r as { card_id: string; binder_id: string }
+        const uid = userByBinderId.get(row.binder_id)
+        if (!uid) continue
+        const m = meta.get(row.card_id)
+        if (m && m.supertype === 'Pokémon') {
+          const set = speciesByUser.get(uid) ?? new Set<string>()
+          set.add(speciesFromCardName(m.name))
+          speciesByUser.set(uid, set)
+        }
+      }
+
+      // Claims completados por vendedor (ventas/cambios/compras)
+      const claimsByUser = new Map<string, { sales: number; trades: number; buys: number }>()
+      for (const c of completedClaims || []) {
+        const row = c as { kind: string; buyer_id: string; seller_id: string }
+        const seller = claimsByUser.get(row.seller_id) ?? { sales: 0, trades: 0, buys: 0 }
+        if (userIdSet.has(row.seller_id)) {
+          if (row.kind === 'sale' || row.kind === 'both') seller.sales++
+          if (row.kind === 'trade' || row.kind === 'both') seller.trades++
+          claimsByUser.set(row.seller_id, seller)
+        }
+        const buyer = claimsByUser.get(row.buyer_id) ?? { sales: 0, trades: 0, buys: 0 }
+        if (userIdSet.has(row.buyer_id)) {
+          buyer.buys++
+          claimsByUser.set(row.buyer_id, buyer)
+        }
+      }
+
+      for (const uid of userIds) {
+        const c = claimsByUser.get(uid) ?? { sales: 0, trades: 0, buys: 0 }
+        const score = computeTrainerScore({
+          capturedSpecies: speciesByUser.get(uid)?.size ?? 0,
+          completedSales: c.sales,
+          completedTrades: c.trades,
+          completedBuys: c.buys,
+          reviewCount: reviewCounts.get(uid) ?? 0
+        })
+        trainerRankByUser.set(uid, { icon: score.rank.icon, name: score.rank.name })
+      }
+    } catch {
+      // el rango es decorativo: no rompe el marketplace
+    }
+  }
+
   const enriched: ExploreCard[] = []
   for (const r of rows) {
     const m = meta.get(r.card_id)
@@ -329,6 +419,7 @@ async function getCards(
         opts.requesterId != null &&
         r.binders?.user_id !== opts.requesterId &&
         opts.wantlistCardIds.has(r.card_id),
+      trainerRank: trainerRankByUser.get(r.binders?.user_id ?? '') ?? null,
       updated_at: r.updated_at
     })
   }

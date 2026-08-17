@@ -193,6 +193,14 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
               {card.isVerified && (
                 <span className="ml-0.5 text-emerald-400" title="Verificado">⚡</span>
               )}
+              {card.trainerRank && (
+                <span
+                  className="ml-1 text-fuchsia-400"
+                  title={`Rango de Entrenador: ${card.trainerRank.name}`}
+                >
+                  {card.trainerRank.icon} {card.trainerRank.name}
+                </span>
+              )}
               {location && ` · ${location}`}
             </p>
           </div>

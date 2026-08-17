@@ -25,6 +25,7 @@ import {
 } from '@/components/icons'
 import { formatLocation, isProfileComplete, type Profile } from '@/lib/profile'
 import { pokedexLevel } from '@/lib/pokedex'
+import type { TrainerScore } from '@/lib/trainer'
 
 interface SidebarBinder {
   id: string
@@ -45,6 +46,8 @@ interface BinderSidebarProps {
   updating: boolean
   /** Especies Pokémon capturadas en todos los binders + total del catálogo */
   pokedex?: { captured: number; total: number } | null
+  /** Puntos de Entrenador (XP + rango) del usuario */
+  trainer?: TrainerScore | null
   onSelectBinder: (binderId: string) => void
   onCreateBinder: () => void
   onEditBinder: () => void
@@ -77,6 +80,7 @@ export default function BinderSidebar({
   tradeCount,
   updating,
   pokedex,
+  trainer,
   onSelectBinder,
   onCreateBinder,
   onEditBinder,
@@ -238,6 +242,33 @@ export default function BinderSidebar({
                     style={{ width: `${Math.min(100, (pokedex.captured / pokedex.total) * 100)}%` }}
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Puntos de Entrenador: XP + rango del usuario */}
+            {trainer && (
+              <div className="border-b border-slate-800/80 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                    <span className="text-sm leading-none">🏆</span>
+                    Entrenador
+                  </p>
+                  <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-2 py-0.5 text-[10px] font-bold text-fuchsia-300">
+                    {trainer.rank.icon} {trainer.rank.name}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-sm font-bold text-white">
+                  {trainer.xp.toLocaleString('en-US')}{' '}
+                  <span className="text-xs font-medium text-slate-500">XP acumuladas</span>
+                </p>
+                {trainer.nextRank && (
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-rose-400"
+                      style={{ width: `${Math.round(trainer.progress * 100)}%` }}
+                    />
+                  </div>
+                )}
               </div>
             )}
 

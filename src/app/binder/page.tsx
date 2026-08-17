@@ -26,6 +26,7 @@ import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
 import { completeSaleAction } from '@/app/actions/claims'
 import { fetchJson } from '@/lib/utils'
 import type { Profile } from '@/lib/profile'
+import type { TrainerScore } from '@/lib/trainer'
 import { effectivePrice, type Availability } from '@/lib/cardStatus'
 import {
   SLOTS_PER_SHEET,
@@ -67,6 +68,7 @@ export default function BinderPage() {
   const [settingsModal, setSettingsModal] = useState<'create' | 'edit' | null>(null)
   const [showClaims, setShowClaims] = useState(false)
   const [pokedex, setPokedex] = useState<{ captured: number; total: number } | null>(null)
+  const [trainer, setTrainer] = useState<TrainerScore | null>(null)
   const [tab, setTab] = useState<BinderTab>('collection')
   const [wantlist, setWantlist] = useState<WantlistCard[]>([])
   const [wantlistLoading, setWantlistLoading] = useState(false)
@@ -118,6 +120,7 @@ export default function BinderPage() {
       const data = await res.json()
       if (res.ok && typeof data.captured === 'number') {
         setPokedex({ captured: data.captured, total: data.total ?? 0 })
+        if (data.trainer) setTrainer(data.trainer)
       }
     } catch {
       // la Pokédex es decorativa: si falla, el sidebar simplemente no la muestra
@@ -462,6 +465,7 @@ export default function BinderPage() {
               tradeCount={tradeCount}
               updating={updating}
               pokedex={pokedex}
+              trainer={trainer}
               onSelectBinder={selectBinder}
               onCreateBinder={() => setSettingsModal('create')}
               onEditBinder={() => setSettingsModal('edit')}

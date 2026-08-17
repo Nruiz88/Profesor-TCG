@@ -134,6 +134,14 @@ export default function MarketGrid({
                 </p>
                 <p className="truncate text-[11px] text-slate-500">
                   {location || 'Ubicación no especificada'}
+                  {card.trainerRank && (
+                    <span
+                      className="ml-1 text-fuchsia-400"
+                      title={`Rango de Entrenador: ${card.trainerRank.name}`}
+                    >
+                      {card.trainerRank.icon} {card.trainerRank.name}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>

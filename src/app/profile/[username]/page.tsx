@@ -8,6 +8,7 @@ import { resolveCardImage } from '@/lib/cardImage'
 import { speciesFromCardName } from '@/lib/pokedex'
 import { effectivePrice } from '@/lib/cardStatus'
 import { findWantlistMatches } from '@/lib/matchmaking'
+import { computeTrainerScore } from '@/lib/trainer'
 import UserProfileView, { type ProfileReview } from '@/components/profile/UserProfileView'
 import type { ExploreCard } from '@/app/api/public/explore/route'
 import type { WantlistCard } from '@/types/wantlist'
@@ -53,6 +54,12 @@ interface Reputation {
   ratingAvg: number | null
   reviewCount: number
   completedClaims: number
+  /** Ventas completadas como vendedor (kind sale/both). */
+  completedSales: number
+  /** Cambios completados como vendedor (kind trade/both). */
+  completedTrades: number
+  /** Compras completadas como comprador. */
+  completedBuys: number
   isVerified: boolean
 }
 
@@ -60,21 +67,39 @@ async function loadReputation(
   admin: QueryClient,
   profileId: string
 ): Promise<Reputation> {
-  const [{ data: reviewRows }, { count: completedClaims }] = await Promise.all([
+  const [{ data: reviewRows }, { data: completedRows }] = await Promise.all([
     admin.from('reviews').select('rating').eq('reviewed_user_id', profileId),
     admin
       .from('claims')
-      .select('id', { count: 'exact', head: true })
+      .select('kind, buyer_id, seller_id')
       .or(`seller_id.eq.${profileId},buyer_id.eq.${profileId}`)
       .eq('status', 'completed')
+      .limit(1000)
   ])
 
   const ratings = (reviewRows || []).map((r: { rating: number }) => r.rating)
+
+  // Desglose por rol/tipo para el score de entrenador
+  let completedSales = 0
+  let completedTrades = 0
+  let completedBuys = 0
+  for (const c of completedRows || []) {
+    const row = c as { kind: string; buyer_id: string; seller_id: string }
+    if (row.seller_id === profileId) {
+      if (row.kind === 'sale' || row.kind === 'both') completedSales++
+      if (row.kind === 'trade' || row.kind === 'both') completedTrades++
+    }
+    if (row.buyer_id === profileId) completedBuys++
+  }
+
   return {
     ratingAvg:
       ratings.length > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : null,
     reviewCount: ratings.length,
-    completedClaims: completedClaims ?? 0,
+    completedClaims: (completedRows || []).length,
+    completedSales,
+    completedTrades,
+    completedBuys,
     isVerified: false
   }
 }
@@ -264,6 +289,15 @@ export default async function UserProfilePage({
     isVerified: rep.isVerified || !!profile.is_verified
   }))
 
+  // Puntos de Entrenador: XP unificada que se luce en el perfil público
+  const trainerScore = computeTrainerScore({
+    capturedSpecies: pokedex?.captured ?? 0,
+    completedSales: rep.completedSales,
+    completedTrades: rep.completedTrades,
+    completedBuys: rep.completedBuys,
+    reviewCount: rep.reviewCount
+  })
+
   // Matchmaking: si el visitante tiene en su binder cartas que el usuario del
   // perfil busca, mostramos el banner "¡Oportunidad de Match!".
   let matchCount = 0
@@ -295,6 +329,7 @@ export default async function UserProfilePage({
       matchCount={matchCount}
       isOwnProfile={user?.id === profile.id}
       pokedex={pokedex}
+      trainerScore={trainerScore}
     />
   )
 }

@@ -10,6 +10,8 @@ import { buildSwapOfferUrl } from '@/lib/matchmaking'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
 import { REVIEW_TAGS } from '@/lib/reputation'
 import { pokedexLevel } from '@/lib/pokedex'
+import type { TrainerScore } from '@/lib/trainer'
+import TrainerScoreCard from './TrainerScoreCard'
 import { createClient } from '@/lib/supabase/client'
 import { ChatIcon, CheckIcon, ShareIcon } from '@/components/icons'
 import type { ExploreCard } from '@/app/api/public/explore/route'
@@ -62,6 +64,8 @@ interface UserProfileViewProps {
   isOwnProfile: boolean
   /** Especies Pokémon capturadas en los binders + total del catálogo */
   pokedex?: { captured: number; total: number } | null
+  /** Puntos de Entrenador (XP + rango) calculados server-side */
+  trainerScore?: TrainerScore
 }
 
 function Stars({ rating }: { rating: number }) {
@@ -137,7 +141,8 @@ export default function UserProfileView({
   reviews,
   matchCount,
   isOwnProfile,
-  pokedex
+  pokedex,
+  trainerScore
 }: UserProfileViewProps) {
   // Tab inicial desde la URL (?tab=settings) para que "Configurar perfil"
   // aterrice directo en la configuración del perfil propio.
@@ -351,6 +356,9 @@ export default function UserProfileView({
             </div>
           </div>
         )}
+
+        {/* Puntos de Entrenador: XP unificada por actividad (cosmético) */}
+        {trainerScore && <TrainerScoreCard score={trainerScore} />}
 
         {/* Banner de matchmaking: el visitante tiene cartas que este perfil busca */}
         {matchCount > 0 && !isOwnProfile && (

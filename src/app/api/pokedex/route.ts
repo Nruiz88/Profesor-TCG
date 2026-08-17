@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { countCatalogPokemonSpecies, getCardMetadataMap } from '@/lib/catalog'
 import { speciesFromCardName } from '@/lib/pokedex'
+import { computeTrainerScore } from '@/lib/trainer'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,7 +48,43 @@ export async function GET() {
     }
 
     const total = await countCatalogPokemonSpecies()
-    return NextResponse.json({ captured, total })
+
+    // Score de entrenador (XP + rango): mismas reglas que el perfil público,
+    // con las capturas de arriba + claims completados + reseñas recibidas.
+    const [{ data: completedClaims }, { count: reviewCount }] = await Promise.all([
+      supabase
+        .from('claims')
+        .select('kind, buyer_id, seller_id')
+        .or(`seller_id.eq.${user.id},buyer_id.eq.${user.id}`)
+        .eq('status', 'completed')
+        .limit(1000),
+      supabase
+        .from('reviews')
+        .select('id', { count: 'exact', head: true })
+        .eq('reviewed_user_id', user.id)
+    ])
+
+    let completedSales = 0
+    let completedTrades = 0
+    let completedBuys = 0
+    for (const c of completedClaims || []) {
+      const row = c as { kind: string; buyer_id: string; seller_id: string }
+      if (row.seller_id === user.id) {
+        if (row.kind === 'sale' || row.kind === 'both') completedSales++
+        if (row.kind === 'trade' || row.kind === 'both') completedTrades++
+      }
+      if (row.buyer_id === user.id) completedBuys++
+    }
+
+    const trainer = computeTrainerScore({
+      capturedSpecies: captured,
+      completedSales,
+      completedTrades,
+      completedBuys,
+      reviewCount: reviewCount ?? 0
+    })
+
+    return NextResponse.json({ captured, total, trainer })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
     return NextResponse.json({ error: message }, { status: 500 })
