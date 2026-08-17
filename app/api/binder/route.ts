@@ -76,11 +76,14 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Binder no encontrado' }, { status: 404 })
       }
     } else {
-      // Aseguramos el binder del usuario autenticado
+      // Aseguramos el binder del usuario autenticado: el más antiguo (mismo
+      // orden que getUserBinders, que lista las carpetas por created_at asc)
       const { data: existing } = await supabase
         .from('binders')
         .select(BINDER_SELECT)
         .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
         .limit(1)
       let b = existing?.[0] ?? null
 
