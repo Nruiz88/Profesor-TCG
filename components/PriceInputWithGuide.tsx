@@ -5,8 +5,9 @@ import type { SlotCard } from '@/lib/sheets'
 import type { CardLanguage } from '@/lib/cardLanguage'
 import { normalizeLanguage } from '@/lib/cardLanguage'
 import {
+  buildCardmarketUrl,
+  buildEbayUrl,
   buildPriceChartingUrl,
-  buildTcgplayerUrl,
   CURRENCIES,
   normalizeCurrency,
   type Currency
@@ -52,18 +53,29 @@ export default function PriceInputWithGuide({
 
   const hasAutoPrice = card.market_price != null && card.market_price > 0
 
-  const guideUrl = buildPriceChartingUrl({
-    cardName: card.card_name,
-    setId: card.set_id,
-    number: card.number,
-    language
-  })
-  const tcgUrl = buildTcgplayerUrl({
-    cardName: card.card_name,
-    setId: card.set_id,
-    number: card.number,
-    language
-  })
+  const guideUrls = {
+    priceCharting: buildPriceChartingUrl({
+      cardName: card.card_name,
+      setId: card.set_id,
+      set_name: card.set_name,
+      number: card.number,
+      language
+    }),
+    ebay: buildEbayUrl({
+      cardName: card.card_name,
+      setId: card.set_id,
+      set_name: card.set_name,
+      number: card.number,
+      language
+    }),
+    cardmarket: buildCardmarketUrl({
+      cardName: card.card_name,
+      setId: card.set_id,
+      set_name: card.set_name,
+      number: card.number,
+      language
+    })
+  }
 
   function handleLanguage(lang: CardLanguage) {
     setLanguage(lang)
@@ -130,28 +142,36 @@ export default function PriceInputWithGuide({
         <LanguagePills value={language} onChange={handleLanguage} />
       </div>
 
-      {/* B. Guía de referencia externa: PriceCharting + TCGplayer */}
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      {/* B. Guía de referencia externa: PriceCharting + eBay + Cardmarket */}
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
         <a
-          href={guideUrl}
+          href={guideUrls.priceCharting}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-2.5 text-sm font-semibold text-sky-300 transition-colors hover:bg-sky-500/20"
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-2.5 text-sm font-semibold text-sky-300 transition-colors hover:bg-sky-500/20"
         >
-          🔍 Ver en PriceCharting ↗
+          🔍 PriceCharting ↗
         </a>
         <a
-          href={tcgUrl}
+          href={guideUrls.ebay}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-2.5 text-sm font-semibold text-sky-300 transition-colors hover:bg-sky-500/20"
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/20"
         >
-          🛒 Ver en TCGplayer ↗
+          🛒 eBay (ventas) ↗
+        </a>
+        <a
+          href={guideUrls.cardmarket}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm font-semibold text-amber-300 transition-colors hover:bg-amber-500/20"
+        >
+          🏷️ Cardmarket ↗
         </a>
       </div>
       <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
         Abren la búsqueda de tu carta exacta (nombre, set y número) en cada referencia para copiar
-        el precio.
+        el precio. eBay muestra ventas reales — ideal para cartas importadas o ediciones especiales.
       </p>
 
       {/* C. Precio manual + moneda + guardado */}

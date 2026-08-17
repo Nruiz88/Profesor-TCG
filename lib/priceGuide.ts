@@ -30,48 +30,77 @@ export function formatPrice(value: number, currency: unknown): string {
   return `$${n}`
 }
 
+// Metadatos comunes para armar búsquedas externas: nombre + número + set
+// (nombre si está disponible, si no el código), con el calificador de idioma
+// para copias que no sean inglés (TCGplayer, eBay y Cardmarket separan idiomas).
+function queryParts(opts: {
+  cardName: string
+  setId: string
+  set_name?: string | null
+  number: string
+  language?: string | null
+}, langWord: string | null): string[] {
+  const set = (opts.set_name ?? '').trim() || opts.setId.toUpperCase()
+  const parts = [opts.cardName, opts.number, set]
+  if (langWord) parts.push(langWord)
+  return parts.filter(Boolean)
+}
+
+// Palabra de idioma para eBay / Cardmarket: separan todas las impresiones.
+// PriceCharting solo separa japonés, así que esa URL pasa null salvo para JP.
+function languageWordFor(opts: {
+  language?: string | null
+}, onlyJapanese = false): string | null {
+  if (!opts.language || !isCardLanguage(opts.language)) return null
+  if (onlyJapanese) return opts.language === 'JP' ? 'Japanese' : null
+  return LANGUAGE_WORD[opts.language]
+}
+
+const LANGUAGE_WORD: Record<CardLanguage, string | null> = {
+  ES: 'Spanish',
+  EN: null,
+  JP: 'Japanese',
+  KO: 'Korean',
+  ZH: 'Chinese'
+}
+
 // Deep link explícito a la búsqueda de referencia en PriceCharting, armado con
 // los metadatos de la carta. Para copias japonesas se agrega el calificador
 // "Japanese" (PriceCharting separa esos precios en su propia serie).
 export function buildPriceChartingUrl(opts: {
   cardName: string
   setId: string
+  set_name?: string | null
   number: string
   language?: string | null
 }): string {
-  const q = [
-    opts.cardName,
-    opts.setId.toUpperCase(),
-    opts.number,
-    opts.language === 'JP' ? 'Japanese' : ''
-  ]
-    .filter(Boolean)
-    .join(' ')
-  return `https://www.pricecharting.com/search-products?q=${encodeURIComponent(q)}`
+  const q = queryParts(opts, languageWordFor(opts, true))
+  return `https://www.pricecharting.com/search-products?q=${encodeURIComponent(q.join(' '))}`
 }
 
-// TCGplayer no filtra por idioma en el texto de búsqueda: usa el parámetro
-// de query `Language=` (ej: ?q=Pikachu%20151&Language=English), igual que el
-// deep link de un producto como el que genera el propio sitio.
-const TCGPLAYER_LANGUAGE: Record<CardLanguage, string> = {
-  ES: 'Spanish',
-  EN: 'English',
-  JP: 'Japanese',
-  KO: 'Korean',
-  ZH: 'Chinese'
-}
-
-export function buildTcgplayerUrl(opts: {
+// eBay: búsqueda directa de la carta en ventas REALES (sold + completed), que
+// es la referencia más fiable para cartas importadas y ediciones especiales
+// (JP/KO/ZH) que TCGplayer no cubre. Funciona sin API key.
+export function buildEbayUrl(opts: {
   cardName: string
   setId: string
+  set_name?: string | null
   number: string
   language?: string | null
 }): string {
-  const q = [opts.cardName, opts.number].filter(Boolean).join(' ')
-  const lang =
-    opts.language && isCardLanguage(opts.language)
-      ? TCGPLAYER_LANGUAGE[opts.language]
-      : null
-  const langParam = lang ? `&Language=${encodeURIComponent(lang)}` : ''
-  return `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(q)}${langParam}`
+  const q = queryParts(opts, languageWordFor(opts)).join(' ')
+  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(q)}&LH_Sold=1&LH_Complete=1`
+}
+
+// Cardmarket: búsqueda directa de singles (mercado europeo, buenos precios
+// para cartas en inglés y español). Funciona sin API key.
+export function buildCardmarketUrl(opts: {
+  cardName: string
+  setId: string
+  set_name?: string | null
+  number: string
+  language?: string | null
+}): string {
+  const q = queryParts(opts, languageWordFor(opts)).join(' ')
+  return `https://www.cardmarket.com/en/Pokemon/Products/Singles?searchString=${encodeURIComponent(q)}`
 }

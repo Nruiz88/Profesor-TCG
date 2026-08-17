@@ -6,6 +6,7 @@ export interface RawCard {
   card_id: string
   card_name: string
   set_id: string
+  set_name?: string | null
   number: string
   slot_number: number
   market_price: number | null

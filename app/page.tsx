@@ -94,19 +94,34 @@ const STEPS = [
     n: '1',
     icon: CardsIcon,
     title: 'Armá tu Binder 3D',
-    text: 'Digitalizá tu álbum físico en minutos, con precios de mercado en tiempo real.'
+    text: 'Digitalizá tu álbum físico en minutos, con precios de mercado en tiempo real.',
+    tag: '1 minuto',
+    gradient: 'from-rose-500 to-orange-400',
+    glow: 'hover:shadow-rose-500/15',
+    href: '/login',
+    cta: 'Empezar gratis'
   },
   {
     n: '2',
     icon: SwapIcon,
     title: 'Publicá o Intercambiá',
-    text: 'Marcá tus cartas en venta o proponé cambios 1v1 comparando valores automáticamente.'
+    text: 'Marcá tus cartas en venta o proponé cambios 1v1 comparando valores automáticamente.',
+    tag: 'Venta o trueque',
+    gradient: 'from-sky-500 to-cyan-400',
+    glow: 'hover:shadow-sky-500/15',
+    href: '/explore',
+    cta: 'Ver el mercado'
   },
   {
     n: '3',
     icon: ChatIcon,
     title: 'Cerrá por WhatsApp',
-    text: 'Generá tu kit de claim (texto o imagen 1080×1080), compartí el link y coordiná directo con el comprador, sin comisiones.'
+    text: 'Generá tu kit de claim (texto o imagen 1080×1080), compartí el link y coordiná directo con el comprador, sin comisiones.',
+    tag: 'Sin comisiones',
+    gradient: 'from-emerald-500 to-teal-400',
+    glow: 'hover:shadow-emerald-500/15',
+    href: '/explore',
+    cta: 'Ver un ejemplo'
   }
 ]
 
@@ -318,28 +333,72 @@ export default async function LandingPage() {
       </section>
 
       {/* Cómo funciona */}
-      <section className="mx-auto max-w-6xl px-4 py-20">
-        <h2 className="text-center text-3xl font-bold tracking-tight text-white">
-          Del álbum físico al trato cerrado en 3 pasos
-        </h2>
-        <div className="mt-14 grid gap-10 sm:grid-cols-3">
-          {STEPS.map((s) => (
-            <div key={s.n} className="relative text-center">
-              <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-binder-accent/30 bg-binder-accent/10 text-binder-accent">
-                <s.icon width={26} height={26} strokeWidth={1.7} />
-                <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-binder-accent text-xs font-bold text-white shadow-lg shadow-rose-900/40">
-                  {s.n}
+      <section className="relative overflow-hidden border-t border-slate-800/60 bg-slate-900/40 py-20 sm:py-24">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(56,189,248,0.06),transparent_55%)]"
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto max-w-6xl px-4">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-binder-accent">
+              <SwapIcon width={14} height={14} />
+              Cómo funciona
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Del álbum físico al trato cerrado en{' '}
+              <span className="bg-gradient-to-r from-binder-accent to-amber-400 bg-clip-text text-transparent">
+                3 pasos
+              </span>
+            </h2>
+            <p className="mt-4 leading-relaxed text-slate-400">
+              Digitalizá, publicá y cerrá el trato directo por WhatsApp: sin comisiones ni
+              intermediarios.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {STEPS.map((s) => (
+              <Link
+                key={s.n}
+                href={s.href}
+                className={`group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-slate-600 hover:shadow-2xl ${s.glow}`}
+              >
+                {/* Glow difuso de la esquina al hover */}
+                <div
+                  className={`pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${s.gradient} opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-25`}
+                  aria-hidden="true"
+                />
+
+                <div className="flex items-start justify-between gap-3">
+                  <span className="relative">
+                    <span
+                      className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${s.gradient} text-white shadow-lg`}
+                    >
+                      <s.icon width={24} height={24} strokeWidth={1.7} />
+                    </span>
+                    <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white shadow ring-1 ring-slate-700">
+                      {s.n}
+                    </span>
+                  </span>
+                  <span className="rounded-full border border-slate-700/70 bg-slate-800/60 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                    {s.tag}
+                  </span>
+                </div>
+
+                <h3 className="mt-5 text-base font-semibold text-white">{s.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{s.text}</p>
+
+                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-binder-accent transition-colors group-hover:text-rose-400">
+                  {s.cta}
+                  <ArrowRightIcon
+                    width={15}
+                    height={15}
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  />
                 </span>
-              </div>
-              <h3 className="mt-5 text-base font-semibold text-white">{s.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">{s.text}</p>
-              {s.n !== '3' && (
-                <span className="absolute right-[-28px] top-8 hidden text-slate-700 sm:block">
-                  <ArrowRightIcon width={22} height={22} />
-                </span>
-              )}
-            </div>
-          ))}
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getCardMetadataMap } from '@/lib/catalog'
+import { getCardMetadataMap, getSets } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
 
 export const dynamic = 'force-dynamic'
@@ -43,6 +43,8 @@ export async function GET(req: Request) {
       if (error) throw error
 
       const meta = await getCardMetadataMap()
+      const sets = await getSets()
+      const setNameById = new Map(sets.map((s) => [s.id, s.name]))
       const enriched = await Promise.all(
         (cards || []).map(async (c) => {
           const m = meta.get(c.card_id)
@@ -52,6 +54,7 @@ export async function GET(req: Request) {
             supertype: m?.supertype ?? null,
             subtypes: m?.subtypes ?? null,
             types: m?.types ?? null,
+            set_name: setNameById.get(c.set_id) ?? c.set_id,
             image: await resolveCardImage(c.set_id, c.number)
           }
         })
@@ -104,6 +107,8 @@ export async function GET(req: Request) {
 
     // Enriquecer con metadata del catálogo para el render de la carta (rarity, subtypes, etc.)
     const meta = await getCardMetadataMap()
+    const sets = await getSets()
+    const setNameById = new Map(sets.map((s) => [s.id, s.name]))
     const enriched = await Promise.all(
       (cards || []).map(async (c) => {
         const m = meta.get(c.card_id)
@@ -113,6 +118,7 @@ export async function GET(req: Request) {
           supertype: m?.supertype ?? null,
           subtypes: m?.subtypes ?? null,
           types: m?.types ?? null,
+          set_name: setNameById.get(c.set_id) ?? c.set_id,
           // pokemontcg.io sirve el reverso de la carta en lugar de 404 limpio:
           // resolvemos la imagen real o un placeholder "Sin imagen"
           image: await resolveCardImage(c.set_id, c.number)
