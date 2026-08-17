@@ -8,11 +8,13 @@ import { sanitizeComment } from '@/lib/sanitize'
 // ============================================================================
 // createReviewAction — cierra una transacción con reseña:
 //   1. Inserta el registro en `reviews` (una por transacción y participante).
-//   2. Marca el `claims` como 'completed'.
+//   2. Marca el `claims` como 'completed' (si aún estaba pendiente).
 //   3. Recalcula rating_avg e incrementa total_sales / total_trades del
 //      usuario calificado (sale si el claim era de venta, trade si era cambio).
 // Todo se valida en el servidor: participación real, sin auto-calificación,
-// rating 1-5 y tags permitidos.
+// rating 1-5 y tags permitidos. Cada participante califica una sola vez por
+// transacción (unique claim_id+reviewer_id); los claims ya completados por el
+// vendedor ("Marcar vendida") siguen siendo calificables por la otra parte.
 //
 // Seguridad: el comentario se sanitiza del lado del servidor con
 // sanitizeComment (escape de <>"'& + máx 500) JUSTO ANTES del .insert(),
@@ -61,9 +63,9 @@ export async function createReviewAction(
     if (claim.buyer_id !== user.id && claim.seller_id !== user.id) {
       return { ok: false, error: 'No participaste en esta transacción' }
     }
-    if (claim.status === 'completed') {
-      return { ok: false, error: 'Esta transacción ya fue confirmada' }
-    }
+    // La transacción puede estar 'pending' o ya 'completed' (por ejemplo, si el
+    // vendedor la cerró con "Marcar vendida"): cada participante califica una
+    // sola vez, y el unique (claim_id, reviewer_id) impide duplicados.
 
     // 2) Se califica a la contraparte (nunca a uno mismo)
     const reviewedUserId = input.reviewedUserId

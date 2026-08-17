@@ -46,6 +46,10 @@ export type CreateClaimResult =
   | { success: true; claimId: string; whatsappUrl: string }
   | { success: false; error: string }
 
+export type CompleteSaleResult =
+  | { ok: true; completedClaims: number }
+  | { ok: false; error: string }
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function createClaimAction(
@@ -164,5 +168,101 @@ export async function createClaimAction(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
     return { success: false, error: message }
+  }
+}
+
+// ============================================================================
+// completeSaleAction — el vendedor cierra la venta de una carta reservada:
+//   1. Autenticación de servidor (dueño del binder).
+//   2. La carta debe existir, pertenecer al usuario y estar 'reserved'.
+//   3. Sale de circulación: status 'collection', sin venta/cambio y sin soft lock.
+//   4. Cierra los claims pendientes de esa carta donde el usuario es vendedor
+//      (status 'completed' + completed_at) para que ambas partes puedan
+//      confirmar y calificar desde "Mis transacciones".
+// ============================================================================
+export async function completeSaleAction(input: {
+  cardId: string
+}): Promise<CompleteSaleResult> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser()
+  if (authError || !user) return { ok: false, error: 'Necesitás iniciar sesión' }
+
+  const cardId = typeof input.cardId === 'string' ? input.cardId.trim() : ''
+  if (!UUID_RE.test(cardId)) {
+    return { ok: false, error: 'Identificador de carta inválido' }
+  }
+
+  try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    if (!serviceKey || !url) {
+      return { ok: false, error: 'Servicio no disponible' }
+    }
+    const admin = createAdminClient(url, serviceKey)
+
+    // La carta debe existir, estar reservada y pertenecer al usuario.
+    const { data: card, error: cardError } = await admin
+      .from('binder_cards')
+      .select('id, binder_id, status')
+      .eq('id', cardId)
+      .maybeSingle()
+    if (cardError) throw cardError
+    if (!card) return { ok: false, error: 'Carta no encontrada' }
+
+    const { data: binder, error: binderError } = await admin
+      .from('binders')
+      .select('user_id')
+      .eq('id', card.binder_id)
+      .maybeSingle()
+    if (binderError) throw binderError
+    if (!binder || binder.user_id !== user.id) {
+      return { ok: false, error: 'Esta carta no es tuya' }
+    }
+    if (card.status !== 'reserved') {
+      return { ok: false, error: 'La carta no está reservada' }
+    }
+
+    // Sale de circulación: queda en la colección, sin venta/cambio y sin lock.
+    const { error: updateError } = await admin
+      .from('binder_cards')
+      .update({
+        status: 'collection',
+        is_for_sale: false,
+        is_for_trade: false,
+        reserved_until: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', cardId)
+    if (updateError) throw updateError
+
+    // Cierra los claims pendientes de esta carta donde el usuario vende.
+    const { data: pending, error: claimsError } = await admin
+      .from('claims')
+      .select('id')
+      .eq('card_id', cardId)
+      .eq('seller_id', user.id)
+      .eq('status', 'pending')
+    if (claimsError) throw claimsError
+
+    let completedClaims = 0
+    if (pending && pending.length > 0) {
+      const { error: completeError } = await admin
+        .from('claims')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .in(
+          'id',
+          pending.map((c) => c.id)
+        )
+      if (completeError) throw completeError
+      completedClaims = pending.length
+    }
+
+    return { ok: true, completedClaims }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error desconocido'
+    return { ok: false, error: message }
   }
 }

@@ -23,6 +23,7 @@ import { GlobeIcon, LockIcon, PlusIcon, SparklesIcon } from '@/components/icons'
 import type { WantlistCard } from '@/types/wantlist'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
+import { completeSaleAction } from '@/app/actions/claims'
 import { fetchJson } from '@/lib/utils'
 import type { Profile } from '@/lib/profile'
 import { effectivePrice, type Availability } from '@/lib/cardStatus'
@@ -380,6 +381,22 @@ export default function BinderPage() {
     }
   }
 
+  // Cierre de venta: el vendedor marca la carta reservada como vendida. Sale de
+  // circulación, se completa el claim y ambas partes pueden calificarse.
+  async function markCardSold(cardId: string) {
+    const res = await completeSaleAction({ cardId })
+    if (!res.ok) {
+      setMessage(res.error)
+      return
+    }
+    await loadBinder()
+    setMessage(
+      res.completedClaims > 0
+        ? 'Carta marcada como vendida. La transacción quedó cerrada: podés calificar a la otra parte desde Mis transacciones.'
+        : 'Carta marcada como vendida y quitada de la venta.'
+    )
+  }
+
   async function addCardToSlot(card: SearchResult, language: CardLanguage) {
     if (!binder || !slotTarget) throw new Error('Sin binder o slot objetivo')
 
@@ -643,6 +660,7 @@ export default function BinderPage() {
                       onRemoveSlot={removeSlot}
                       onEmptySlotClick={(slotIndex) => setSlotTarget({ sheetIndex, slotIndex })}
                       onEditCard={setEditCard}
+                      onMarkSold={markCardSold}
                       onCardUpdated={() => loadBinder()}
                     />
                   )

@@ -17,6 +17,8 @@ interface BinderSheetProps {
   onRemoveSlot?: (slotId: string) => void
   onEmptySlotClick?: (slotIndex: number) => void
   onEditCard?: (card: SlotCard) => void
+  /** Cierra la venta de una carta reservada (solo vista del dueño) */
+  onMarkSold?: (cardId: string) => void
   /** Refresca el binder tras guardar idioma/precio manual desde el detalle */
   onCardUpdated?: () => void
   seller?: SellerInfo | null
@@ -29,6 +31,7 @@ export default function BinderSheet({
   onRemoveSlot,
   onEmptySlotClick,
   onEditCard,
+  onMarkSold,
   onCardUpdated,
   seller,
   highlightCardId
@@ -140,6 +143,25 @@ export default function BinderSheet({
                     aria-label={`Editar ${card.card_name}`}
                   >
                     Editar
+                  </button>
+                )}
+
+                {onEditCard && onMarkSold && normalizeStatus(card.status) === 'reserved' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (
+                        window.confirm(
+                          `¿Marcar "${card.card_name}" como vendida? Sale de la venta, se cierra la reserva y podés calificar a la otra parte.`
+                        )
+                      ) {
+                        onMarkSold(card.id)
+                      }
+                    }}
+                    className="absolute left-1.5 top-9 rounded-full bg-emerald-600/90 px-2 py-1 text-[10px] font-bold text-white opacity-0 shadow-md transition-opacity hover:bg-emerald-500 group-hover:opacity-100"
+                    aria-label={`Marcar ${card.card_name} como vendida`}
+                  >
+                    ✔ Vendida
                   </button>
                 )}
               </div>

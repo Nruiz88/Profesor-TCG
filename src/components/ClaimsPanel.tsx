@@ -82,6 +82,11 @@ export default function ClaimsPanel({ onClose }: ClaimsPanelProps) {
   }, [onClose])
 
   const pending = (claims ?? []).filter((c) => c.status === 'pending')
+  // Cerradas por el vendedor ("Marcar vendida") pero todavía sin calificar por mí
+  const unreviewed = (claims ?? []).filter(
+    (c) => c.status === 'completed' && !c.reviewedByMe
+  )
+  const actionCount = pending.length + unreviewed.length
 
   return (
     <div
@@ -109,10 +114,10 @@ export default function ClaimsPanel({ onClose }: ClaimsPanelProps) {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
-          {pending.length > 0 && (
+          {actionCount > 0 && (
             <p className="mb-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-200/80">
-              Tenés <strong>{pending.length}</strong> transacción{pending.length !== 1 ? 'es' : ''}{' '}
-              pendiente{pending.length !== 1 ? 's' : ''} de confirmar tras coordinarla por
+              Tenés <strong>{actionCount}</strong> transacción
+              {actionCount !== 1 ? 'es' : ''} por confirmar o calificar tras coordinarla por
               WhatsApp.
             </p>
           )}
@@ -168,19 +173,21 @@ export default function ClaimsPanel({ onClose }: ClaimsPanelProps) {
                     · {KIND_LABEL[c.kind] ?? c.kind} · {formatDate(c.created_at)}
                   </p>
 
-                  {c.status === 'pending' && (
+                  {(c.status === 'pending' || (c.status === 'completed' && !c.reviewedByMe)) && (
                     <button
                       onClick={() => setConfirming(c)}
                       className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
                     >
-                      ✓ Confirmar transacción y calificar
+                      {c.status === 'completed'
+                        ? '⭐ Calificar y cerrar'
+                        : '✓ Confirmar transacción y calificar'}
                     </button>
                   )}
 
-                  {c.status === 'completed' && (
+                  {c.status === 'completed' && c.reviewedByMe && (
                     <p className="mt-3 flex items-center gap-1.5 text-xs text-emerald-400">
                       <CheckIcon className="h-3.5 w-3.5" />
-                      Confirmada{c.reviewedByMe ? ' · ya la calificaste' : ''}
+                      Confirmada · ya la calificaste
                     </p>
                   )}
                 </li>
