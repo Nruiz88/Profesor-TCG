@@ -1,6 +1,11 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
 import { buildWhatsAppLink, sanitizeWhatsAppText } from '@/lib/whatsapp'
 import type { WantlistMatch } from '@/types/wantlist'
+
+// Cliente mínimo compatible con el cliente RLS y el de service role: ambos
+// exponen .from(table) con la misma cadena (mismo patrón que explore/route).
+type QueryClient = {
+  from: (table: string) => any
+}
 
 // ---------------------------------------------------------------------------
 // Matchmaking: comparar la wantlist del comprador contra las cartas en venta
@@ -11,7 +16,7 @@ import type { WantlistMatch } from '@/types/wantlist'
 export async function findWantlistMatches(
   buyerId: string,
   sellerId: string,
-  client: SupabaseClient
+  client: QueryClient
 ): Promise<WantlistMatch[]> {
   const { data: wantlist } = await client
     .from('wantlist_cards')
@@ -23,7 +28,7 @@ export async function findWantlistMatches(
     .from('binders')
     .select('id')
     .eq('user_id', sellerId)
-  const binderIds = (binders || []).map((b) => b.id)
+  const binderIds = (binders || []).map((b: { id: string }) => b.id)
   if (binderIds.length === 0) return []
 
   const { data: sellerCards } = await client
