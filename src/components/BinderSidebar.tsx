@@ -24,6 +24,7 @@ import {
   XIcon
 } from '@/components/icons'
 import { formatLocation, isProfileComplete, type Profile } from '@/lib/profile'
+import { pokedexLevel } from '@/lib/pokedex'
 
 interface SidebarBinder {
   id: string
@@ -42,6 +43,8 @@ interface BinderSidebarProps {
   saleCount: number
   tradeCount: number
   updating: boolean
+  /** Especies Pokémon capturadas en todos los binders + total del catálogo */
+  pokedex?: { captured: number; total: number } | null
   onSelectBinder: (binderId: string) => void
   onCreateBinder: () => void
   onEditBinder: () => void
@@ -73,6 +76,7 @@ export default function BinderSidebar({
   saleCount,
   tradeCount,
   updating,
+  pokedex,
   onSelectBinder,
   onCreateBinder,
   onEditBinder,
@@ -209,6 +213,33 @@ export default function BinderSidebar({
                 </div>
               ))}
             </div>
+
+            {/* Pokédex: especies capturadas en todos los binders (cosmético) */}
+            {pokedex && pokedex.total > 0 && (
+              <div className="border-b border-slate-800/80 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                    <span className="text-sm leading-none">⚡</span>
+                    Pokédex
+                  </p>
+                  <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-300">
+                    {pokedexLevel(pokedex.captured).icon} {pokedexLevel(pokedex.captured).name}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-sm font-bold text-white">
+                  {pokedex.captured}{' '}
+                  <span className="text-xs font-medium text-slate-500">
+                    de {pokedex.total} Pokémon capturados
+                  </span>
+                </p>
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-400"
+                    style={{ width: `${Math.min(100, (pokedex.captured / pokedex.total) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Colecciones */}
             <div className="border-b border-slate-800/80 p-3">

@@ -46,7 +46,8 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith('/api/binder') ||
       pathname.startsWith('/api/offers') ||
       pathname.startsWith('/api/admin') ||
-      pathname === '/api/profile')
+      pathname === '/api/profile' ||
+      pathname === '/api/pokedex')
   ) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'

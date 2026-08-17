@@ -64,6 +64,7 @@ export default function BinderPage() {
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [settingsModal, setSettingsModal] = useState<'create' | 'edit' | null>(null)
   const [showClaims, setShowClaims] = useState(false)
+  const [pokedex, setPokedex] = useState<{ captured: number; total: number } | null>(null)
   const [tab, setTab] = useState<BinderTab>('collection')
   const [wantlist, setWantlist] = useState<WantlistCard[]>([])
   const [wantlistLoading, setWantlistLoading] = useState(false)
@@ -107,6 +108,18 @@ export default function BinderPage() {
       // perfil no disponible
     }
     return null
+  }, [])
+
+  const loadPokedex = useCallback(async () => {
+    try {
+      const res = await fetch('/api/pokedex')
+      const data = await res.json()
+      if (res.ok && typeof data.captured === 'number') {
+        setPokedex({ captured: data.captured, total: data.total ?? 0 })
+      }
+    } catch {
+      // la Pokédex es decorativa: si falla, el sidebar simplemente no la muestra
+    }
   }, [])
 
   const loadWantlist = useCallback(async () => {
@@ -176,8 +189,9 @@ export default function BinderPage() {
     })
     loadBinder()
     loadProfile()
+    loadPokedex()
     loadWantlist()
-  }, [loadBinder, loadBinders, loadProfile, loadWantlist])
+  }, [loadBinder, loadBinders, loadProfile, loadPokedex, loadWantlist])
 
   async function selectBinder(binderId: string) {
     setLoading(true)
@@ -429,6 +443,7 @@ export default function BinderPage() {
               saleCount={saleCount}
               tradeCount={tradeCount}
               updating={updating}
+              pokedex={pokedex}
               onSelectBinder={selectBinder}
               onCreateBinder={() => setSettingsModal('create')}
               onEditBinder={() => setSettingsModal('edit')}
