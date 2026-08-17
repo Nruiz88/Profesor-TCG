@@ -11,7 +11,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { resolveCardImage } from '@/lib/cardImage'
 import { effectivePrice } from '@/lib/cardStatus'
-import { getSets } from '@/lib/catalog'
+import { countCatalogPokemonSpecies, getCardMetadataMap, getSets } from '@/lib/catalog'
+import { speciesFromCardName } from '@/lib/pokedex'
 
 export interface OgBinderData {
   title: string
@@ -33,6 +34,20 @@ export interface OgCardData {
   image: string
   username: string | null
   isReserved: boolean
+}
+
+export interface OgProfileData {
+  username: string
+  ratingAvg: number | null
+  reviewCount: number
+  completedClaims: number
+  activeListings: number
+  totalCards: number
+  pokedexCaptured: number | null
+  pokedexTotal: number | null
+  city: string | null
+  country: string | null
+  isVerified: boolean
 }
 
 interface BinderCardRow {
@@ -189,5 +204,90 @@ export async function getCardOgData(cardId: string): Promise<OgCardData | null> 
     image: await resolveCardImage(card.set_id, card.number),
     username: owner?.username ?? null,
     isReserved: card.status === 'reserved'
+  }
+}
+
+// Datos para el OG de un perfil público (reputación + colección). Espeja los
+// conteos del perfil: rating/reviews, transacciones completadas, cartas
+// totales, listados activos y la Pokédex del usuario.
+export async function getProfileOgData(username: string): Promise<OgProfileData | null> {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!serviceKey || !url) return null
+  const admin = createAdminClient(url, serviceKey)
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('id, username, city, country, is_verified')
+    .eq('username', username.toLowerCase())
+    .maybeSingle()
+  if (!profile) return null
+
+  const { data: binders } = await admin.from('binders').select('id').eq('user_id', profile.id)
+  const binderIds = (binders || []).map((b) => b.id as string)
+
+  const [
+    { data: reviewRows },
+    { count: completedClaims },
+    { count: totalCards },
+    { count: activeListings }
+  ] = await Promise.all([
+    admin.from('reviews').select('rating').eq('reviewed_user_id', profile.id),
+    admin
+      .from('claims')
+      .select('id', { count: 'exact', head: true })
+      .or(`seller_id.eq.${profile.id},buyer_id.eq.${profile.id}`)
+      .eq('status', 'completed'),
+    binderIds.length
+      ? admin
+          .from('binder_cards')
+          .select('id', { count: 'exact', head: true })
+          .in('binder_id', binderIds)
+      : Promise.resolve({ count: 0 }),
+    binderIds.length
+      ? admin
+          .from('binder_cards')
+          .select('id', { count: 'exact', head: true })
+          .in('binder_id', binderIds)
+          .or('is_for_sale.eq.true,is_for_trade.eq.true')
+      : Promise.resolve({ count: 0 })
+  ])
+
+  const ratings = (reviewRows || []).map((r) => r.rating as number)
+
+  // Pokédex (cosmético, no debe romper el OG si falla)
+  let pokedexCaptured: number | null = null
+  let pokedexTotal: number | null = null
+  if (binderIds.length > 0) {
+    try {
+      const { data: rows } = await admin
+        .from('binder_cards')
+        .select('card_id')
+        .in('binder_id', binderIds)
+      const meta = await getCardMetadataMap()
+      const species = new Set<string>()
+      for (const r of rows || []) {
+        const m = meta.get((r as { card_id: string }).card_id)
+        if (m && m.supertype === 'Pokémon') species.add(speciesFromCardName(m.name))
+      }
+      pokedexCaptured = species.size
+      pokedexTotal = await countCatalogPokemonSpecies()
+    } catch {
+      // cosmético
+    }
+  }
+
+  return {
+    username: profile.username,
+    ratingAvg: ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null,
+    reviewCount: ratings.length,
+    completedClaims: completedClaims ?? 0,
+    activeListings: activeListings ?? 0,
+    totalCards: totalCards ?? 0,
+    pokedexCaptured,
+    pokedexTotal,
+    city: profile.city,
+    country: profile.country,
+    isVerified: !!profile.is_verified
   }
 }

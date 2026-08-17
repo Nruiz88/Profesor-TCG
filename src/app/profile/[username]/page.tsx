@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
+import { getProfileOgData } from '@/lib/og'
 import { countCatalogPokemonSpecies, getCardMetadataMap, getSets } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
 import { speciesFromCardName } from '@/lib/pokedex'
@@ -11,6 +13,35 @@ import type { ExploreCard } from '@/app/api/public/explore/route'
 import type { WantlistCard } from '@/types/wantlist'
 
 export const dynamic = 'force-dynamic'
+
+// Metadata dinámica del perfil público (og:title/description para WhatsApp)
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ username: string }>
+}): Promise<Metadata> {
+  const { username } = await params
+  const data = await getProfileOgData(username)
+  if (!data) {
+    return { title: 'Perfil · Profesor TCG' }
+  }
+  const title = `@${data.username} · Profesor TCG`
+  const stats = [
+    data.ratingAvg != null ? `★ ${data.ratingAvg.toFixed(1)} (${data.reviewCount})` : 'Sin reseñas',
+    `${data.completedClaims} transacciones`,
+    `${data.totalCards} cartas en el binder`
+  ].join(' · ')
+  const description = `${stats}. ${data.city || data.country ? `Ubicado en ${[data.city, data.country].filter(Boolean).join(', ')}. ` : ''}Coleccionista de Profesor TCG — conocé su colección y coordina por WhatsApp.`
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'profile'
+    }
+  }
+}
 
 // Cliente mínimo compatible con el cliente RLS y el de service role (ambos
 // exponen .from(table) con la misma cadena) — patrón de explore/route.
