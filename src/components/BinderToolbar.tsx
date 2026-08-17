@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRightIcon, PlusIcon, SearchIcon, SwapIcon, TagIcon, XIcon } from './icons'
+import { ArrowRightIcon, SearchIcon, SwapIcon, TagIcon, XIcon } from './icons'
 import { ENERGY_TYPES, TypeIcon } from './TypeIcon'
 import LanguagePills from './LanguagePills'
-import type { SearchResult } from './SlotSearchModal'
+import SearchResultCard from './SearchResultCard'
+import type { SearchResult } from '@/types'
 import type { CardLanguage } from '@/lib/cardLanguage'
 
 interface BinderToolbarProps {
@@ -22,8 +23,6 @@ interface BinderToolbarProps {
   /** Agrega una carta del catálogo al binder (en el bolsillo vacío más próximo) */
   onAddCard: (card: SearchResult, language: CardLanguage) => Promise<void>
 }
-
-const MAX_SUGGESTIONS = 8
 
 // Barra de herramientas del binder: buscador del catálogo completo (nombre o
 // número) que agrega directo al bolsillo vacío más próximo, filtros del visor
@@ -157,7 +156,7 @@ export default function BinderToolbar({
                 onClick={() => setOpen(false)}
                 aria-hidden="true"
               />
-              <div className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
+              <div className="absolute left-0 right-0 top-full z-30 mt-2 w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
                 {loading ? (
                   <p className="px-4 py-4 text-sm text-slate-400">Buscando…</p>
                 ) : error ? (
@@ -168,43 +167,21 @@ export default function BinderToolbar({
                   </p>
                 ) : (
                   <>
-                    <ul className="max-h-80 overflow-y-auto p-2">
-                      {results.slice(0, MAX_SUGGESTIONS).map((card) => (
-                        <li key={card.id}>
-                          <div className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-slate-800/60">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={card.image}
-                              alt={card.name}
-                              loading="lazy"
-                              className="h-14 w-10 shrink-0 rounded-md object-cover"
-                            />
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-white">
-                                {card.name}
-                              </p>
-                              <p className="truncate text-xs text-slate-400">
-                                {card.set_name} · {card.number}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => handleAdd(card)}
-                              disabled={saving !== null}
-                              className="flex shrink-0 items-center gap-1 rounded-xl bg-binder-accent px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-rose-500 disabled:opacity-50"
-                            >
-                              {saving === card.id ? (
-                                'Agregando…'
-                              ) : (
-                                <>
-                                  <PlusIcon width={13} height={13} />
-                                  Agregar
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="max-h-[55vh] overflow-y-auto p-3">
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {results.map((card) => (
+                          <SearchResultCard
+                            key={card.id}
+                            card={card}
+                            busy={saving === card.id}
+                            disabled={saving !== null}
+                            actionLabel="Agregar"
+                            busyLabel="Agregando…"
+                            onSelect={handleAdd}
+                          />
+                        ))}
+                      </div>
+                    </div>
                     <div className="border-t border-slate-800 p-3">
                       <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
                         Idioma de tu copia

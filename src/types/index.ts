@@ -4,3 +4,4 @@
 export * from './card'
 export * from './claim'
 export * from './database.types'
+export * from './search'

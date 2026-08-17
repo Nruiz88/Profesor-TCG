@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import type { SearchResult } from '@/components/SlotSearchModal'
+import type { SearchResult } from '@/types'
 import { ArrowRightIcon, ScaleIcon, SearchIcon, XIcon } from '@/components/icons'
 
 interface SelectedCard extends SearchResult {

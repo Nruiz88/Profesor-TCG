@@ -2,17 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import LanguagePills from './LanguagePills'
+import SearchResultCard from './SearchResultCard'
 import type { CardLanguage } from '@/lib/cardLanguage'
-
-export interface SearchResult {
-  id: string
-  name: string
-  number: string
-  rarity: string | null
-  set_id: string
-  set_name: string
-  image: string
-}
+import type { SearchResult } from '@/types'
 
 interface SlotSearchModalProps {
   slotLabel: string
@@ -120,29 +112,15 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {results.map((card) => (
-              <button
+              <SearchResultCard
                 key={card.id}
-                onClick={() => handleSelect(card)}
+                card={card}
+                busy={saving === card.id}
                 disabled={saving !== null}
-                className="group relative overflow-hidden rounded-lg border border-slate-800 bg-slate-950 text-left transition-colors hover:border-slate-600"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={card.image}
-                  alt={card.name}
-                  loading="lazy"
-                  className="aspect-[63/88] w-full object-cover"
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent px-2 pb-1 pt-6">
-                  <p className="truncate text-[10px] font-semibold text-white">{card.name}</p>
-                  <p className="truncate text-[9px] text-slate-300">
-                    {card.set_name} · {card.number}
-                  </p>
-                </div>
-                <span className="absolute right-1 top-1 rounded-full bg-binder-accent px-2 py-0.5 text-[9px] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
-                  {saving === card.id ? 'Guardando…' : 'Seleccionar'}
-                </span>
-              </button>
+                actionLabel="Seleccionar"
+                busyLabel="Guardando…"
+                onSelect={handleSelect}
+              />
             ))}
           </div>
         </div>
