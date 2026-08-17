@@ -99,6 +99,16 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
             className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200"
           />
 
+          {/* Badge de wantlist (la carta la busca el visitante) */}
+          {card.onWantlist && (
+            <span
+              title="Esta carta está en tu wantlist"
+              className="absolute right-2 top-2 rounded-full border border-white/20 bg-fuchsia-600/90 px-2.5 py-1 text-[11px] font-bold text-white shadow-lg backdrop-blur-md"
+            >
+              🔔 Wantlist
+            </span>
+          )}
+
           {/* Badge superior glassmorphism */}
           <div className="absolute left-2 top-2">
             {isSale ? (

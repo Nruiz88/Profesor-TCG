@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { LogoutIcon, MenuIcon, XIcon } from '@/components/icons'
+import NotificationsBell from './NotificationsBell'
 
 export interface NavUser {
   id: string
@@ -25,6 +26,7 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
   const pathname = usePathname()
   const [user, setUser] = useState<NavUser | null>(initialUser)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [pendingOffers, setPendingOffers] = useState(0)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -48,6 +50,26 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
       subscription.subscription.unsubscribe()
     }
   }, [])
+
+  // Badge de ofertas pendientes recibidas (solo con sesión; se refresca al
+  // navegar para que baje apenas se responde una oferta en /offers).
+  useEffect(() => {
+    if (!user) {
+      setPendingOffers(0)
+      return
+    }
+    let active = true
+    fetch('/api/offers/count')
+      .then(async (res) => {
+        if (!res.ok) return
+        const data = await res.json()
+        if (active) setPendingOffers(data.pending ?? 0)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [user?.id, pathname])
 
   // Cerrar el menú al navegar
   useEffect(() => {
@@ -120,6 +142,14 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
               </Link>
               <Link href="/offers" className={linkClass(active === 'offers')}>
                 Ofertas
+                {pendingOffers > 0 && (
+                  <span
+                    className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white"
+                    title={`${pendingOffers} oferta${pendingOffers !== 1 ? 's' : ''} pendiente${pendingOffers !== 1 ? 's' : ''} de responder`}
+                  >
+                    {pendingOffers > 9 ? '9+' : pendingOffers}
+                  </span>
+                )}
               </Link>
             </>
           )}
@@ -129,6 +159,7 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
         <div className="hidden items-center gap-2 md:flex">
           {user ? (
             <>
+              <NotificationsBell />
               <Link
                 href="/binder"
                 className="hidden max-w-[13rem] truncate rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20 lg:block"
@@ -162,8 +193,10 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
           )}
         </div>
 
-        {/* Menú hamburguesa (mobile) */}
-        <div className="relative md:hidden" ref={menuRef}>
+        {/* Campanita + menú hamburguesa (mobile) */}
+        <div className="flex items-center gap-2 md:hidden">
+          {user && <NotificationsBell />}
+          <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
             aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
@@ -197,6 +230,11 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
                     </Link>
                     <Link href="/offers" className={mobileLinkClass(active === 'offers')}>
                       Ofertas
+                      {pendingOffers > 0 && (
+                        <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
+                          {pendingOffers > 9 ? '9+' : pendingOffers}
+                        </span>
+                      )}
                     </Link>
                   </>
                 )}
@@ -230,6 +268,7 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
               )}
             </div>
           )}
+          </div>
         </div>
       </nav>
     </header>

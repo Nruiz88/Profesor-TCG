@@ -120,6 +120,8 @@ export interface ExploreCard {
   reviewCount: number
   isVerified: boolean
   binder_public: boolean
+  /** true si la carta está en la wantlist del usuario con sesión (badge 🔔). */
+  onWantlist?: boolean
   updated_at: string
 }
 
@@ -164,6 +166,24 @@ export async function GET(req: Request) {
     const cardsClient =
       serviceKey && url ? createAdminClient(url, serviceKey) : supabase
 
+    // Wantlist del usuario con sesión: para marcar con 🔔 las cartas que busca.
+    // La wantlist es pública de lectura; el match es por card_id del catálogo.
+    let requesterId: string | null = null
+    let wantlistCardIds: Set<string> | null = null
+    {
+      const {
+        data: { user: sessionUser }
+      } = await supabase.auth.getUser()
+      if (sessionUser) {
+        requesterId = sessionUser.id
+        const { data: wl } = await supabase
+          .from('wantlist_cards')
+          .select('card_id')
+          .eq('user_id', sessionUser.id)
+        wantlistCardIds = new Set((wl || []).map((w) => w.card_id as string))
+      }
+    }
+
     return await getCards(cardsClient, {
       mode,
       q,
@@ -173,7 +193,9 @@ export async function GET(req: Request) {
       typeFilter,
       languageFilter,
       sort,
-      limit
+      limit,
+      requesterId,
+      wantlistCardIds
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
@@ -193,6 +215,10 @@ async function getCards(
     languageFilter: string
     sort: string
     limit: number
+    /** user_id del visitante con sesión (null si anónimo). */
+    requesterId: string | null
+    /** card_ids de la wantlist del visitante (null si anónimo). */
+    wantlistCardIds: Set<string> | null
   }
 ) {
   // Filtro por disponibilidad usando las flags (is_for_sale / is_for_trade):
@@ -297,6 +323,12 @@ async function getCards(
       reviewCount: reviewCounts.get(r.binders?.user_id ?? '') ?? 0,
       isVerified: !!seller?.is_verified,
       binder_public: !!r.binders?.is_public,
+      // 🔔 Wantlist: solo si el visitante la busca y no es su propia carta
+      onWantlist:
+        opts.wantlistCardIds != null &&
+        opts.requesterId != null &&
+        r.binders?.user_id !== opts.requesterId &&
+        opts.wantlistCardIds.has(r.card_id),
       updated_at: r.updated_at
     })
   }
@@ -311,6 +343,9 @@ async function getCards(
   }
 
   const cards = enriched.slice(0, opts.limit)
+  // Si hay más resultados filtrados de los pedidos, el cliente muestra
+  // "Cargar más" (paginación incremental hasta MAX_LIMIT).
+  const hasMore = enriched.length > opts.limit
 
   // Facets: sets, rarezas y ciudades presentes en el resultado completo
   const setMap = new Map<string, string>()
@@ -326,7 +361,7 @@ async function getCards(
     cities
   }
 
-  return NextResponse.json({ cards, facets })
+  return NextResponse.json({ cards, facets, hasMore })
 }
 
 export interface ExploreBinder {

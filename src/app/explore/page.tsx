@@ -41,6 +41,11 @@ const SORTS = [
 
 const EMPTY_FACETS: ExploreFacets = { sets: [], rarities: [], cities: [] }
 
+// Paginación incremental: la API devuelve hasMore y el cliente pide de a
+// PAGE_SIZE hasta MAX_RESULTS (mismo tope del server).
+const PAGE_SIZE = 60
+const MAX_RESULTS = 120
+
 function SelectField({
   value,
   onChange,
@@ -94,6 +99,13 @@ export default function ExplorePage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [debouncedQ, setDebouncedQ] = useState(initialQ)
 
+  // Paginación: limitRef evita re-crear load() (y re-fetchear) al cargar más;
+  // limit es solo para el estado del botón.
+  const limitRef = useRef(PAGE_SIZE)
+  const [limit, setLimit] = useState(PAGE_SIZE)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => setDebouncedQ(q), 300)
@@ -102,40 +114,58 @@ export default function ExplorePage() {
     }
   }, [q])
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const params = new URLSearchParams({ view })
-      if (view === 'cards') {
-        params.set('mode', mode)
-        if (debouncedQ) params.set('q', debouncedQ)
-        if (setFilter) params.set('set', setFilter)
-        if (rarityFilter) params.set('rarity', rarityFilter)
-        if (cityFilter) params.set('city', cityFilter)
-        if (typeFilter) params.set('type', typeFilter)
-        if (languageFilter) params.set('language', languageFilter)
-        params.set('sort', sort)
+  const load = useCallback(
+    async (append = false) => {
+      if (append) setLoadingMore(true)
+      else setLoading(true)
+      setError(null)
+      try {
+        const params = new URLSearchParams({ view })
+        if (view === 'cards') {
+          params.set('mode', mode)
+          if (debouncedQ) params.set('q', debouncedQ)
+          if (setFilter) params.set('set', setFilter)
+          if (rarityFilter) params.set('rarity', rarityFilter)
+          if (cityFilter) params.set('city', cityFilter)
+          if (typeFilter) params.set('type', typeFilter)
+          if (languageFilter) params.set('language', languageFilter)
+          params.set('limit', String(limitRef.current))
+          params.set('sort', sort)
+        }
+        const res = await fetch(`/api/public/explore?${params.toString()}`)
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Error al cargar')
+        if (view === 'cards') {
+          setCards((prev) => (append ? [...prev, ...(data.cards || [])] : data.cards || []))
+          setFacets(data.facets || EMPTY_FACETS)
+          setHasMore(data.hasMore === true)
+        } else {
+          setBinders(data.binders || [])
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error desconocido')
+      } finally {
+        setLoading(false)
+        setLoadingMore(false)
       }
-      const res = await fetch(`/api/public/explore?${params.toString()}`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error al cargar')
-      if (view === 'cards') {
-        setCards(data.cards || [])
-        setFacets(data.facets || EMPTY_FACETS)
-      } else {
-        setBinders(data.binders || [])
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
-    } finally {
-      setLoading(false)
-    }
-  }, [view, mode, debouncedQ, setFilter, rarityFilter, cityFilter, typeFilter, languageFilter, sort])
+    },
+    [view, mode, debouncedQ, setFilter, rarityFilter, cityFilter, typeFilter, languageFilter, sort]
+  )
 
+  // Cualquier cambio de filtro/vista reinicia la paginación a la primera página
   useEffect(() => {
-    load()
+    limitRef.current = PAGE_SIZE
+    setLimit(PAGE_SIZE)
+    setHasMore(false)
+    void load(false)
   }, [load])
+
+  function loadMore() {
+    if (loadingMore) return
+    limitRef.current = Math.min(limitRef.current + PAGE_SIZE, MAX_RESULTS)
+    setLimit(limitRef.current)
+    void load(true)
+  }
 
   const hasActiveFilters = !!(q || setFilter || rarityFilter || cityFilter || typeFilter || languageFilter)
   const activeMode = MODES.find((m) => m.id === mode) ?? MODES[0]
@@ -359,7 +389,7 @@ export default function ExplorePage() {
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-800/60 pt-3">
             <p className="text-xs text-slate-500">
               {view === 'cards'
-                ? `${cards.length} carta${cards.length !== 1 ? 's' : ''} · ${activeMode.label.toLowerCase()}${typeFilter ? ` · ${ENERGY_TYPES.find((t) => t.id === typeFilter)?.label ?? typeFilter}` : ''}${languageFilter ? ` · ${CARD_LANGUAGE_META[languageFilter as keyof typeof CARD_LANGUAGE_META]?.label ?? languageFilter}` : ''}`
+                ? `${hasMore ? 'Mostrando ' : ''}${cards.length} carta${cards.length !== 1 ? 's' : ''}${hasMore ? '+' : ''} · ${activeMode.label.toLowerCase()}${typeFilter ? ` · ${ENERGY_TYPES.find((t) => t.id === typeFilter)?.label ?? typeFilter}` : ''}${languageFilter ? ` · ${CARD_LANGUAGE_META[languageFilter as keyof typeof CARD_LANGUAGE_META]?.label ?? languageFilter}` : ''}`
                 : `${binders.length} binder${binders.length !== 1 ? 's' : ''} destacado${binders.length !== 1 ? 's' : ''}`}
             </p>
             {hasActiveFilters && (
@@ -389,7 +419,27 @@ export default function ExplorePage() {
               <p className="text-sm font-semibold text-red-400">{error}</p>
             </div>
           ) : view === 'cards' ? (
-            <MarketGrid cards={cards} loading={loading} />
+            <>
+              <MarketGrid cards={cards} loading={loading} />
+              {hasMore && !loading && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-6 py-3 text-sm font-semibold text-slate-200 shadow-lg backdrop-blur transition-colors hover:border-rose-500/50 hover:text-white disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-rose-400" />
+                        Cargando más…
+                      </>
+                    ) : (
+                      <>Cargar más cartas ({limit} de hasta {MAX_RESULTS})</>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <BindersGrid binders={binders} loading={loading} />
           )}

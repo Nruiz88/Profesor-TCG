@@ -81,6 +81,16 @@ export default function MarketGrid({
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </Link>
 
+              {/* Badge flotante superior izquierda: la carta está en tu wantlist */}
+              {card.onWantlist && (
+                <span
+                  className="absolute left-2.5 top-2.5 rounded-full bg-fuchsia-500 px-2 py-1 text-[10px] font-bold text-white shadow-lg shadow-fuchsia-950/50"
+                  title="Esta carta está en tu wantlist"
+                >
+                  🔔 Wantlist
+                </span>
+              )}
+
               {/* Badge flotante superior derecha */}
               {isSale ? (
                 <span className="absolute right-2.5 top-2.5 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-bold text-emerald-950 shadow-lg shadow-emerald-950/50">
