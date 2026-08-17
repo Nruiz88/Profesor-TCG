@@ -5,6 +5,7 @@ import SiteNav from '@/components/SiteNav'
 import MarketGrid, { BindersGrid } from '@/components/MarketGrid'
 import type { ExploreBinder, ExploreCard, ExploreFacets } from '@/app/api/public/explore/route'
 import { ENERGY_TYPES, TypeIcon } from '@/components/TypeIcon'
+import { CARD_LANGUAGES, CARD_LANGUAGE_META } from '@/lib/cardLanguage'
 import { ChevronDownIcon, SearchIcon, XIcon } from '@/components/icons'
 
 type View = 'cards' | 'binders'
@@ -70,6 +71,7 @@ export default function ExplorePage() {
   const [view, setView] = useState<View>('cards')
   const [mode, setMode] = useState<Mode>('all')
   const [typeFilter, setTypeFilter] = useState('')
+  const [languageFilter, setLanguageFilter] = useState('')
   // El buscador arranca con ?q= (deep-link desde la home: "Buscar este Trade").
   // También inicializamos debouncedQ con ese valor para que el PRIMER fetch ya
   // vaya filtrado (evita una carrera donde un fetch sin q pise el resultado).
@@ -112,6 +114,7 @@ export default function ExplorePage() {
         if (rarityFilter) params.set('rarity', rarityFilter)
         if (cityFilter) params.set('city', cityFilter)
         if (typeFilter) params.set('type', typeFilter)
+        if (languageFilter) params.set('language', languageFilter)
         params.set('sort', sort)
       }
       const res = await fetch(`/api/public/explore?${params.toString()}`)
@@ -128,13 +131,13 @@ export default function ExplorePage() {
     } finally {
       setLoading(false)
     }
-  }, [view, mode, debouncedQ, setFilter, rarityFilter, cityFilter, typeFilter, sort])
+  }, [view, mode, debouncedQ, setFilter, rarityFilter, cityFilter, typeFilter, languageFilter, sort])
 
   useEffect(() => {
     load()
   }, [load])
 
-  const hasActiveFilters = !!(q || setFilter || rarityFilter || cityFilter || typeFilter)
+  const hasActiveFilters = !!(q || setFilter || rarityFilter || cityFilter || typeFilter || languageFilter)
   const activeMode = MODES.find((m) => m.id === mode) ?? MODES[0]
 
   return (
@@ -252,6 +255,44 @@ export default function ExplorePage() {
                 </div>
               </div>
 
+              {/* Fila de idiomas */}
+              <div className="mt-4">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                  Idioma
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
+                  <button
+                    onClick={() => setLanguageFilter('')}
+                    className={`shrink-0 rounded-xl border bg-slate-950 px-3 py-2 text-xs font-bold transition-all ${
+                      languageFilter === ''
+                        ? 'scale-105 border-rose-500/60 text-rose-400 ring-2 ring-rose-500/40'
+                        : 'border-slate-800 text-slate-400 hover:border-slate-600 hover:text-white'
+                    }`}
+                  >
+                    Todas
+                  </button>
+                  {CARD_LANGUAGES.map((lang) => {
+                    const active = languageFilter === lang
+                    return (
+                      <button
+                        key={lang}
+                        onClick={() => setLanguageFilter(active ? '' : lang)}
+                        aria-pressed={active}
+                        title={CARD_LANGUAGE_META[lang].label}
+                        className={`shrink-0 rounded-xl border bg-slate-950 px-3 py-2 text-xs font-bold transition-all ${
+                          active
+                            ? 'scale-105 border-rose-500/60 text-rose-400 ring-2 ring-rose-500/40'
+                            : 'border-slate-800 text-slate-400 hover:border-slate-600 hover:text-white'
+                        }`}
+                      >
+                        <span aria-hidden="true">{CARD_LANGUAGE_META[lang].flag}</span>{' '}
+                        {lang}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               {/* Fila inferior: modos + dropdowns */}
               <div className="mt-4 flex flex-wrap items-center gap-2.5">
                 {/* Modos de transacción */}
@@ -318,7 +359,7 @@ export default function ExplorePage() {
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-800/60 pt-3">
             <p className="text-xs text-slate-500">
               {view === 'cards'
-                ? `${cards.length} carta${cards.length !== 1 ? 's' : ''} · ${activeMode.label.toLowerCase()}${typeFilter ? ` · ${ENERGY_TYPES.find((t) => t.id === typeFilter)?.label ?? typeFilter}` : ''}`
+                ? `${cards.length} carta${cards.length !== 1 ? 's' : ''} · ${activeMode.label.toLowerCase()}${typeFilter ? ` · ${ENERGY_TYPES.find((t) => t.id === typeFilter)?.label ?? typeFilter}` : ''}${languageFilter ? ` · ${CARD_LANGUAGE_META[languageFilter as keyof typeof CARD_LANGUAGE_META]?.label ?? languageFilter}` : ''}`
                 : `${binders.length} binder${binders.length !== 1 ? 's' : ''} destacado${binders.length !== 1 ? 's' : ''}`}
             </p>
             {hasActiveFilters && (
@@ -329,6 +370,7 @@ export default function ExplorePage() {
                   setRarityFilter('')
                   setCityFilter('')
                   setTypeFilter('')
+                  setLanguageFilter('')
                   setSort('recent')
                 }}
                 className="flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-white"

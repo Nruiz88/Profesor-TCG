@@ -4,6 +4,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getCardMetadataMap, getSets } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
 import { effectivePrice } from '@/lib/cardStatus'
+import { isCardLanguage } from '@/lib/cardLanguage'
 
 export const dynamic = 'force-dynamic'
 
@@ -137,6 +138,7 @@ export async function GET(req: Request) {
   const rarityFilter = searchParams.get('rarity') ?? ''
   const cityFilter = (searchParams.get('city') ?? '').trim()
   const typeFilter = searchParams.get('type') ?? ''
+  const languageFilter = searchParams.get('language') ?? ''
   const sort = searchParams.get('sort') ?? 'recent'
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '60', 10) || 60, MAX_LIMIT)
 
@@ -160,6 +162,7 @@ export async function GET(req: Request) {
       rarityFilter,
       cityFilter,
       typeFilter,
+      languageFilter,
       sort,
       limit
     })
@@ -178,6 +181,7 @@ async function getCards(
     rarityFilter: string
     cityFilter: string
     typeFilter: string
+    languageFilter: string
     sort: string
     limit: number
   }
@@ -208,6 +212,9 @@ async function getCards(
   }
   if (opts.setFilter) {
     query = query.eq('set_id', opts.setFilter)
+  }
+  if (opts.languageFilter && isCardLanguage(opts.languageFilter)) {
+    query = query.eq('language', opts.languageFilter)
   }
 
   const { data, error } = await query.limit(MAX_LIMIT)
