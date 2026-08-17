@@ -8,6 +8,8 @@ import {
 } from '@/lib/cardStatus'
 import { isCardLanguage } from '@/lib/cardLanguage'
 import { isCurrency } from '@/lib/priceGuide'
+import { effectivePrice } from '@/lib/cardStatus'
+import { notifyWantlistMatches } from '@/lib/notifications'
 
 export const dynamic = 'force-dynamic'
 
@@ -188,10 +190,34 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select(
-        'id, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, reserved_until'
+        'id, card_id, card_name, set_id, number, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, reserved_until'
       )
       .single()
     if (error) throw error
+
+    // Al PUBLICAR (venta/cambio), avisamos a los usuarios con esa carta en su
+    // wantlist. Best-effort: un fallo acá no debe romper la actualización.
+    if (body.availability !== undefined && (data.is_for_sale || data.is_for_trade)) {
+      try {
+        const { data: sellerProfile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .maybeSingle()
+        await notifyWantlistMatches({
+          binderCardId: data.id,
+          cardId: data.card_id,
+          cardName: data.card_name,
+          setId: data.set_id,
+          number: data.number,
+          price: effectivePrice(data.market_price, data.price_override, data.price),
+          sellerId: user.id,
+          sellerUsername: sellerProfile?.username ?? 'coleccionista'
+        })
+      } catch {
+        // silencioso
+      }
+    }
 
     return NextResponse.json({ card: data })
   } catch (err) {
