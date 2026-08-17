@@ -11,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 const BASE = 'https://raw.githubusercontent.com/simeydotme/pokemon-cards-css/main'
 const API = 'https://api.github.com/repos/simeydotme/pokemon-cards-css/git/trees/main?recursive=1'
-const CSS_DIR = join(ROOT, 'app', 'vendor', 'pokemon-cards')
+const CSS_DIR = join(ROOT, 'src', 'app', 'vendor', 'pokemon-cards')
 const IMG_DIR = join(ROOT, 'public', 'vendor', 'pokemon-cards', 'img')
 
 // Orden de concatenación (mismo que index.html del demo)
@@ -91,7 +91,7 @@ async function main() {
   // Reescribir url("/img/...") -> url("/vendor/pokemon-cards/img/...")
   const css = parts.join('\n').replace(/url\((["']?)\/img\//g, 'url($1/vendor/pokemon-cards/img/')
   await writeFile(join(CSS_DIR, 'pokemon-cards.css'), css)
-  console.log(`CSS concatenado: ${(css.length / 1024).toFixed(1)} KB -> app/vendor/pokemon-cards/pokemon-cards.css`)
+  console.log(`CSS concatenado: ${(css.length / 1024).toFixed(1)} KB -> src/app/vendor/pokemon-cards/pokemon-cards.css`)
 
   // 3) Imágenes
   let ok = 0
@@ -114,7 +114,7 @@ async function main() {
   // 4) LICENSE (MIT, atribución obligatoria)
   const license = await (await download(`${BASE}/LICENSE`)).text()
   await writeFile(join(CSS_DIR, 'LICENSE'), license)
-  console.log('LICENSE guardado en app/vendor/pokemon-cards/LICENSE')
+  console.log('LICENSE guardado en src/app/vendor/pokemon-cards/LICENSE')
 }
 
 main().catch((err) => {

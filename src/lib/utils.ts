@@ -1,44 +1,48 @@
 // ============================================================================
 // Helpers generales compartidos por toda la app.
+//
+// `cn` mergea clases condicionales de Tailwind resolviendo conflictos de
+// especificidad: si una clase sobrescribe a otra (p. ej. bordes brillantes
+// según el tipo de energía o la rareza de una carta), tailwind-merge
+// conserva solo la última ganadora en vez de emitir ambas.
 // ============================================================================
 
-export type ClassValue =
-  | string
-  | number
-  | null
-  | undefined
-  | false
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 
-/** Une clases de Tailwind descartando valores falsy (usa clsx/tailwind-merge si se agregan). */
+/** Une clases condicionales y resuelve conflictos de especificidad de Tailwind. */
 export function cn(...inputs: ClassValue[]): string {
-  return inputs.filter(Boolean).join(' ')
+  return twMerge(clsx(inputs))
 }
 
-const MONEY_CURRENCIES: Record<string, { symbol: string; suffix: string }> = {
-  USD: { symbol: '$', suffix: '' },
-  EUR: { symbol: '€', suffix: '' },
-  ARS: { symbol: '$', suffix: ' ARS' }
-}
-
-function moneyParts(currency: string) {
-  return (
-    MONEY_CURRENCIES[currency] ?? {
-      symbol: '$',
-      suffix: currency !== 'USD' ? ` ${currency}` : ''
-    }
-  )
-}
-
-/** Formatea un número como moneda (USD/EUR/ARS). null → 'consultar precio'. */
-export function formatMoney(
-  value: number | null | undefined,
-  currency: string = 'USD'
-): string {
-  if (value == null) return 'consultar precio'
-  const { symbol, suffix } = moneyParts(currency)
-  const n = value.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+const CURRENCY_FORMATTERS: Record<'USD' | 'ARS', Intl.NumberFormat> = {
+  USD: new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    currencyDisplay: 'narrowSymbol'
+  }),
+  ARS: new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    currencyDisplay: 'narrowSymbol'
   })
-  return `${symbol}${n}${suffix}`
+}
+
+/** Formatea un monto con el símbolo oficial de la moneda ($ y ARS separador). */
+export function formatCurrency(
+  amount: number,
+  currency: 'USD' | 'ARS' = 'USD'
+): string {
+  return CURRENCY_FORMATTERS[currency].format(amount)
+}
+
+/** Genera una URL limpia a partir de un nombre (set, usuario, etc.). */
+export function slugify(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/'/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }

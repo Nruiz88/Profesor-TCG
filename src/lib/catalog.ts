@@ -37,7 +37,7 @@ export interface SetData {
   releaseDate?: string
 }
 
-const CACHE_DIR = path.join(process.cwd(), 'data', 'cache')
+const CACHE_DIR = path.join(process.cwd(), 'src', 'content')
 const GITHUB_BASE = 'https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master'
 
 async function readLocal(file: string): Promise<string | null> {

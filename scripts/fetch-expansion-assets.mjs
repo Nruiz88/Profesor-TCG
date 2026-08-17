@@ -14,7 +14,7 @@ const args = process.argv.slice(2)
 const setFilter = new Set(args.filter((a) => !a.startsWith('--')))
 
 async function getCatalogSets() {
-  const raw = await readFile(join(ROOT, 'data', 'cache', 'sets.json'), 'utf8')
+  const raw = await readFile(join(ROOT, 'src', 'content', 'sets.json'), 'utf8')
   return JSON.parse(raw)
 }
 

@@ -9,7 +9,7 @@ import { resolveCardImage } from '@/lib/cardImage'
 // Datos públicos: no requiere auth (lo usa también la vista pública).
 export const dynamic = 'force-dynamic'
 
-const CACHE_DIR = path.join(process.cwd(), 'data', 'cache')
+const CACHE_DIR = path.join(process.cwd(), 'src', 'content')
 const TCGDEX_ES = (id: string) => `https://api.tcgdex.net/v2/es/cards/${encodeURIComponent(id)}`
 
 export interface FullCard {

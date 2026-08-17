@@ -10,7 +10,7 @@
 //   3. Fallback local           — catálogo local + assets locales + CDN, si
 //                                 ambas APIs fallaron.
 //
-// El catálogo local (data/cache) también se usa para completar campos
+// El catálogo local (src/content) también se usa para completar campos
 // estructurales (serie/fecha) cuando el proveedor primario responde parcial,
 // sin disparar llamadas de red extra. El resultado se cachea en memoria y en
 // Supabase (expansions_cache, TTL 24h) para evitar redundancia.
@@ -92,7 +92,7 @@ async function saveToDbCache(setId: string, data: ExpansionData): Promise<void> 
 }
 
 // ---------------------------------------------------------------------------
-// Catálogo local (pokemon-tcg-data en data/cache): fallback de datos + fuente
+// Catálogo local (pokemon-tcg-data en src/content): fallback de datos + fuente
 // de campos estructurales (serie, fecha, total impreso). Sin red.
 // ---------------------------------------------------------------------------
 async function fromLocalCatalog(setId: string): Promise<ExpansionSource | null> {

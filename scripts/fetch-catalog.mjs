@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
-const CACHE_DIR = join(ROOT, 'data', 'cache')
+// Salida estática: src/content/ se incluye en el bundle de producción
+// (outputFileTracingIncludes) para consumo con cero latencia de red.
+const CACHE_DIR = join(ROOT, 'src', 'content')
 
 const BASE = 'https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master'
 const CONCURRENCY = 8
@@ -69,7 +71,7 @@ async function main() {
   console.log('Descargando sets…')
   const sets = await download(`${BASE}/sets/en.json`)
   await writeFile(join(CACHE_DIR, 'sets.json'), JSON.stringify(sets))
-  console.log(`  ${sets.length} sets guardados en data/cache/sets.json`)
+  console.log(`  ${sets.length} sets guardados en src/content/sets.json`)
 
   if (onlySets) return
 
@@ -101,7 +103,7 @@ async function main() {
   console.log('Generando índice de búsqueda…')
   const index = await buildIndex()
   await writeFile(join(CACHE_DIR, 'index.json'), JSON.stringify(index))
-  console.log(`  ${index.length} cartas en data/cache/index.json`)
+  console.log(`  ${index.length} cartas en src/content/index.json`)
 }
 
 main().catch((err) => {
