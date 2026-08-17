@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { searchCards, cardToImage, getSets, getSetById } from '@/lib/catalog'
+import { searchCards, getSets, getSetById } from '@/lib/catalog'
+import { resolveCardImage } from '@/lib/cardImage'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,18 +16,24 @@ export async function GET(req: Request) {
     const matches = await searchCards(q)
     const sets = await getSets()
 
-    const results = matches.map((c) => {
-      const set = getSetById(sets, c.setId)
-      return {
-        id: c.id,
-        name: c.name,
-        number: c.number,
-        rarity: c.rarity || null,
-        set_id: c.setId,
-        set_name: set?.name || c.setId,
-        image: cardToImage(c)
-      }
-    })
+    // resolveCardImage verifica server-side la existencia: pokemontcg.io
+    // responde 404 con el REVERSO de la carta como body para las que no tiene
+    // (ej. sets de McDonald's como me5 "Pitch Black"), y el navegador lo
+    // renderiza igual. Por eso resolvemos la imagen real o un placeholder.
+    const results = await Promise.all(
+      matches.map(async (c) => {
+        const set = getSetById(sets, c.setId)
+        return {
+          id: c.id,
+          name: c.name,
+          number: c.number,
+          rarity: c.rarity || null,
+          set_id: c.setId,
+          set_name: set?.name || c.setId,
+          image: await resolveCardImage(c.setId, c.number)
+        }
+      })
+    )
 
     return NextResponse.json({ query: q, results })
   } catch (err) {

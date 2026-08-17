@@ -112,10 +112,26 @@ async function fromLocalCatalog(setId: string): Promise<ExpansionSource | null> 
 }
 
 // ---------------------------------------------------------------------------
-// Imágenes: assets locales primero, CDN de pokemontcg.io después. Si no hay
-// nada, '' y el componente muestra su placeholder temático.
+// Imágenes: assets locales primero, CDN de pokemontcg.io después, verificado
+// server-side. Si no hay nada, '' y el componente muestra su placeholder
+// temático. Ojo: pokemontcg.io responde 404 con el REVERSO de la carta como
+// body cuando no tiene el asset — el navegador lo renderiza igual y onError
+// nunca dispara. Por eso verificamos la existencia con HEAD antes de usar el
+// URL del CDN.
 // ---------------------------------------------------------------------------
-function resolveLogoUrl(setId: string): string {
+async function urlExists(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000)
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+async function resolveLogoUrl(setId: string): Promise<string> {
   const local = path.join(
     process.cwd(),
     'public',
@@ -124,11 +140,13 @@ function resolveLogoUrl(setId: string): string {
     `${setId}.png`
   )
   if (existsSync(local)) return `/expansions/logos/${setId}.png`
-  return `${IMAGES_BASE}/${setId}/logo.png`
+  const url = `${IMAGES_BASE}/${setId}/logo.png`
+  return (await urlExists(url)) ? url : ''
 }
 
-function resolveSymbolUrl(setId: string): string {
-  return `${IMAGES_BASE}/${setId}/symbol.png`
+async function resolveSymbolUrl(setId: string): Promise<string> {
+  const url = `${IMAGES_BASE}/${setId}/symbol.png`
+  return (await urlExists(url)) ? url : ''
 }
 
 // ---------------------------------------------------------------------------
@@ -176,8 +194,8 @@ export async function getExpansionData(setId: string): Promise<ExpansionData> {
     series,
     releaseDate,
     totalCards,
-    logoUrl: resolveLogoUrl(id),
-    symbolUrl: resolveSymbolUrl(id)
+    logoUrl: await resolveLogoUrl(id),
+    symbolUrl: await resolveSymbolUrl(id)
   }
 
   memoryCache.set(id, { at: Date.now(), data: result })
