@@ -5,6 +5,7 @@ import SiteNav from '@/components/SiteNav'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
+import SellerReputationCard from '@/components/SellerReputationCard'
 import {
   computeTotalValue,
   groupIntoSheets,
@@ -119,8 +120,9 @@ export default function PublicBinderByUsernamePage({
         </div>
       </header>
 
-      <div className="mb-8">
+      <div className="mb-8 space-y-4">
         <SellerInfoBadge seller={seller} />
+        <SellerReputationCard username={seller?.username} />
       </div>
 
       {loading ? (

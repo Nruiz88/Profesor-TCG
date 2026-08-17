@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 import { CLAIM_WINDOW_MS, revertExpiredReservations } from '@/lib/claim'
 
 export const dynamic = 'force-dynamic'
@@ -75,10 +76,46 @@ export async function POST(req: Request) {
       .single()
     if (error) throw error
 
+    // Registro de la transacción (reputación): solo si el comprador tiene
+    // sesión. Los claims anónimos (sin login) no se registran — no hay
+    // identidad de comprador. Best-effort: no rompe el claim si falla.
+    let claimId: string | null = null
+    try {
+      const supabase = await createClient()
+      const {
+        data: { user }
+      } = await supabase.auth.getUser()
+      if (user) {
+        const { data: binder } = await admin
+          .from('binders')
+          .select('user_id')
+          .eq('id', card.binder_id)
+          .maybeSingle()
+        if (binder) {
+          const kind = card.is_for_sale && card.is_for_trade ? 'both' : card.is_for_sale ? 'sale' : 'trade'
+          const { data: claim, error: claimError } = await supabase
+            .from('claims')
+            .insert({
+              buyer_id: user.id,
+              seller_id: binder.user_id,
+              card_id: cardId,
+              kind,
+              status: 'pending'
+            })
+            .select('id')
+            .single()
+          if (!claimError && claim) claimId = claim.id
+        }
+      }
+    } catch {
+      // sin registro de transacción: el claim sigue funcionando igual
+    }
+
     return NextResponse.json({
       ok: true,
       reserved_until: data.reserved_until,
-      expires_in_ms: CLAIM_WINDOW_MS
+      expires_in_ms: CLAIM_WINDOW_MS,
+      claim_id: claimId
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'

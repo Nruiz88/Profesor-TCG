@@ -40,7 +40,7 @@ export async function GET() {
     const [usersRes, bindersRes, cardsRes, offersRes, marketRes] = await Promise.all([
       admin
         .from('profiles')
-        .select('id, username, city, country, created_at, is_admin')
+        .select('id, username, city, country, created_at, is_admin, is_verified')
         .order('created_at', { ascending: false })
         .limit(500),
       admin.from('binders').select('id, user_id, is_public').limit(5000),
@@ -118,6 +118,7 @@ export async function GET() {
         country: u.country,
         created_at: u.created_at,
         is_admin: u.is_admin,
+        is_verified: !!u.is_verified,
         binderCount: bStats?.count || 0,
         hasPublicBinder: (bStats?.publicCount || 0) > 0,
         cardCount: acc.cardCount,

@@ -12,6 +12,7 @@ import EditCardModal from '@/components/EditCardModal'
 import BinderSettingsModal from '@/components/BinderSettingsModal'
 import BinderToolbar from '@/components/BinderToolbar'
 import ProfileHeaderStats from '@/components/ProfileHeaderStats'
+import ClaimsPanel from '@/components/ClaimsPanel'
 import {
   FolderIcon,
   GearIcon,
@@ -21,6 +22,7 @@ import {
   RefreshIcon,
   ShareIcon,
   ShieldIcon,
+  SwapIcon,
   TrashIcon,
   UserIcon
 } from '@/components/icons'
@@ -66,6 +68,7 @@ export default function BinderPage() {
   const [tradeOnly, setTradeOnly] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [settingsModal, setSettingsModal] = useState<'create' | 'edit' | null>(null)
+  const [showClaims, setShowClaims] = useState(false)
 
   const loadBinder = useCallback(async (binderId?: string) => {
     try {
@@ -432,6 +435,14 @@ export default function BinderPage() {
             <span className="hidden lg:inline">{updating ? 'Actualizando…' : 'Precios'}</span>
           </button>
 
+          <button
+            onClick={() => setShowClaims(true)}
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-600/15 px-3 text-sm font-semibold text-sky-300 transition-colors hover:bg-sky-600/30"
+          >
+            <SwapIcon className="h-4 w-4" />
+            <span className="hidden lg:inline">Transacciones</span>
+          </button>
+
           {profile?.is_admin && (
             <a
               href="/admin"
@@ -619,6 +630,8 @@ export default function BinderPage() {
           onClose={() => setSettingsModal(null)}
         />
       )}
+
+      {showClaims && <ClaimsPanel onClose={() => setShowClaims(false)} />}
       </main>
     </div>
   )

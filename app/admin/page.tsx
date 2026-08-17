@@ -32,6 +32,7 @@ interface Overview {
       country: string | null
       created_at: string
       is_admin: boolean
+      is_verified: boolean
       binderCount: number
       hasPublicBinder: boolean
       cardCount: number
@@ -121,6 +122,22 @@ export default function AdminPage() {
   useEffect(() => {
     load()
   }, [load])
+
+  // Marca/desmarca el badge ⚡ VERIFICADO de un usuario
+  async function handleVerify(u: { id: string; username: string; is_verified: boolean }) {
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: u.id, is_verified: !u.is_verified })
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error || 'Error')
+      load()
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Error al actualizar verificación')
+    }
+  }
 
   if (loading) {
     return (
@@ -328,13 +345,27 @@ export default function AdminPage() {
                   <td className="px-4 py-3 text-center text-sky-400">{u.tradeCount}</td>
                   <td className="px-4 py-3 text-slate-400">{formatDate(u.created_at)}</td>
                   <td className="px-4 py-3">
-                    {u.is_admin ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
-                        <ShieldIcon className="h-3 w-3" /> ADMIN
-                      </span>
-                    ) : (
-                      <span className="text-slate-600">—</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {u.is_admin ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
+                          <ShieldIcon className="h-3 w-3" /> ADMIN
+                        </span>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
+                      <button
+                        onClick={() => handleVerify(u)}
+                        title={u.is_verified ? 'Quitar verificación' : 'Marcar como verificado'}
+                        aria-label={`${u.is_verified ? 'Quitar' : 'Marcar'} verificación de @${u.username}`}
+                        className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs transition-colors ${
+                          u.is_verified
+                            ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
+                            : 'border-slate-700 text-slate-600 hover:border-emerald-500/40 hover:text-emerald-400'
+                        }`}
+                      >
+                        ⚡
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
