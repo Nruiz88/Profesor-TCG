@@ -1,3 +1,6 @@
+import type { CardLanguage } from './cardLanguage'
+import { isCardLanguage } from './cardLanguage'
+
 // Monedas soportadas para el precio manual de una carta
 export type Currency = 'USD' | 'EUR' | 'ARS'
 
@@ -47,20 +50,28 @@ export function buildPriceChartingUrl(opts: {
   return `https://www.pricecharting.com/search-products?q=${encodeURIComponent(q)}`
 }
 
-// Mismo concepto para TCGplayer: nombre + número (ej: Charizard 151) y el
-// calificador de idioma cuando corresponde.
+// TCGplayer no filtra por idioma en el texto de búsqueda: usa el parámetro
+// de query `Language=` (ej: ?q=Pikachu%20151&Language=English), igual que el
+// deep link de un producto como el que genera el propio sitio.
+const TCGPLAYER_LANGUAGE: Record<CardLanguage, string> = {
+  ES: 'Spanish',
+  EN: 'English',
+  JP: 'Japanese',
+  KO: 'Korean',
+  ZH: 'Chinese'
+}
+
 export function buildTcgplayerUrl(opts: {
   cardName: string
   setId: string
   number: string
   language?: string | null
 }): string {
-  const q = [
-    opts.cardName,
-    opts.number,
-    opts.language === 'JP' ? 'Japanese' : ''
-  ]
-    .filter(Boolean)
-    .join(' ')
-  return `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(q)}`
+  const q = [opts.cardName, opts.number].filter(Boolean).join(' ')
+  const lang =
+    opts.language && isCardLanguage(opts.language)
+      ? TCGPLAYER_LANGUAGE[opts.language]
+      : null
+  const langParam = lang ? `&Language=${encodeURIComponent(lang)}` : ''
+  return `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(q)}${langParam}`
 }
