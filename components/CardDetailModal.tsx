@@ -8,6 +8,7 @@ import { effectivePrice } from '@/lib/cardStatus'
 import { formatPrice } from '@/lib/priceGuide'
 import LanguageBadge from './LanguageBadge'
 import PriceInputWithGuide from './PriceInputWithGuide'
+import ExpansionHeader from './ExpansionHeader'
 
 import { TypeIcon } from './TypeIcon'
 
@@ -166,6 +167,8 @@ export default function CardDetailModal({
 
         {/* Body */}
         <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* Header resiliente de la expansión: logo HD + símbolo + progreso */}
+          <ExpansionHeader setId={card.set_id} className="m-5" />
           {error ? (
             <div className="flex flex-col items-center gap-5 p-6 sm:flex-row">
               {/* eslint-disable-next-line @next/next/no-img-element */}

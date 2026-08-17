@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "fetch-catalog": "node scripts/fetch-catalog.mjs",
+    "fetch-expansion-assets": "node scripts/fetch-expansion-assets.mjs",
     "vendor-cards": "node scripts/vendor-pokemon-cards.mjs",
     "vendor-types": "node scripts/vendor-pokemon-types.mjs",
     "test": "vitest run"

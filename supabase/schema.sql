@@ -269,3 +269,36 @@ create policy "card_prices read authenticated" on public.card_prices
 
 create policy "card_prices write authenticated" on public.card_prices
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+-- ============================================================
+-- expansions_cache: caché del servicio Multi-API de expansiones
+-- ============================================================
+create table if not exists public.expansions_cache (
+  set_id text primary key,
+  payload jsonb not null,
+  updated_at timestamptz not null default timezone('utc'::text, now())
+);
+
+alter table public.expansions_cache enable row level security;
+
+-- Datos públicos de una expansión: lectura libre; escritura solo vía service role
+create policy "expansions_cache select" on public.expansions_cache
+  for select using (true);
+
+create index if not exists idx_expansions_cache_updated_at
+  on public.expansions_cache (updated_at);
+
+-- ============================================================
+-- app_settings: API keys e integraciones (acceso solo service role)
+-- ============================================================
+create table if not exists public.app_settings (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz not null default timezone('utc'::text, now()),
+  updated_by uuid references auth.users(id) on delete set null
+);
+
+alter table public.app_settings enable row level security;
+
+-- Sin policies de RLS: el cliente no puede leer ni escribir.
+-- Solo el service role accede desde el servidor (endpoints admin
+-- validan is_admin antes de escribir).

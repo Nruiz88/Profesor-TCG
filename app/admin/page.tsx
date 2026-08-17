@@ -19,6 +19,7 @@ import {
   WalletIcon
 } from '@/components/icons'
 import { formatLocation } from '@/lib/profile'
+import AdminIntegrations from '@/components/AdminIntegrations'
 
 interface Overview {
   generatedAt: string
@@ -341,6 +342,9 @@ export default function AdminPage() {
           </table>
         </div>
       </section>
+
+      {/* Integraciones y API keys */}
+      <AdminIntegrations />
 
       {/* Actividad reciente */}
       <section className="mt-8">

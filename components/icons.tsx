@@ -67,6 +67,15 @@ export const LockIcon = (p: IconProps) => (
   </Svg>
 )
 
+export const KeyIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="7.5" cy="15.5" r="4.5" />
+    <path d="m10.7 12.3 8.3-8.3" />
+    <path d="m16 5 3 3" />
+    <path d="m13 8 3 3" />
+  </Svg>
+)
+
 export const ShareIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />

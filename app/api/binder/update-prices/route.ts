@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { pokeWalletSearch } from '@/lib/pokeWallet'
 
 const API_BASE = 'https://api.tcgdex.net/v2/en/cards'
 const CONCURRENCY = 10
@@ -224,6 +225,30 @@ export async function POST(req: Request) {
       }
     }
 
+    // Fallback PokeWallet (si hay API key configurada): solo las cartas que
+    // TCGdex no cubrió (sin precio), con tope de 20 por lote y concurrencia
+    // baja para respetar la cuota gratuita de la API.
+    let pokeWalletFilled = 0
+    const noPriceRows = targetRows
+      .filter((r) => {
+        const p = priceByCard.get(r.card_id)
+        return p == null || p <= 0
+      })
+      .slice(0, 20)
+
+    if (noPriceRows.length > 0) {
+      const pwResults = await mapLimit(noPriceRows, 3, async (row) => {
+        const pw = await pokeWalletSearch({ cardName: row.card_name, number: row.number })
+        return pw ? { card_id: row.card_id, price: pw.price } : null
+      })
+      for (const r of pwResults) {
+        if (r) {
+          priceByCard.set(r.card_id, r.price)
+          pokeWalletFilled++
+        }
+      }
+    }
+
     const updatedAt = new Date().toISOString()
 
     // Un solo upsert batch (PK única: binder_id + slot_number)
@@ -254,6 +279,7 @@ export async function POST(req: Request) {
       withoutPrice: resolved - withPrice,
       failedCards,
       skipped,
+      pokeWalletFilled,
       source: 'tcgdex'
     })
   } catch (err) {
