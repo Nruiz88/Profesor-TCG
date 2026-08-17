@@ -188,7 +188,8 @@ export function buildWhatsAppLink(phone: string, message: string): string {
 }
 
 // Mensaje del comprador → vendedor (se abre en WhatsApp tras el CLAIM).
-// Placeholders: {CARD_NAME} {SET_NUMBER} {PRICE} {CONDITION} {BINDER_SLOT_URL}
+// Incluye el link a la publicación de la carta para que el preview muestre
+// la carta (con su og:image) y el vendedor pueda ubicarla al toque.
 export function claimMessage(p: ClaimParams): string {
   const seller = p.sellerName ? `@${p.sellerName}` : 'coleccionista'
   const cond = p.condition ? ` (Estado: ${p.condition})` : ''
@@ -198,6 +199,7 @@ export function claimMessage(p: ClaimParams): string {
   return [
     `¡Hola ${seller}! Vengo de tu Binder en Profesor TCG.`,
     `Hice el CLAIM de la carta *${p.cardName}* (#${p.setId.toUpperCase()} ${p.number})${cond}${lang} por ${fmtPrice(p.price, p.currency)}.`,
+    `🔗 Publicación de la carta: ${p.cardUrl}`,
     '¿Cómo coordinamos el pago y el envío? 🚀'
   ].join('\n')
 }
@@ -218,7 +220,7 @@ export function sellerKitText(p: ClaimParams): string {
   lines.push(`🏷️ Precio: 💵 *${fmtPrice(p.price, p.currency)}*`)
   if (p.condition) lines.push(`✨ Estado: ${p.condition}`)
   lines.push('')
-  lines.push(`🔗 Mirala en mi Binder 3D: ${p.binderSlotUrl}`)
+  lines.push(`🔗 Publicación de la carta: ${p.cardUrl}`)
   lines.push('')
   lines.push('⚡ *Primer claim por WhatsApp se la lleva.* ¡Hacé tu claim!')
   return lines.join('\n')

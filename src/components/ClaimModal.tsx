@@ -7,7 +7,7 @@ import {
   buildWhatsAppLink,
   claimMessage,
   claimPrice,
-  binderSlotUrl,
+  cardPublicUrl,
   formatReservedUntil
 } from '@/lib/claim'
 import { CARD_STATUS_META, normalizeStatus } from '@/lib/cardStatus'
@@ -35,7 +35,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
 
   const sellerName = seller?.username ? `@${seller.username}` : 'coleccionista'
   const price = claimPrice(card)
-  const slotUrl = binderSlotUrl(seller?.username, card.id)
+  const slotUrl = cardPublicUrl(card.id, card.card_name)
 
   // Al volver de WhatsApp, el claim anónimo pide login/crear cuenta
   // conservando la URL actual (?card=…) para volver a la misma carta.
@@ -106,7 +106,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
       condition: card.condition,
       language: card.language ?? null,
       currency: card.currency ?? null,
-      binderSlotUrl: slotUrl,
+      cardUrl: slotUrl,
       sellerName: seller?.username
     })
   )

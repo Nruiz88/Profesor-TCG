@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { SlotCard } from '@/lib/sheets'
-import { binderSlotUrl, claimPrice, sellerKitText } from '@/lib/claim'
+import { cardPublicUrl, claimPrice, sellerKitText } from '@/lib/claim'
 import type { Availability } from '@/lib/cardStatus'
 
 interface ClaimKitModalProps {
@@ -209,7 +209,7 @@ export default function ClaimKitModal({
   )
 
   const effectivePrice = price != null ? price : claimPrice(card)
-  const slotUrl = binderSlotUrl(username, card.id)
+  const slotUrl = cardPublicUrl(card.id, card.card_name)
   const kitText = sellerKitText({
     cardName: card.card_name,
     setId: card.set_id,
@@ -218,7 +218,7 @@ export default function ClaimKitModal({
     condition: card.condition,
     language: card.language ?? null,
     currency: card.currency ?? null,
-    binderSlotUrl: slotUrl,
+    cardUrl: slotUrl,
     sellerName: username
   })
 

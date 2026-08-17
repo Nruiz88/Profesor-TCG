@@ -7,8 +7,9 @@ export const contentType = 'image/png'
 export const alt = 'Carta en Profesor TCG'
 
 // Imagen de preview (WhatsApp/redes) de una carta publicada: carta real,
-// nombre, set y precio. Los deep links del kit de claim (?card=) caen en el
-// binder, que tiene su propia imagen de portada.
+// nombre, set y precio. Es la imagen que referencia el kit de claim y el
+// mensaje de CLAIM (cardPublicUrl), para que el preview muestre la carta y no
+// la portada del binder.
 export default async function Image({
   params
 }: {

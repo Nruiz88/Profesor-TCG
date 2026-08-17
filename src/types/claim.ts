@@ -40,7 +40,8 @@ export interface ClaimParams {
   condition?: string | null
   language?: string | null
   currency?: string | null
-  binderSlotUrl: string
+  /** URL pública de la carta (página /card/[id]/[slug] con su og:image). */
+  cardUrl: string
   sellerName?: string | null
 }
 

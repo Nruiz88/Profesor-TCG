@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { effectivePrice } from '@/lib/cardStatus'
+import { slugify } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
 // WhatsApp Claim — lógica compartida del circuito de compra/venta:
@@ -72,11 +73,12 @@ export function claimPrice(card: {
   return effectivePrice(card.market_price, card.price_override, card.price)
 }
 
-// URL pública del slot de la carta (deep link a la posición exacta del binder)
-export function binderSlotUrl(username: string | null | undefined, cardId: string): string {
+// URL pública de la carta (página /card/[id]/[slug] con su og:image propia).
+// El preview de WhatsApp muestra la carta real (nombre, set y precio), no la
+// portada del binder.
+export function cardPublicUrl(cardId: string, cardName: string): string {
   const base = typeof window !== 'undefined' ? window.location.origin : ''
-  const userPath = username ? `/binder/${encodeURIComponent(username)}` : '/binder'
-  return `${base}${userPath}?card=${cardId}`
+  return `${base}/card/${cardId}/${slugify(cardName)}`
 }
 
 // Revertir soft locks expirados: las cartas 'reserved' con reserved_until vencido
