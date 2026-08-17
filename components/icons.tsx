@@ -21,6 +21,13 @@ function Svg({ children, ...props }: SVGProps<SVGSVGElement>) {
 
 type IconProps = SVGProps<SVGSVGElement>
 
+export const HomeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <path d="M9 22V12h6v10" />
+  </Svg>
+)
+
 export const PlusIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M12 5v14M5 12h14" />

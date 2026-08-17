@@ -14,6 +14,7 @@ import ProfileHeaderStats from '@/components/ProfileHeaderStats'
 import {
   CompassIcon,
   FolderIcon,
+  HomeIcon,
   GearIcon,
   GlobeIcon,
   LockIcon,
@@ -436,6 +437,14 @@ export default function BinderPage() {
           <span className="hidden h-6 w-px bg-slate-800 md:block" aria-hidden="true" />
 
           {/* Navegación */}
+          <a
+            href="/"
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
+          >
+            <HomeIcon className="h-4 w-4" />
+            <span className="hidden lg:inline">Inicio</span>
+          </a>
+
           <a
             href="/explore"
             className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"

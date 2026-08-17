@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import SiteNav from '@/components/SiteNav'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
@@ -77,17 +78,22 @@ export default function PublicBinderByUsernamePage({
 
   if (error) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-10 text-center">
-          <h1 className="text-xl font-bold text-white">Profesor TCG</h1>
-          <p className="mt-2 text-sm text-slate-400">{error}</p>
+      <div className="min-h-screen text-slate-200">
+        <SiteNav />
+        <div className="mx-auto max-w-5xl px-4 py-8">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-10 text-center">
+            <h1 className="text-xl font-bold text-white">Profesor TCG</h1>
+            <p className="mt-2 text-sm text-slate-400">{error}</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="min-h-screen text-slate-200">
+      <SiteNav />
+      <div className="mx-auto max-w-5xl px-4 py-8">
       <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-white">Profesor TCG</h1>
@@ -144,6 +150,7 @@ export default function PublicBinderByUsernamePage({
           />
         </>
       )}
+      </div>
     </div>
   )
 }

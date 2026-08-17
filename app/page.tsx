@@ -1,10 +1,12 @@
 import Link from 'next/link'
+import SiteNav from '@/components/SiteNav'
 import HeroBinderDemo from '@/components/HeroBinderDemo'
 import CommunityStatsBar from '@/components/CommunityStatsBar'
 import LiveMarketFeed from '@/components/LiveMarketFeed'
 import LiveActivityTicker from '@/components/LiveActivityTicker'
 import TradeFairnessWidget from '@/components/TradeFairnessWidget'
 import ClaimSimulator from '@/components/ClaimSimulator'
+import { createClient } from '@/lib/supabase/server'
 import {
   CardsIcon,
   WalletIcon,
@@ -78,40 +80,19 @@ const STEPS = [
   }
 ]
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient()
+  const {
+    data: { user }
+  } = await supabase.auth.getUser()
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-300">
       {/* Nav */}
-      <nav className="border-b border-slate-800/60">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-binder-accent text-sm font-bold text-white">
-              P
-            </span>
-            <span className="text-lg font-bold tracking-tight text-white">Profesor TCG</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/explore"
-              className="rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:text-white"
-            >
-              Explorar
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:text-white"
-            >
-              Ingresar
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-xl bg-binder-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-rose-500"
-            >
-              Empezar gratis
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav
+        active="home"
+        initialUser={user ? { id: user.id, email: user.email ?? undefined } : null}
+      />
 
       {/* Hero */}
       <section className="relative overflow-hidden">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
+import SiteNav from '@/components/SiteNav'
 import MarketGrid, { BindersGrid } from '@/components/MarketGrid'
 import type { ExploreBinder, ExploreCard, ExploreFacets } from '@/app/api/public/explore/route'
 import { ENERGY_TYPES, TypeIcon } from '@/components/TypeIcon'
@@ -140,41 +140,7 @@ export default function ExplorePage() {
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
       {/* Header flotante glass */}
-      <header className="sticky top-0 z-50 border-b border-slate-800/60 bg-[#090d16]/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5">
-          <Link href="/" className="group flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-rose-600 to-rose-400 text-white shadow-lg shadow-rose-900/40 transition-transform group-hover:scale-105">
-              P
-            </span>
-            <span className="text-lg font-bold tracking-tight text-white">
-              Profesor TCG{' '}
-              <span className="bg-gradient-to-r from-rose-400 to-rose-500 bg-clip-text font-semibold text-transparent">
-                · Explorar
-              </span>
-            </span>
-          </Link>
-          <nav className="flex items-center gap-2 text-sm">
-            <Link
-              href="/"
-              className="rounded-lg px-3 py-2 font-medium text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
-            >
-              Inicio
-            </Link>
-            <Link
-              href="/explore"
-              className="rounded-lg bg-white/5 px-3 py-2 font-medium text-white"
-            >
-              Explorar
-            </Link>
-            <Link
-              href="/login"
-              className="ml-1 rounded-xl bg-rose-600 px-4 py-2 font-semibold text-white shadow-lg shadow-rose-900/40 transition-all hover:bg-rose-500"
-            >
-              Ingresar
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <SiteNav label="Explorar" active="explore" />
 
       <main className="mx-auto max-w-7xl px-4 py-10">
         {/* Hero */}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import SiteNav from '@/components/SiteNav'
 import PokemonCard from '@/components/PokemonCard'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
 import ClaimModal from '@/components/ClaimModal'
@@ -70,21 +71,29 @@ export default function PublicCardPage({
   }, [cardId])
 
   if (loading) {
-    return <p className="py-24 text-center text-slate-500">Cargando carta…</p>
+    return (
+      <div className="min-h-screen text-slate-200">
+        <SiteNav />
+        <p className="py-24 text-center text-slate-500">Cargando carta…</p>
+      </div>
+    )
   }
 
   if (error || !data) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-12">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-14 text-center">
-          <h1 className="text-xl font-bold text-white">Profesor TCG</h1>
-          <p className="mt-2 text-sm text-slate-400">{error || 'Carta no encontrada'}</p>
-          <Link
-            href="/explore"
-            className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-binder-accent px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500"
-          >
-            Explorar el marketplace
-          </Link>
+      <div className="min-h-screen text-slate-200">
+        <SiteNav />
+        <div className="mx-auto max-w-3xl px-4 py-12">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-14 text-center">
+            <h1 className="text-xl font-bold text-white">Profesor TCG</h1>
+            <p className="mt-2 text-sm text-slate-400">{error || 'Carta no encontrada'}</p>
+            <Link
+              href="/explore"
+              className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-binder-accent px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500"
+            >
+              Explorar el marketplace
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -116,7 +125,9 @@ export default function PublicCardPage({
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="min-h-screen text-slate-200">
+      <SiteNav />
+      <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <Link
           href="/explore"
@@ -214,6 +225,7 @@ export default function PublicCardPage({
       {showClaim && (
         <ClaimModal card={cardForModal} seller={owner} onClose={() => setShowClaim(false)} />
       )}
+      </div>
     </div>
   )
 }
