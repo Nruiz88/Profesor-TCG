@@ -1,3 +1,4 @@
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getApiKey } from './apiKeys'
 
 // ============================================================================
@@ -10,6 +11,118 @@ import { getApiKey } from './apiKeys'
 // ============================================================================
 
 const POKEWALLET_BASE = 'https://api.pokewallet.io'
+
+// ============================================================================
+// CUOTA: el plan gratuito de PokeWallet permite 100 pedidos/hora y NO se puede
+// superar. Este guard aplica un presupuesto con margen de seguridad:
+//   - En memoria (siempre activo): ventana deslizante de 1h, tope 90/h.
+//   - En base (integration_usage, si la tabla existe): contador por hora UTC
+//     persistente entre reinicios/instancias.
+// Cualquier llamada por encima del presupuesto se descarta (devuelve null) y
+// la cadena de fallback sigue con TCGdex / null sin consumir cuota.
+// ============================================================================
+const POKEWALLET_HOURLY_LIMIT = 100
+const POKEWALLET_SAFETY_MARGIN = 10
+const POKEWALLET_BUDGET = POKEWALLET_HOURLY_LIMIT - POKEWALLET_SAFETY_MARGIN
+const WINDOW_MS = 60 * 60 * 1000
+const USAGE_INTEGRATION = 'poke_wallet'
+
+// Ventana deslizante en memoria (por instancia del servidor)
+let requestTimes: number[] = []
+
+// Helper puro (testeable): descarta timestamps fuera de la ventana y cuenta.
+export function pruneRequestTimes(
+  times: number[],
+  now: number,
+  windowMs: number = WINDOW_MS
+): number[] {
+  const cutoff = now - windowMs
+  return times.filter((t) => t >= cutoff)
+}
+
+function memoryUsage(): number {
+  requestTimes = pruneRequestTimes(requestTimes, Date.now())
+  return requestTimes.length
+}
+
+// Presupuesto actual de la cuota (en memoria).
+export function pokeWalletBudget(): {
+  used: number
+  limit: number
+  remaining: number
+} {
+  const used = memoryUsage()
+  return {
+    used,
+    limit: POKEWALLET_BUDGET,
+    remaining: Math.max(0, POKEWALLET_BUDGET - used)
+  }
+}
+
+function adminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  return url && key ? createAdminClient(url, key) : null
+}
+
+function hourBucket(now: number): string {
+  return new Date(now).toISOString().slice(0, 13)
+}
+
+// Conteo persistente en base para la hora actual (null si la tabla no existe)
+async function dbUsage(): Promise<number | null> {
+  const client = adminClient()
+  if (!client) return null
+  try {
+    const { data, error } = await client
+      .from('integration_usage')
+      .select('count')
+      .eq('integration', USAGE_INTEGRATION)
+      .eq('bucket', hourBucket(Date.now()))
+      .maybeSingle()
+    if (error) throw error
+    return data?.count ?? 0
+  } catch {
+    return null
+  }
+}
+
+// Incrementa el contador persistente (best-effort: sin tabla no hace nada;
+// sin ella, el guard en memoria sigue activo)
+async function dbIncrement(): Promise<void> {
+  const client = adminClient()
+  if (!client) return
+  try {
+    const bucket = hourBucket(Date.now())
+    const { data } = await client
+      .from('integration_usage')
+      .select('count')
+      .eq('integration', USAGE_INTEGRATION)
+      .eq('bucket', bucket)
+      .maybeSingle()
+    const next = (data?.count ?? 0) + 1
+    await client.from('integration_usage').upsert(
+      { integration: USAGE_INTEGRATION, bucket, count: next },
+      { onConflict: 'integration,bucket' }
+    )
+  } catch {
+    // sin persistencia: el guard en memoria sigue activo
+  }
+}
+
+// ¿Hay presupuesto disponible? Revisa memoria + base (si existe).
+async function budgetAvailable(): Promise<boolean> {
+  if (memoryUsage() >= POKEWALLET_BUDGET) return false
+  const db = await dbUsage()
+  if (db !== null && db >= POKEWALLET_BUDGET) return false
+  return true
+}
+
+// Reserva una llamada del presupuesto (memoria + base).
+async function consumeBudget(): Promise<void> {
+  requestTimes.push(Date.now())
+  await dbIncrement()
+}
 
 interface PokeWalletPrices {
   sub_type_name?: string
@@ -111,7 +224,8 @@ function bestCardmarketPrice(results: PokeWalletResult[]): PokeWalletPrice | nul
 }
 
 // Busca el precio de una carta por nombre (+ número). Devuelve null si no hay
-// key, falla el request, hay error de auth o no encuentra precio.
+// key, falla el request, hay error de auth, el presupuesto de cuota está
+// agotado o no encuentra precio.
 export async function pokeWalletSearch(opts: {
   cardName: string
   number?: string
@@ -120,8 +234,12 @@ export async function pokeWalletSearch(opts: {
   const key = opts.key ?? (await getPokeWalletKey())
   if (!key) return null
 
+  // CUOTA: si no hay presupuesto, no se consulta PokeWallet (falla silencioso)
+  if (!(await budgetAvailable())) return null
+
   const q = [opts.cardName, opts.number].filter(Boolean).join(' ')
   try {
+    await consumeBudget() // reserva la llamada antes del fetch
     const res = await fetch(`${POKEWALLET_BASE}/search?q=${encodeURIComponent(q)}&limit=10`, {
       headers: {
         'X-API-Key': key,
@@ -152,22 +270,43 @@ export async function pokeWalletSearch(opts: {
   }
 }
 
-// Prueba de conexión para el panel admin (usa la clave configurada).
-export async function pokeWalletTest(): Promise<{ ok: boolean; detail: string }> {
+// Prueba de conexión para el panel admin (usa la clave configurada y también
+// consume presupuesto: una prueba es un pedido real a la API).
+export async function pokeWalletTest(): Promise<{
+  ok: boolean
+  detail: string
+  budget: { used: number; limit: number; remaining: number }
+}> {
+  const budget = pokeWalletBudget()
   const key = await getPokeWalletKey()
-  if (!key) return { ok: false, detail: 'No hay clave configurada' }
+  if (!key) return { ok: false, detail: 'No hay clave configurada', budget }
+  if (!(await budgetAvailable())) {
+    return {
+      ok: false,
+      detail: 'Presupuesto de PokeWallet agotado por esta hora (se reanuda en la próxima hora).',
+      budget
+    }
+  }
   try {
+    await consumeBudget()
     const res = await fetch(`${POKEWALLET_BASE}/search?q=pikachu&limit=1`, {
       headers: { 'X-API-Key': key, 'User-Agent': 'profesortcg/1.0' },
       cache: 'no-store'
     })
+    const after = pokeWalletBudget()
     if (res.status === 401 || res.status === 403) {
-      return { ok: false, detail: 'Clave inválida (401/403)' }
+      return { ok: false, detail: 'Clave inválida (401/403)', budget: after }
     }
-    if (res.status === 429) return { ok: false, detail: 'Cuota de PokeWallet excedida (429)' }
-    if (!res.ok) return { ok: false, detail: `PokeWallet respondió ${res.status}` }
-    return { ok: true, detail: 'Conexión OK: la API responde con la clave configurada' }
+    if (res.status === 429) {
+      return { ok: false, detail: 'Cuota de PokeWallet excedida (429)', budget: after }
+    }
+    if (!res.ok) return { ok: false, detail: `PokeWallet respondió ${res.status}`, budget: after }
+    return {
+      ok: true,
+      detail: 'Conexión OK: la API responde con la clave configurada',
+      budget: after
+    }
   } catch {
-    return { ok: false, detail: 'No se pudo contactar a PokeWallet' }
+    return { ok: false, detail: 'No se pudo contactar a PokeWallet', budget: pokeWalletBudget() }
   }
 }

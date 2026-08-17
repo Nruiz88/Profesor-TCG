@@ -75,8 +75,15 @@ export async function POST(req: Request) {
   try {
     if (body.action === 'test') {
       // Solo se prueba la integración de PokeWallet por ahora
-      const result = name === 'pokewallet_api_key' ? await pokeWalletTest() : { ok: false, detail: 'Sin prueba disponible' }
-      return NextResponse.json({ ok: result.ok, detail: result.detail })
+      if (name === 'pokewallet_api_key') {
+        const result = await pokeWalletTest()
+        return NextResponse.json({
+          ok: result.ok,
+          detail: result.detail,
+          budget: result.budget
+        })
+      }
+      return NextResponse.json({ ok: false, detail: 'Sin prueba disponible' })
     }
 
     if (body.action === 'delete') {

@@ -80,10 +80,14 @@ export default function AdminIntegrations() {
     setFeedback(null)
     try {
       const data = await post({ action: 'test', name })
+      const budgetNote =
+        data.budget && typeof data.budget.remaining === 'number'
+          ? ` · Presupuesto de la hora: ${data.budget.used}/${data.budget.limit} pedidos (quedan ${data.budget.remaining})`
+          : ''
       setFeedback({
         name,
         kind: data.ok ? 'ok' : 'error',
-        msg: data.detail ?? (data.ok ? 'Conexión OK' : 'Error de conexión')
+        msg: `${data.detail ?? (data.ok ? 'Conexión OK' : 'Error de conexión')}${budgetNote}`
       })
     } catch (err) {
       setFeedback({

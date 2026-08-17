@@ -302,3 +302,17 @@ alter table public.app_settings enable row level security;
 -- Sin policies de RLS: el cliente no puede leer ni escribir.
 -- Solo el service role accede desde el servidor (endpoints admin
 -- validan is_admin antes de escribir).
+
+-- ============================================================
+-- integration_usage: contador global de cuota (PokeWallet 100 req/h)
+-- ============================================================
+create table if not exists public.integration_usage (
+  integration text not null,
+  bucket text not null,              -- hora UTC: 'YYYY-MM-DDTHH'
+  count integer not null default 0,
+  primary key (integration, bucket)
+);
+
+alter table public.integration_usage enable row level security;
+
+-- Sin policies de RLS: solo service role mantiene el contador.
