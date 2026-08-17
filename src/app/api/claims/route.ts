@@ -6,10 +6,20 @@ import { CLAIM_WINDOW_MS, revertExpiredReservations } from '@/lib/claim'
 export const dynamic = 'force-dynamic'
 
 // Soft Lock de 24h: el comprador que hace CLAIM sobre una carta pública
-// (is_for_sale / is_for_trade) la marca como 'reserved' con vencimiento.
-// El claim es anónimo (el comprador llega por un link compartido), así que
-// se aplica con el cliente de service role: RLS solo permite al dueño
-// actualizar sus cartas, y acá lo hace un tercero.
+// (is_for_sale / is_for_trade) la marca como 'reserved' con vencimiento y se
+// va a WhatsApp a coordinar.
+//
+// El claim abre WhatsApp para TODOS (logueado o no), pero la RESERVA solo se
+// aplica con sesión: sin login se responde requiresLogin (sin tocar la carta)
+// y el cliente muestra el mensaje de "iniciá sesión para reservar tu claim".
+// Con sesión: soft lock 24h + registro en `claims` (reputación, confirmación
+// y reseñas). Si hay una reserva activa sin transacciones (p. ej. una reserva
+// anónima vieja), el claim del usuario logueado se "adjunta" en vez de 409.
+//
+// La actualización de la carta la hace el service role (RLS solo permite al
+// dueño actualizar sus cartas, y acá lo hace un tercero); el registro del
+// claim usa el cliente del usuario (RLS permite insert solo con
+// auth.uid() = buyer_id).
 export async function POST(req: Request) {
   let body: { card_id?: unknown }
   try {
@@ -29,6 +39,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Servicio no disponible' }, { status: 500 })
   }
   const admin = createAdminClient(url, serviceKey)
+  const supabase = await createClient()
 
   try {
     // Primero revierte reservas vencidas (soft lock expirado vuelve a estar disponible)
@@ -55,14 +66,67 @@ export async function POST(req: Request) {
     }
 
     const now = new Date()
-    const activeReservation = card.status === 'reserved' && card.reserved_until && new Date(card.reserved_until) > now
+
+    // Sin sesión: el claim NO reserva — se abre WhatsApp y se pide login.
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ ok: true, anonymous: true, requiresLogin: true })
+    }
+
+    const activeReservation =
+      card.status === 'reserved' && card.reserved_until && new Date(card.reserved_until) > now
     if (activeReservation) {
+      // Ya hay una reserva activa. Si la carta no tiene NINGUNA transacción
+      // registrada (p. ej. una reserva anónima de antes de exigir login), el
+      // claim del usuario logueado se adjunta: registra la transacción y
+      // mantiene la reserva existente.
+      {
+        const { data: existing } = await admin
+          .from('claims')
+          .select('id')
+          .eq('card_id', cardId)
+          .maybeSingle()
+        if (!existing) {
+          const { data: binder } = await admin
+            .from('binders')
+            .select('user_id')
+            .eq('id', card.binder_id)
+            .maybeSingle()
+          if (binder) {
+            const kind =
+              card.is_for_sale && card.is_for_trade ? 'both' : card.is_for_sale ? 'sale' : 'trade'
+            const { data: claim, error: claimError } = await supabase
+              .from('claims')
+              .insert({
+                buyer_id: user.id,
+                seller_id: binder.user_id,
+                card_id: cardId,
+                kind,
+                status: 'pending'
+              })
+              .select('id')
+              .single()
+            if (!claimError && claim) {
+              return NextResponse.json({
+                ok: true,
+                reserved_until: card.reserved_until,
+                expires_in_ms: new Date(card.reserved_until).getTime() - now.getTime(),
+                claim_id: claim.id,
+                attached: true
+              })
+            }
+          }
+        }
+      }
       return NextResponse.json(
         { error: 'Esta carta ya está reservada por otro claim' },
         { status: 409 }
       )
     }
 
+    // Con sesión: soft lock de 24h + registro de la transacción (reputación).
     const reservedUntil = new Date(now.getTime() + CLAIM_WINDOW_MS).toISOString()
     const { data, error } = await admin
       .from('binder_cards')
@@ -76,46 +140,52 @@ export async function POST(req: Request) {
       .single()
     if (error) throw error
 
-    // Registro de la transacción (reputación): solo si el comprador tiene
-    // sesión. Los claims anónimos (sin login) no se registran — no hay
-    // identidad de comprador. Best-effort: no rompe el claim si falla.
-    let claimId: string | null = null
-    try {
-      const supabase = await createClient()
-      const {
-        data: { user }
-      } = await supabase.auth.getUser()
-      if (user) {
-        const { data: binder } = await admin
-          .from('binders')
-          .select('user_id')
-          .eq('id', card.binder_id)
-          .maybeSingle()
-        if (binder) {
-          const kind = card.is_for_sale && card.is_for_trade ? 'both' : card.is_for_sale ? 'sale' : 'trade'
-          const { data: claim, error: claimError } = await supabase
-            .from('claims')
-            .insert({
-              buyer_id: user.id,
-              seller_id: binder.user_id,
-              card_id: cardId,
-              kind,
-              status: 'pending'
-            })
-            .select('id')
-            .single()
-          if (!claimError && claim) claimId = claim.id
-        }
-      }
-    } catch {
-      // sin registro de transacción: el claim sigue funcionando igual
+    const { data: binder } = await admin
+      .from('binders')
+      .select('user_id')
+      .eq('id', card.binder_id)
+      .maybeSingle()
+    if (!binder) {
+      await admin
+        .from('binder_cards')
+        .update({
+          status: card.is_for_sale ? 'for_sale' : card.is_for_trade ? 'for_trade' : 'collection',
+          reserved_until: null
+        })
+        .eq('id', cardId)
+      return NextResponse.json({ error: 'Binder no encontrado' }, { status: 500 })
+    }
+
+    const kind = card.is_for_sale && card.is_for_trade ? 'both' : card.is_for_sale ? 'sale' : 'trade'
+    const { data: claim, error: claimError } = await supabase
+      .from('claims')
+      .insert({
+        buyer_id: user.id,
+        seller_id: binder.user_id,
+        card_id: cardId,
+        kind,
+        status: 'pending'
+      })
+      .select('id')
+      .single()
+    if (claimError) {
+      // Revertir la reserva para no dejar un soft lock sin transacción
+      await admin
+        .from('binder_cards')
+        .update({
+          status: card.is_for_sale ? 'for_sale' : card.is_for_trade ? 'for_trade' : 'collection',
+          reserved_until: null
+        })
+        .eq('id', cardId)
+      throw claimError
     }
 
     return NextResponse.json({
       ok: true,
       reserved_until: data.reserved_until,
       expires_in_ms: CLAIM_WINDOW_MS,
-      claim_id: claimId
+      claim_id: claim.id,
+      anonymous: false
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'

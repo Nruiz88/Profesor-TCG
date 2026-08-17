@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { clearPendingClaim } from '@/lib/pendingClaim'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -12,6 +13,28 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [claimId, setClaimId] = useState<string | null>(null)
+
+  // Inicializar desde la URL: ?mode=signup (link "Crear cuenta gratis") y
+  // ?claim=<card_id> (venís de un claim anónimo → aplicamos la reserva acá).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('mode') === 'signup') setMode('signup')
+    setClaimId(params.get('claim'))
+  }, [])
+
+  // Destino tras iniciar sesión: respeta ?next= (del claim, del middleware…)
+  // pero solo rutas internas — nunca URLs externas ni protocol-relative.
+  function afterLoginPath(): string {
+    if (typeof window === 'undefined') return '/binder'
+    const next = new URLSearchParams(window.location.search).get('next')
+    if (next && next.startsWith('/') && !next.startsWith('//')) return next
+    return '/binder'
+  }
+
+  function appendQuery(url: string, query: string): string {
+    return url + (url.includes('?') ? '&' : '?') + query
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -28,7 +51,32 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
       }
-      router.push('/binder')
+
+      // Si venís de un claim anónimo (?claim=<card_id>), aplicamos la reserva
+      // ahora que hay sesión — así la persona no tiene que re-reclamar al volver.
+      let dest = afterLoginPath()
+      if (claimId) {
+        try {
+          const res = await fetch('/api/claims', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ card_id: claimId })
+          })
+          const data = await res.json().catch(() => ({}))
+          if (res.ok && !data.requiresLogin) {
+            dest = appendQuery(dest, 'claim_applied=1')
+            clearPendingClaim()
+          } else if (res.status === 409) {
+            dest = appendQuery(dest, 'claim_taken=1')
+            clearPendingClaim()
+          }
+          // Otros errores (401 sin sesión por confirmación de email, etc.):
+          // la intención queda pendiente y el ClaimModal la reintenta al volver.
+        } catch {
+          // La reserva se puede reintentar desde la carta.
+        }
+      }
+      router.push(dest)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error de autenticación')
