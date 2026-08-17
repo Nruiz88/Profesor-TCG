@@ -25,6 +25,7 @@ import type { Profile } from '@/lib/profile'
 import { effectivePrice, type Availability } from '@/lib/cardStatus'
 import {
   SLOTS_PER_SHEET,
+  findNextEmptySlot,
   groupIntoSheets,
   padSheet,
   sheetPageCount,
@@ -56,7 +57,6 @@ export default function BinderPage() {
   const [showProfile, setShowProfile] = useState(false)
   const [editCard, setEditCard] = useState<SlotCard | null>(null)
   const [requireProfileFor, setRequireProfileFor] = useState<Availability | null>(null)
-  const [search, setSearch] = useState('')
   const [saleOnly, setSaleOnly] = useState(false)
   const [tradeOnly, setTradeOnly] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
@@ -298,29 +298,24 @@ export default function BinderPage() {
     0
   )
 
-  // Filtros del visor (búsqueda + disponibilidad) — client-side, sin refetch
+  // Filtros del visor (disponibilidad + tipo) — client-side, sin refetch.
+  // El buscador del toolbar ya no filtra el binder: busca en el catálogo
+  // completo y agrega directo al bolsillo vacío más próximo.
   const filteredCards = useMemo(() => {
-    const q = search.trim().toLowerCase()
     return cards.filter((c) => {
       if (saleOnly && !c.is_for_sale) return false
       if (tradeOnly && !c.is_for_trade) return false
       if (typeFilter && !(c.types ?? []).includes(typeFilter)) return false
-      if (q) {
-        const name = c.card_name.toLowerCase()
-        const num = String(c.number).toLowerCase()
-        if (!name.includes(q) && !num.includes(q)) return false
-      }
       return true
     })
-  }, [cards, search, saleOnly, tradeOnly, typeFilter])
+  }, [cards, saleOnly, tradeOnly, typeFilter])
 
-  // Reiniciar la página al cambiar la búsqueda o los filtros
+  // Reiniciar la página al cambiar los filtros
   useEffect(() => {
     setCurrentSheet(0)
-  }, [search, saleOnly, tradeOnly, typeFilter])
+  }, [saleOnly, tradeOnly, typeFilter])
 
-  const hasActiveFilters =
-    search.trim() !== '' || saleOnly || tradeOnly || typeFilter !== null
+  const hasActiveFilters = saleOnly || tradeOnly || typeFilter !== null
   const sheets = groupIntoSheets(filteredCards)
   // Sin filtros: siempre mostramos una hoja vacía al final para poder agregar
   if (sheets.length === 0 && !hasActiveFilters) sheets.push([])
@@ -385,6 +380,32 @@ export default function BinderPage() {
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Error al guardar carta')
     await loadBinder()
+  }
+
+  // Agrega la carta al bolsillo vacío más próximo (primer slot libre).
+  // Es el flujo principal: el buscador del toolbar agrega sin tener que
+  // elegir un bolsillo primero.
+  async function addCardToNearestSlot(card: SearchResult, language: CardLanguage) {
+    if (!binder) throw new Error('Sin binder')
+
+    const slotNumber = findNextEmptySlot(cards)
+    const res = await fetch('/api/binder/slots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        binder_id: binder.id,
+        slot_number: slotNumber,
+        card_id: card.id,
+        card_name: card.name,
+        set_id: card.set_id,
+        number: card.number,
+        language
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error al guardar carta')
+    await loadBinder()
+    setMessage(`"${card.name}" agregada a tu binder en el bolsillo #${slotNumber}.`)
   }
 
   return (
@@ -558,8 +579,6 @@ export default function BinderPage() {
       ) : (
         <>
           <BinderToolbar
-            search={search}
-            onSearchChange={setSearch}
             saleOnly={saleOnly}
             onToggleSale={() => setSaleOnly((v) => !v)}
             tradeOnly={tradeOnly}
@@ -573,6 +592,7 @@ export default function BinderPage() {
             }
             shownCount={filteredCards.length}
             totalCount={totalCards}
+            onAddCard={addCardToNearestSlot}
           />
 
           {filteredCards.length === 0 && hasActiveFilters ? (

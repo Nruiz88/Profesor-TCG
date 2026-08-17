@@ -68,6 +68,16 @@ export function sheetPageCount(sheetCount: number): number {
   return Math.max(1, Math.ceil(sheetCount / 2))
 }
 
+// Primer bolsillo vacío del binder: el slot_number más bajo (desde 1) que
+// todavía no está ocupado. Respeta los huecos que dejan las cartas quitadas
+// y crece al final cuando el binder está completo.
+export function findNextEmptySlot(cards: Pick<SlotCard, 'slot_number'>[]): number {
+  const taken = new Set(cards.map((c) => c.slot_number))
+  let n = 1
+  while (taken.has(n)) n++
+  return n
+}
+
 export function computeTotalValue(cards: SlotCard[]): number {
   return cards.reduce((sum, c) => sum + (c.market_price ?? 0), 0)
 }

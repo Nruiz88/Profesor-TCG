@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   SLOTS_PER_SHEET,
   computeTotalValue,
+  findNextEmptySlot,
   groupIntoSheets,
   padSheet,
   sheetPageCount,
@@ -102,6 +103,27 @@ describe('sheetPageCount', () => {
     expect(sheetPageCount(3)).toBe(2)
     expect(sheetPageCount(4)).toBe(2)
     expect(sheetPageCount(5)).toBe(3)
+  })
+})
+
+describe('findNextEmptySlot', () => {
+  it('devuelve 1 cuando el binder está vacío', () => {
+    expect(findNextEmptySlot([])).toBe(1)
+  })
+
+  it('devuelve el primer hueco respetando los bolsillos ocupados', () => {
+    const cards = [1, 2, 4, 5].map((slot_number) => slotCard({ slot_number }))
+    expect(findNextEmptySlot(cards)).toBe(3)
+  })
+
+  it('crece al final cuando el binder está completo', () => {
+    const cards = [1, 2, 3].map((slot_number) => slotCard({ slot_number }))
+    expect(findNextEmptySlot(cards)).toBe(4)
+  })
+
+  it('ignora huecos intermedios desordenados', () => {
+    const cards = [9, 1, 3].map((slot_number) => slotCard({ slot_number }))
+    expect(findNextEmptySlot(cards)).toBe(2)
   })
 })
 

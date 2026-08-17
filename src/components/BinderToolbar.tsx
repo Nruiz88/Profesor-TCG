@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowRightIcon, SearchIcon, SwapIcon, TagIcon, XIcon } from './icons'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowRightIcon, PlusIcon, SearchIcon, SwapIcon, TagIcon, XIcon } from './icons'
 import { ENERGY_TYPES, TypeIcon } from './TypeIcon'
+import LanguagePills from './LanguagePills'
+import type { SearchResult } from './SlotSearchModal'
+import type { CardLanguage } from '@/lib/cardLanguage'
 
 interface BinderToolbarProps {
-  search: string
-  onSearchChange: (value: string) => void
   saleOnly: boolean
   onToggleSale: () => void
   tradeOnly: boolean
@@ -18,14 +19,16 @@ interface BinderToolbarProps {
   onJumpPage: (page: number) => void // 1-based
   shownCount: number
   totalCount: number
+  /** Agrega una carta del catálogo al binder (en el bolsillo vacío más próximo) */
+  onAddCard: (card: SearchResult, language: CardLanguage) => Promise<void>
 }
 
-// Barra de herramientas del visor: buscador en tiempo real (nombre o número),
-// filtro por tipo de energía (Pokédex style), filtros de disponibilidad
-// (en venta / para cambio) y salto directo a página.
+const MAX_SUGGESTIONS = 8
+
+// Barra de herramientas del binder: buscador del catálogo completo (nombre o
+// número) que agrega directo al bolsillo vacío más próximo, filtros del visor
+// (tipo de energía + disponibilidad) y salto directo a página.
 export default function BinderToolbar({
-  search,
-  onSearchChange,
   saleOnly,
   onToggleSale,
   tradeOnly,
@@ -36,11 +39,68 @@ export default function BinderToolbar({
   currentPage,
   onJumpPage,
   shownCount,
-  totalCount
+  totalCount,
+  onAddCard
 }: BinderToolbarProps) {
   const [jumpInput, setJumpInput] = useState('')
-  const hasFilters =
-    search.trim() !== '' || saleOnly || tradeOnly || typeFilter !== null
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<SearchResult[]>([])
+  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [language, setLanguage] = useState<CardLanguage>('ES')
+  const [saving, setSaving] = useState<string | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const hasFilters = saleOnly || tradeOnly || typeFilter !== null
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+
+    const q = query.trim()
+    if (q.length < 2) {
+      setResults([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    timerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Error al buscar')
+        setResults(data.results || [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al buscar')
+        setResults([])
+      } finally {
+        setLoading(false)
+      }
+    }, 300)
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [query])
+
+  async function handleAdd(card: SearchResult) {
+    if (saving !== null) return
+    setSaving(card.id)
+    setError(null)
+    try {
+      await onAddCard(card, language)
+      setQuery('')
+      setResults([])
+      setOpen(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al agregar la carta')
+    } finally {
+      setSaving(null)
+    }
+  }
 
   function handleJump() {
     const n = parseInt(jumpInput, 10)
@@ -52,18 +112,110 @@ export default function BinderToolbar({
 
   return (
     <div className="mb-6 rounded-3xl border border-slate-800/90 bg-slate-900/40 p-4 backdrop-blur-xl">
-      {/* Buscador + salto a página */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* Buscador del catálogo + salto a página */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="relative flex-1">
           <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-rose-500" />
           <input
             type="search"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Buscá por nombre de carta o número de colección…"
-            className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-10 pr-4 text-sm text-white placeholder-slate-600 focus:border-rose-500/50 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-            aria-label="Buscar carta en el binder"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setOpen(true)
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && results[0] && saving === null) {
+                e.preventDefault()
+                handleAdd(results[0])
+              }
+              if (e.key === 'Escape') setOpen(false)
+            }}
+            placeholder="Buscá la carta que querés agregar (nombre o número)…"
+            aria-label="Buscar carta en el catálogo para agregar al binder"
+            className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-10 pr-10 text-sm text-white placeholder-slate-600 focus:border-rose-500/50 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
           />
+          {query && (
+            <button
+              onClick={() => {
+                setQuery('')
+                setResults([])
+                setOpen(false)
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 transition-colors hover:text-white"
+              aria-label="Limpiar búsqueda"
+            >
+              <XIcon width={15} height={15} />
+            </button>
+          )}
+
+          {/* Dropdown de resultados del catálogo */}
+          {open && query.trim().length >= 2 && (
+            <>
+              <div
+                className="fixed inset-0 z-20"
+                onClick={() => setOpen(false)}
+                aria-hidden="true"
+              />
+              <div className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
+                {loading ? (
+                  <p className="px-4 py-4 text-sm text-slate-400">Buscando…</p>
+                ) : error ? (
+                  <p className="px-4 py-4 text-sm text-red-400">{error}</p>
+                ) : results.length === 0 ? (
+                  <p className="px-4 py-4 text-sm text-slate-500">
+                    Sin resultados para «{query.trim()}»
+                  </p>
+                ) : (
+                  <>
+                    <ul className="max-h-80 overflow-y-auto p-2">
+                      {results.slice(0, MAX_SUGGESTIONS).map((card) => (
+                        <li key={card.id}>
+                          <div className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-slate-800/60">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={card.image}
+                              alt={card.name}
+                              loading="lazy"
+                              className="h-14 w-10 shrink-0 rounded-md object-cover"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-white">
+                                {card.name}
+                              </p>
+                              <p className="truncate text-xs text-slate-400">
+                                {card.set_name} · {card.number}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleAdd(card)}
+                              disabled={saving !== null}
+                              className="flex shrink-0 items-center gap-1 rounded-xl bg-binder-accent px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-rose-500 disabled:opacity-50"
+                            >
+                              {saving === card.id ? (
+                                'Agregando…'
+                              ) : (
+                                <>
+                                  <PlusIcon width={13} height={13} />
+                                  Agregar
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="border-t border-slate-800 p-3">
+                      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                        Idioma de tu copia
+                      </p>
+                      <LanguagePills value={language} onChange={setLanguage} compact />
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -161,7 +313,6 @@ export default function BinderToolbar({
           {hasFilters && (
             <button
               onClick={() => {
-                onSearchChange('')
                 if (saleOnly) onToggleSale()
                 if (tradeOnly) onToggleTrade()
                 if (typeFilter !== null) onTypeChange(null)
