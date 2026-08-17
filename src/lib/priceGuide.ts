@@ -1,8 +1,10 @@
 import type { CardLanguage } from './cardLanguage'
 import { isCardLanguage } from './cardLanguage'
+import type { Currency } from '@/types/card'
+
+export type { Currency } from '@/types/card'
 
 // Monedas soportadas para el precio manual de una carta
-export type Currency = 'USD' | 'EUR' | 'ARS'
 
 export const CURRENCIES: { id: Currency; label: string; symbol: string }[] = [
   { id: 'USD', label: 'Dólar (USD)', symbol: '$' },

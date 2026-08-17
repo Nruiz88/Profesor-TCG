@@ -1,4 +1,6 @@
-export type CardStatus = 'collection' | 'for_sale' | 'for_trade' | 'reserved'
+import type { Availability, CardStatus } from '@/types/card'
+
+export type { Availability, CardStatus } from '@/types/card'
 
 export const CARD_STATUSES: CardStatus[] = ['collection', 'for_sale', 'for_trade', 'reserved']
 
@@ -38,12 +40,6 @@ export function isCardStatus(value: unknown): value is CardStatus {
 // ---------------------------------------------------------------------------
 // Modalidad de disponibilidad: qué ofrece el usuario con la carta.
 // ---------------------------------------------------------------------------
-
-export type Availability =
-  | 'solo_coleccion'
-  | 'solo_venta'
-  | 'solo_cambio'
-  | 'venta_o_cambio'
 
 export const AVAILABILITIES: Availability[] = [
   'solo_coleccion',

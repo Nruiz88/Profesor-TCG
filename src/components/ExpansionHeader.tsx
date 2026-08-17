@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { ExpansionData } from '@/src/services/expansions'
+import type { ExpansionData } from '@/services/expansions'
 
 interface ExpansionHeaderProps {
   setId: string

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getExpansionData } from '@/src/services/expansions'
+import { getExpansionData } from '@/services/expansions'
 
 export const dynamic = 'force-dynamic'
 

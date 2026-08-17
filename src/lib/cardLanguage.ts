@@ -1,5 +1,8 @@
+import type { CardLanguage } from '@/types/card'
+
+export type { CardLanguage } from '@/types/card'
+
 // Idioma de la copia física de una carta (código ISO 639-1-ish propio del TCG)
-export type CardLanguage = 'ES' | 'EN' | 'JP' | 'KO' | 'ZH'
 
 export const CARD_LANGUAGES: CardLanguage[] = ['ES', 'EN', 'JP', 'KO', 'ZH']
 
