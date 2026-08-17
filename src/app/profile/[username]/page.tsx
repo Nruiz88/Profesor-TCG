@@ -114,11 +114,20 @@ async function loadWantlist(
     .select('id, card_id, card_name, set_id, set_name, number, max_budget, currency')
     .eq('user_id', profileId)
     .order('created_at', { ascending: false })
+
+  const meta = await getCardMetadataMap()
   return Promise.all(
-    (data || []).map(async (w: any) => ({
-      ...w,
-      image: await resolveCardImage(w.set_id, w.number)
-    }))
+    (data || []).map(async (w: any) => {
+      const m = meta.get(w.card_id)
+      return {
+        ...w,
+        rarity: m?.rarity ?? null,
+        supertype: m?.supertype ?? null,
+        subtypes: m?.subtypes ?? null,
+        types: m?.types ?? null,
+        image: await resolveCardImage(w.set_id, w.number)
+      }
+    })
   )
 }
 
@@ -128,7 +137,9 @@ async function loadReviews(
 ): Promise<ProfileReview[]> {
   const { data } = await admin
     .from('reviews')
-    .select('id, rating, tags, comment, created_at, reviewer:profiles!reviews_reviewer_id_fkey(id, username)')
+    .select(
+      'id, rating, tags, comment, created_at, reviewer:profiles!reviews_reviewer_id_fkey(id, username), claim:claims!reviews_claim_id_fkey(kind)'
+    )
     .eq('reviewed_user_id', profileId)
     .order('created_at', { ascending: false })
     .limit(50)
@@ -139,6 +150,7 @@ async function loadReviews(
     tags: r.tags ?? [],
     comment: r.comment,
     createdAt: r.created_at,
+    kind: r.claim && !Array.isArray(r.claim) ? r.claim.kind : null,
     reviewer:
       r.reviewer && !Array.isArray(r.reviewer)
         ? { id: r.reviewer.id, username: r.reviewer.username }

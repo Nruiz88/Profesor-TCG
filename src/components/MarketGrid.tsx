@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import type { ExploreBinder, ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
+import { slugify } from '@/lib/utils'
 import { ArrowRightIcon } from '@/components/icons'
 
 // Mensaje pre-armado del claim (mismo formato que el resto de la app)
@@ -14,11 +15,11 @@ function claimHref(card: ExploreCard): string {
   return `${whatsAppLink(card.whatsapp_number ?? '')}?text=${text}`
 }
 
-// Deep link: binder completo si es público, si no la vista individual /card/[id]
+// Deep link: binder completo si es público, si no la vista individual /card/[id]/[slug]
 function binderHref(card: ExploreCard): string {
   return card.binder_public
     ? `/binder/${encodeURIComponent(card.username)}?card=${card.id}`
-    : `/card/${card.id}`
+    : `/card/${card.id}/${slugify(card.card_name)}`
 }
 
 const fmtUsd = (n: number) =>

@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import PokemonCard from '@/components/PokemonCard'
 import { TrashIcon } from '@/components/icons'
 import { formatPrice } from '@/lib/priceGuide'
+import { toSlotCard, type SlotCard } from '@/lib/sheets'
 import type { WantlistCard } from '@/types/wantlist'
 
 interface WantlistSlotProps {
@@ -22,6 +24,39 @@ function formatBudgetLabel(budget: number, currency: string): string {
   return base
 }
 
+// Convierte una entrada de wantlist al contrato SlotCard para renderizar la
+// misma carta con efecto holo/3D que el binder (PokemonCard).
+function toWantlistSlotCard(w: WantlistCard): SlotCard {
+  return toSlotCard({
+    id: w.card_id,
+    binder_id: '',
+    card_id: w.card_id,
+    card_name: w.card_name,
+    set_id: w.set_id,
+    set_name: w.set_name,
+    number: w.number,
+    slot_number: 0,
+    market_price: null,
+    status: null,
+    price_override: null,
+    is_for_sale: false,
+    is_for_trade: false,
+    price: null,
+    trade_notes: null,
+    condition: null,
+    language: null,
+    manual_price: null,
+    currency: w.currency,
+    is_user_reported: false,
+    reserved_until: null,
+    rarity: w.rarity ?? null,
+    supertype: w.supertype ?? null,
+    subtypes: w.subtypes ?? null,
+    types: w.types ?? null,
+    image: w.image
+  })
+}
+
 export default function WantlistSlot({
   entry,
   owner = false,
@@ -30,21 +65,18 @@ export default function WantlistSlot({
   onBudgetChange
 }: WantlistSlotProps) {
   const [budget, setBudget] = useState(entry.max_budget ?? '')
+  const slotCard = toWantlistSlotCard(entry)
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-fuchsia-500/50 bg-slate-950 shadow-[0_0_15px_rgba(217,70,239,0.2)] transition-shadow hover:shadow-[0_0_20px_rgba(217,70,239,0.35)]">
-      {/* Badge flotante superior */}
-      <span className="absolute left-2 top-2 z-10 rounded-md bg-fuchsia-500/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white shadow">
-        Buscada
-      </span>
-
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={entry.image}
-        alt={entry.card_name}
-        loading="lazy"
-        className="aspect-[63/88] w-full object-cover"
-      />
+    <div className="group relative rounded-xl border border-fuchsia-500/50 bg-slate-950 shadow-[0_0_15px_rgba(217,70,239,0.2)] transition-shadow hover:shadow-[0_0_20px_rgba(217,70,239,0.35)]">
+      {/* Carta con efecto holo (mismo PokemonCard que el binder) */}
+      <div className="relative aspect-[63/88] rounded-xl">
+        {/* Badge flotante superior */}
+        <span className="absolute left-2 top-2 z-10 rounded-md bg-fuchsia-500/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white shadow">
+          Buscada
+        </span>
+        <PokemonCard card={slotCard} />
+      </div>
 
       <div className="border-t border-fuchsia-500/30 p-2.5">
         <p className="truncate text-xs font-semibold text-white">{entry.card_name}</p>

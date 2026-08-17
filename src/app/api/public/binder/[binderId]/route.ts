@@ -74,10 +74,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
     )
 
     const wantlistEnriched = await Promise.all(
-      (wantlist || []).map(async (w) => ({
-        ...w,
-        image: await resolveCardImage(w.set_id, w.number)
-      }))
+      (wantlist || []).map(async (w) => {
+        const m = meta.get(w.card_id)
+        return {
+          ...w,
+          rarity: m?.rarity ?? null,
+          supertype: m?.supertype ?? null,
+          subtypes: m?.subtypes ?? null,
+          types: m?.types ?? null,
+          image: await resolveCardImage(w.set_id, w.number)
+        }
+      })
     )
 
     return NextResponse.json({

@@ -10,11 +10,28 @@ import {
   type TradeOfferView
 } from '@/lib/tradeOffers'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
+import { ChatIcon, SwapIcon } from '@/components/icons'
 
 type Inbox = 'received' | 'sent'
 
 const fmt = (n: number | null | undefined) =>
-  n != null ? `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
+  n != null
+    ? `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : '—'
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return 'recién'
+  if (minutes < 60) return `hace ${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `hace ${hours} h`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `hace ${days} día${days !== 1 ? 's' : ''}`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `hace ${months} mes${months !== 1 ? 'es' : ''}`
+  return `hace ${Math.floor(months / 12)} año${Math.floor(months / 12) !== 1 ? 's' : ''}`
+}
 
 export default function OffersPage() {
   const [inbox, setInbox] = useState<Inbox>('received')
@@ -76,38 +93,58 @@ export default function OffersPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Bandeja de ofertas</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Intercambios propuestos entre binders de la comunidad.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/binder" className="text-sm font-medium text-slate-400 transition-colors hover:text-white">
-            ← Mi binder
-          </Link>
-          <Link href="/explore" className="text-sm font-medium text-slate-400 transition-colors hover:text-white">
-            Explorar
-          </Link>
+      {/* Encabezado con acento neón */}
+      <header className="relative mb-6 overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 p-6 backdrop-blur-xl">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/70 to-transparent" />
+        <div className="pointer-events-none absolute -top-24 right-0 h-48 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
+
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-fuchsia-500/15 text-fuchsia-300 ring-1 ring-fuchsia-500/40">
+                <SwapIcon width={18} height={18} />
+              </span>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight text-white">Bandeja de ofertas</h1>
+                <p className="text-xs text-slate-500">
+                  Intercambios propuestos entre binders de la comunidad.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/binder"
+              className="text-sm font-medium text-slate-400 transition-colors hover:text-white"
+            >
+              ← Mi binder
+            </Link>
+            <Link
+              href="/explore"
+              className="text-sm font-medium text-slate-400 transition-colors hover:text-white"
+            >
+              Explorar
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="mb-6 flex gap-2">
+      {/* Tabs estilo segmentado */}
+      <div className="mb-6 flex gap-1 rounded-xl border border-slate-800 bg-slate-900 p-1">
         {(
           [
-            { id: 'received', label: 'Ofertas recibidas' },
-            { id: 'sent', label: 'Ofertas enviadas' }
+            { id: 'received', label: '📥 Ofertas recibidas' },
+            { id: 'sent', label: '📤 Ofertas enviadas' }
           ] as { id: Inbox; label: string }[]
         ).map((t) => (
           <button
             key={t.id}
             onClick={() => setInbox(t.id)}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+            aria-pressed={inbox === t.id}
+            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
               inbox === t.id
-                ? 'bg-binder-accent/20 text-binder-accent ring-1 ring-binder-accent/40'
-                : 'border border-slate-800 text-slate-400 hover:border-slate-600 hover:text-white'
+                ? 'bg-binder-accent text-white shadow'
+                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
             }`}
           >
             {t.label}
@@ -124,9 +161,12 @@ export default function OffersPage() {
       {loading ? (
         <p className="py-20 text-center text-slate-500">Cargando ofertas…</p>
       ) : offers.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-16 text-center">
-          <p className="text-lg font-semibold text-white">Sin ofertas {inbox === 'received' ? 'recibidas' : 'enviadas'}</p>
-          <p className="mt-1 text-sm text-slate-500">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 px-6 py-16 text-center backdrop-blur-xl">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/40 to-transparent" />
+          <p className="text-lg font-semibold text-white">
+            Sin ofertas {inbox === 'received' ? 'recibidas' : 'enviadas'}
+          </p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
             {inbox === 'received'
               ? 'Cuando alguien proponga un intercambio por una de tus cartas, aparece acá.'
               : 'Proponé un cambio desde la ficha pública de otro coleccionista y lo vas a ver acá.'}
@@ -137,70 +177,104 @@ export default function OffersPage() {
           {offers.map((o) => {
             const status = normalizeOfferStatus(o.status)
             const meta = TRADE_OFFER_STATUS_META[status]
-            const other =
-              inbox === 'received' ? o.sender : o.receiver
+            const other = inbox === 'received' ? o.sender : o.receiver
+            const location = formatLocation(other.city, other.country)
             const favorable =
-              status === 'pending' && inbox === 'received' && tradeIsFavorable(o.totalRequested, o.totalOffered)
+              status === 'pending' &&
+              inbox === 'received' &&
+              tradeIsFavorable(o.totalRequested, o.totalOffered)
             return (
               <div
                 key={o.id}
-                className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
+                className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 shadow-[0_8px_30px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-colors hover:border-slate-700"
               >
-                {/* Cabecera */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-rose-500/50 to-transparent" />
+
+                {/* Cabecera: quién propuso + estado */}
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ring-1 ${meta.badgeClass}`}>
-                      {meta.label}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-amber-500 text-sm font-bold text-white shadow">
+                      {(other.username[0] ?? 'C').toUpperCase()}
                     </span>
-                    <span className="text-xs text-slate-500">{dateFmt(o.created_at)}</span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm">
+                        <Link
+                          href={`/profile/${encodeURIComponent(other.username)}`}
+                          className="font-semibold text-white transition-colors hover:text-rose-300"
+                        >
+                          @{other.username}
+                        </Link>{' '}
+                        <span className="text-slate-500">
+                          {inbox === 'received' ? 'propone un intercambio' : 'recibirá tu oferta'}
+                        </span>
+                      </p>
+                      <p className="truncate text-xs text-slate-500">
+                        {location || 'Ubicación no especificada'} ·{' '}
+                        <time dateTime={o.created_at} title={dateFmt(o.created_at)}>
+                          {timeAgo(o.created_at)}
+                        </time>
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-400">
-                    {inbox === 'received' ? 'De' : 'Para'}{' '}
-                    <span className="font-semibold text-slate-200">@{other.username}</span>
-                    {formatLocation(other.city, other.country) &&
-                      ` · ${formatLocation(other.city, other.country)}`}
-                  </p>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold ring-1 ${meta.badgeClass}`}
+                  >
+                    {meta.label}
+                  </span>
                 </div>
 
-                {/* Comparativa */}
+                {/* Comparativa Quiere / Ofrece */}
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
-                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Quiere</p>
+                  <div className="rounded-xl border border-rose-500/20 bg-slate-950/60 p-3">
+                    <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-rose-400/80">
+                      Quiere
+                    </p>
                     <div className="mt-2 flex gap-3">
                       {o.requested.image && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={o.requested.image}
-                          alt={o.requested.card_name}
-                          className="h-20 w-14 shrink-0 rounded-lg object-cover"
-                        />
+                        <div className="shrink-0 overflow-hidden rounded-lg ring-1 ring-rose-500/40 shadow-[0_0_14px_rgba(244,63,94,0.2)]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={o.requested.image}
+                            alt={o.requested.card_name}
+                            className="h-20 w-14 object-cover"
+                          />
+                        </div>
                       )}
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white">{o.requested.card_name}</p>
+                        <p className="truncate text-sm font-semibold text-white">
+                          {o.requested.card_name}
+                        </p>
                         <p className="text-xs text-slate-500">
                           {o.requested.set_id.toUpperCase()} {o.requested.number}
                         </p>
-                        <p className="mt-1 text-sm font-bold text-yellow-400">{fmt(o.requested.price)}</p>
+                        <p className="mt-1 text-sm font-bold text-yellow-400">
+                          {fmt(o.requested.price)}
+                        </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
-                    <p className="text-[10px] uppercase tracking-widest text-slate-500">
+                  <div className="rounded-xl border border-emerald-500/20 bg-slate-950/60 p-3">
+                    <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-emerald-500/80">
                       Ofrece{`${o.offered.length > 0 ? ` (${o.offered.length})` : ''}`}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {o.offered.map((c) => (
                         <div key={c.id} className="w-14">
                           {c.image && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={c.image}
-                              alt={c.card_name}
-                              className="h-20 w-14 rounded-lg object-cover"
-                            />
+                            <div className="overflow-hidden rounded-lg ring-1 ring-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.15)]">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={c.image}
+                                alt={c.card_name}
+                                className="h-20 w-14 object-cover"
+                              />
+                            </div>
                           )}
-                          <p className="mt-1 truncate text-center text-[10px] text-slate-400" title={c.card_name}>
+                          <p
+                            className="mt-1 truncate text-center text-[10px] text-slate-400"
+                            title={c.card_name}
+                          >
                             {c.card_name}
                           </p>
                         </div>
@@ -218,17 +292,22 @@ export default function OffersPage() {
                 </div>
 
                 {/* Valor comparativo */}
-                <p className="mt-3 text-sm text-slate-300">
-                  Valor del intercambio: <span className="font-bold text-yellow-400">{tradeValueText(o.totalRequested, o.totalOffered)}</span>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <p className="text-sm text-slate-300">
+                    Valor del intercambio:{' '}
+                    <span className="font-bold text-yellow-400">
+                      {tradeValueText(o.totalRequested, o.totalOffered)}
+                    </span>
+                  </p>
                   {favorable && (
-                    <span className="ml-2 rounded-full bg-emerald-600/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                    <span className="rounded-full bg-emerald-600/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
                       Te conviene ✓
                     </span>
                   )}
-                </p>
+                </div>
 
                 {o.message && (
-                  <p className="mt-3 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm italic text-slate-400">
+                  <p className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm italic text-slate-400">
                     “{o.message}”
                   </p>
                 )}
@@ -240,7 +319,7 @@ export default function OffersPage() {
                       <button
                         onClick={() => updateStatus(o.id, 'accepted')}
                         disabled={actingId === o.id}
-                        className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-950/50 transition-colors hover:bg-emerald-500 disabled:opacity-50"
                       >
                         Aceptar oferta
                       </button>
@@ -259,8 +338,9 @@ export default function OffersPage() {
                       href={confirmWhatsApp(o)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-950/50 transition-colors hover:bg-emerald-500"
                     >
+                      <ChatIcon width={14} height={14} />
                       Coordinar entrega por WhatsApp
                     </a>
                   )}

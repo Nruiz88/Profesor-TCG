@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveCardImage } from '@/lib/cardImage'
+import { getCardMetadataMap } from '@/lib/catalog'
 import { sanitizePlainText, sanitizeCardTitle } from '@/lib/sanitize'
 import { normalizeCurrency } from '@/lib/priceGuide'
 
@@ -27,11 +28,19 @@ export async function GET() {
       .order('created_at', { ascending: false })
     if (error) throw error
 
+    const meta = await getCardMetadataMap()
     const enriched = await Promise.all(
-      (wantlist || []).map(async (w) => ({
-        ...w,
-        image: await resolveCardImage(w.set_id, w.number)
-      }))
+      (wantlist || []).map(async (w) => {
+        const m = meta.get(w.card_id)
+        return {
+          ...w,
+          rarity: m?.rarity ?? null,
+          supertype: m?.supertype ?? null,
+          subtypes: m?.subtypes ?? null,
+          types: m?.types ?? null,
+          image: await resolveCardImage(w.set_id, w.number)
+        }
+      })
     )
 
     return NextResponse.json({ wantlist: enriched })

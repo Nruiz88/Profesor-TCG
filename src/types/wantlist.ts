@@ -21,6 +21,10 @@ export interface WantlistCard {
   max_budget: number | null
   currency: string
   image: string
+  rarity?: string | null
+  supertype?: string | null
+  subtypes?: string[] | null
+  types?: string[] | null
 }
 
 export interface WantlistMatch {

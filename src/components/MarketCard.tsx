@@ -6,6 +6,7 @@ import type { ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
 import { CARD_LANGUAGE_META, normalizeLanguage } from '@/lib/cardLanguage'
 import { formatPrice } from '@/lib/priceGuide'
+import { slugify } from '@/lib/utils'
 import { ArrowRightIcon, ChatIcon } from '@/components/icons'
 
 // Mensaje pre-armado del claim (mismo formato que MarketGrid/ClaimModal)
@@ -135,7 +136,7 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
               href={
                 card.binder_public
                   ? `/binder/${encodeURIComponent(card.username)}?card=${card.id}`
-                  : `/card/${card.id}`
+                  : `/card/${card.id}/${slugify(card.card_name)}`
               }
               className="flex items-center justify-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20"
             >

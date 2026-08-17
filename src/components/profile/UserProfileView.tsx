@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import SiteNav from '@/components/SiteNav'
 import MarketCard from '@/components/MarketCard'
 import WantlistSlot from '@/components/binder/WantlistSlot'
@@ -18,6 +19,7 @@ export interface ProfileReview {
   tags: string[]
   comment: string | null
   createdAt: string
+  kind?: string | null
   reviewer: { id: string; username: string } | null
 }
 
@@ -66,6 +68,27 @@ function formatDate(iso: string): string {
   } catch {
     return iso
   }
+}
+
+// Fecha relativa ("hace 3 días") con la fecha exacta disponible como tooltip.
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return 'hace un momento'
+  if (minutes < 60) return `hace ${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `hace ${hours} h`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `hace ${days} día${days !== 1 ? 's' : ''}`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `hace ${months} mes${months !== 1 ? 'es' : ''}`
+  return `hace ${Math.floor(months / 12)} año${Math.floor(months / 12) !== 1 ? 's' : ''}`
+}
+
+const KIND_LABEL: Record<string, string> = {
+  sale: '🛒 Compra',
+  trade: '🔄 Intercambio',
+  both: '🔄 Venta e intercambio'
 }
 
 function EmptyState({
@@ -177,8 +200,14 @@ export default function UserProfileView({
 
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         {/* Header de identidad y reputación */}
-        <header className="mb-8 rounded-3xl border border-slate-800/80 bg-slate-900/40 p-6 backdrop-blur-xl sm:p-8">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+        <header className="relative mb-8 overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl">
+          {/* Acento neón superior */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/70 to-transparent" />
+          {/* Glow decorativo de fondo */}
+          <div className="pointer-events-none absolute -top-28 left-1/2 h-56 w-[28rem] -translate-x-1/2 rounded-full bg-fuchsia-500/10 blur-3xl" />
+
+          <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
+            {/* Identidad */}
             <div className="flex items-center gap-5">
               <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-fuchsia-500/40 via-rose-500/30 to-sky-500/40 text-3xl font-black text-white ring-2 ring-fuchsia-400/50 shadow-[0_0_35px_rgba(217,70,239,0.35)]">
                 {initial}
@@ -193,40 +222,53 @@ export default function UserProfileView({
               </div>
 
               <div className="min-w-0">
-                <h1 className="truncate text-2xl font-bold tracking-tight text-white">
-                  {profile.username}
-                </h1>
-                <p className="truncate text-sm text-slate-400">@{profile.username}</p>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="truncate text-2xl font-bold tracking-tight text-white">
+                    {profile.username}
+                  </h1>
+                  {profile.isVerified && (
+                    <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-300 ring-1 ring-emerald-500/30">
+                      ⚡ Verificado
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 truncate text-sm text-slate-400">
+                  <span className="text-slate-600">@{profile.username}</span>
+                  {location && (
+                    <>
+                      <span className="text-slate-700">·</span>
+                      <span>📍 {location}</span>
+                    </>
+                  )}
+                </p>
               </div>
             </div>
 
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-slate-400">
+            {/* Reputación + acciones */}
+            <div className="flex flex-col gap-4 lg:items-end">
+              <div className="flex flex-wrap items-center gap-2">
                 {ratingAvg != null ? (
-                  <span className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 px-3 py-1.5">
                     <Stars rating={ratingAvg} />
-                    <span className="font-bold text-amber-400">{ratingAvg.toFixed(1)}</span>
-                    <span>
-                      ({reviewCount} reseña{reviewCount !== 1 ? 's' : ''})
+                    <span className="text-sm font-bold text-amber-400">{ratingAvg.toFixed(1)}</span>
+                    <span className="text-xs text-slate-500">
+                      {reviewCount} reseña{reviewCount !== 1 ? 's' : ''}
                     </span>
                   </span>
                 ) : (
-                  <span className="text-slate-500">Sin reseñas aún</span>
+                  <span className="rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-500">
+                    Sin reseñas aún
+                  </span>
                 )}
-                <span className="text-slate-700">•</span>
-                <span>
-                  {completedClaims} trato{completedClaims !== 1 ? 's' : ''} confirmado
-                  {completedClaims !== 1 ? 's' : ''}
+                <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-3 py-1.5">
+                  <span className="text-sm font-bold text-emerald-300">{completedClaims}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400/70">
+                    tratos
+                  </span>
                 </span>
-                {location && (
-                  <>
-                    <span className="text-slate-700">•</span>
-                    <span className="flex items-center gap-1">📍 {location}</span>
-                  </>
-                )}
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {profile.whatsapp_number ? (
                   <a
                     href={whatsAppLink(profile.whatsapp_number)}
@@ -377,17 +419,43 @@ export default function UserProfileView({
                 return (
                   <article
                     key={review.id}
-                    className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl"
+                    className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl transition-colors hover:border-slate-700"
                   >
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-binder-accent to-amber-500 text-sm font-bold text-white shadow">
                         {(review.reviewer?.username[0] ?? '?').toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-white">
-                          {review.reviewer ? `@${review.reviewer.username}` : 'Comprador'}
+                        {review.reviewer ? (
+                          <p className="truncate text-sm">
+                            <Link
+                              href={`/profile/${encodeURIComponent(review.reviewer.username)}`}
+                              className="font-semibold text-white transition-colors hover:text-rose-300"
+                            >
+                              @{review.reviewer.username}
+                            </Link>{' '}
+                            <span className="text-slate-500">dejó una reseña</span>
+                          </p>
+                        ) : (
+                          <p className="truncate text-sm">
+                            <span className="font-semibold text-white">Un comprador</span>{' '}
+                            <span className="text-slate-500">dejó una reseña</span>
+                          </p>
+                        )}
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          {review.kind && KIND_LABEL[review.kind] && (
+                            <span className="rounded-full border border-slate-700 bg-slate-950/60 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
+                              {KIND_LABEL[review.kind]}
+                            </span>
+                          )}
+                          <time
+                            dateTime={review.createdAt}
+                            title={formatDate(review.createdAt)}
+                            className="text-xs text-slate-500"
+                          >
+                            {timeAgo(review.createdAt)}
+                          </time>
                         </p>
-                        <p className="text-xs text-slate-500">{formatDate(review.createdAt)}</p>
                       </div>
                       <Stars rating={review.rating} />
                     </div>
