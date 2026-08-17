@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import Link from 'next/link'
 import type { ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
+import { CARD_LANGUAGE_META, normalizeLanguage } from '@/lib/cardLanguage'
 import { ArrowRightIcon, ChatIcon } from '@/components/icons'
 
 // Mensaje pre-armado del claim (mismo formato que MarketGrid/ClaimModal)
@@ -141,6 +142,9 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
           <p className="truncate text-[11px] font-medium text-slate-500">
             {card.set_name}
             {card.rarity ? ` · ${card.rarity}` : ''}
+            {card.language
+              ? ` · ${CARD_LANGUAGE_META[normalizeLanguage(card.language)].flag} ${card.language}`
+              : ''}
           </p>
         </div>
 

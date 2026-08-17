@@ -9,6 +9,8 @@ import {
   type Availability
 } from '@/lib/cardStatus'
 import { isProfileComplete, type Profile } from '@/lib/profile'
+import { normalizeLanguage, type CardLanguage } from '@/lib/cardLanguage'
+import LanguagePills from './LanguagePills'
 import ClaimKitModal from './ClaimKitModal'
 
 // Condiciones físicas habituales del TCG (opcional, para el mensaje del claim)
@@ -40,6 +42,7 @@ export default function EditCardModal({
   )
   const [tradeNotes, setTradeNotes] = useState<string>(card.trade_notes ?? '')
   const [condition, setCondition] = useState<string>(card.condition ?? '')
+  const [language, setLanguage] = useState<CardLanguage>(() => normalizeLanguage(card.language))
   const [showKit, setShowKit] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -83,6 +86,7 @@ export default function EditCardModal({
       }
       body.trade_notes = tradeNotes.trim() === '' ? null : tradeNotes.trim()
       body.condition = condition.trim() === '' ? null : condition.trim()
+      body.language = language
 
       const res = await fetch(`/api/binder/slots/${card.id}`, {
         method: 'PATCH',
@@ -124,6 +128,20 @@ export default function EditCardModal({
         <p className="mt-1 truncate text-sm text-slate-500">
           {card.card_name} · {card.set_id.toUpperCase()} {card.number}
         </p>
+
+        {/* Idioma de la copia física */}
+        <div className="mt-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+            Idioma de tu copia
+          </p>
+          <div className="mt-2">
+            <LanguagePills value={language} onChange={setLanguage} />
+          </div>
+          <p className="mt-1.5 text-xs text-slate-600">
+            El idioma figura en el slot y en el kit de claim, para que los compradores sepan
+            exactamente qué copia ofrecés.
+          </p>
+        </div>
 
         {/* Selector de modalidad */}
         <div className="mt-5">

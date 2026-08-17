@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import SiteNav from '@/components/SiteNav'
+import LanguageBadge from '@/components/LanguageBadge'
 import PokemonCard from '@/components/PokemonCard'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
 import ClaimModal from '@/components/ClaimModal'
@@ -22,6 +23,7 @@ interface PublicCard {
   types: string[] | null
   status: string
   condition: string | null
+  language: string | null
   is_for_sale: boolean
   is_for_trade: boolean
   trade_notes: string | null
@@ -116,6 +118,7 @@ export default function PublicCardPage({
     price: card.price,
     trade_notes: card.trade_notes,
     condition: card.condition,
+    language: card.language,
     reserved_until: card.reserved_until,
     rarity: card.rarity,
     supertype: card.supertype,
@@ -160,7 +163,10 @@ export default function PublicCardPage({
 
         {/* Info + acciones */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">{card.card_name}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-white">{card.card_name}</h1>
+            <LanguageBadge language={card.language} />
+          </div>
           <p className="mt-1 text-sm text-slate-400">
             {card.set_id.toUpperCase()} · #{card.number}
             {card.condition && <span className="ml-2 text-slate-500">· {card.condition}</span>}

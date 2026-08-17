@@ -7,6 +7,7 @@ import CardDetailModal from './CardDetailModal'
 import CardStatusBadge from './CardStatusBadge'
 import ClaimModal from './ClaimModal'
 import { effectivePrice, normalizeStatus } from '@/lib/cardStatus'
+import LanguageBadge from './LanguageBadge'
 import type { SellerInfo } from './SellerInfoBadge'
 
 interface BinderSheetProps {
@@ -73,6 +74,12 @@ export default function BinderSheet({
                   <PokemonCard card={card} />
                 </div>
 
+                {/* Idioma de la copia (esquina superior izquierda) */}
+                <LanguageBadge
+                  language={card.language}
+                  className="absolute left-1.5 top-1.5"
+                />
+
                 {/* Precio efectivo (precio manual, override o mercado) */}
                 {effectivePrice(card.market_price, card.price_override, card.price) != null && (
                   <div className="pointer-events-none absolute right-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-yellow-400 shadow-md ring-1 ring-yellow-400/30">
@@ -104,7 +111,7 @@ export default function BinderSheet({
                       e.stopPropagation()
                       onRemoveSlot(card.id)
                     }}
-                    className="absolute left-1.5 top-1.5 rounded-full bg-black/70 p-1 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                    className="absolute right-1.5 top-9 rounded-full bg-black/70 p-1 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
                     aria-label={`Quitar ${card.card_name}`}
                   >
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">

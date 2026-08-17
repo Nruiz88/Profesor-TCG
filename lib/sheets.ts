@@ -16,6 +16,7 @@ export interface RawCard {
   price?: number | null
   trade_notes?: string | null
   condition?: string | null
+  language?: string | null
   reserved_until?: string | null
   rarity?: string | null
   supertype?: string | null

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { effectivePrice } from '@/lib/cardStatus'
+import { CARD_LANGUAGE_META, normalizeLanguage } from '@/lib/cardLanguage'
 
 // ---------------------------------------------------------------------------
 // WhatsApp Claim — lógica compartida del circuito de compra/venta:
@@ -16,6 +17,7 @@ export interface ClaimParams {
   number: string
   price: number | null
   condition?: string | null
+  language?: string | null
   binderSlotUrl: string
   sellerName?: string | null
 }
@@ -30,9 +32,10 @@ const fmtPrice = (n: number | null) =>
 export function claimMessage(p: ClaimParams): string {
   const seller = p.sellerName ? `@${p.sellerName}` : 'coleccionista'
   const cond = p.condition ? ` (Estado: ${p.condition})` : ''
+  const lang = p.language ? ` (Idioma: ${CARD_LANGUAGE_META[normalizeLanguage(p.language)].label})` : ''
   return [
     `¡Hola ${seller}! Vengo de tu Binder en Profesor TCG.`,
-    `Hice el CLAIM de la carta *${p.cardName}* (#${p.setId.toUpperCase()} ${p.number})${cond} por ${fmtPrice(p.price)}.`,
+    `Hice el CLAIM de la carta *${p.cardName}* (#${p.setId.toUpperCase()} ${p.number})${cond}${lang} por ${fmtPrice(p.price)}.`,
     '¿Cómo coordinamos el pago y el envío? 🚀'
   ].join('\n')
 }
@@ -46,6 +49,7 @@ export function sellerKitText(p: ClaimParams): string {
   ]
   lines.push(`🃏 *${p.cardName}*`)
   lines.push(`📚 Set ${p.setId.toUpperCase()} · #${p.number}`)
+  if (p.language) lines.push(`🌐 Idioma: ${CARD_LANGUAGE_META[normalizeLanguage(p.language)].label}`)
   lines.push(`🏷️ Precio: 💵 *${fmtPrice(p.price)}* USD`)
   if (p.condition) lines.push(`✨ Estado: ${p.condition}`)
   lines.push('')

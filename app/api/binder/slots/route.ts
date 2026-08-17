@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { isCardLanguage } from '@/lib/cardLanguage'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +11,7 @@ interface SlotInput {
   card_name: string
   set_id: string
   number: string
+  language?: string
 }
 
 export async function POST(req: Request) {
@@ -54,6 +56,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Binder no encontrado' }, { status: 404 })
     }
 
+    // Idioma de la copia (opcional; por defecto Español)
+    const language = body.language ?? 'ES'
+    if (!isCardLanguage(language)) {
+      return NextResponse.json({ error: 'Idioma inválido' }, { status: 400 })
+    }
+
     // Precio desde la caché global card_prices si ya está cargada
     const { data: priceRow } = await supabase
       .from('card_prices')
@@ -70,6 +78,7 @@ export async function POST(req: Request) {
         card_name: body.card_name,
         set_id: body.set_id,
         number: body.number,
+        language,
         market_price: marketPrice,
         updated_at: new Date().toISOString()
       },

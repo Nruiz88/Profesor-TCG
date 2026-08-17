@@ -14,7 +14,7 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-const CARD_FIELDS = 'id, card_name, set_id, number, market_price, price, price_override'
+const CARD_FIELDS = 'id, card_name, set_id, number, market_price, price, price_override, language'
 const PROFILE_FIELDS = 'username, whatsapp_number, city, country'
 
 function userView(s: UserSnapshot | null): OfferUserView {

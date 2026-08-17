@@ -216,6 +216,7 @@ export default function ClaimKitModal({
     number: card.number,
     price: effectivePrice,
     condition: card.condition,
+    language: card.language ?? null,
     binderSlotUrl: slotUrl,
     sellerName: username
   })

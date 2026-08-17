@@ -131,16 +131,20 @@ create table if not exists public.binder_cards (
   price numeric(10, 2),                         -- precio del usuario (prima sobre market_price)
   trade_notes text,                             -- "¿Qué busco a cambio?" (opcional)
   condition text,                               -- estado físico: Mint / Near Mint / Excellent / etc.
+  language text not null default 'ES',          -- idioma de la copia: ES | EN | JP | KO | ZH
   reserved_until timestamptz,                   -- fin del soft lock 24h tras un CLAIM
   updated_at timestamptz not null default timezone('utc'::text, now()),
   unique (binder_id, slot_number),
-  constraint binder_cards_status_check check (status in ('collection', 'for_sale', 'for_trade', 'reserved'))
+  constraint binder_cards_status_check check (status in ('collection', 'for_sale', 'for_trade', 'reserved')),
+  constraint binder_cards_language_check check (language in ('ES', 'EN', 'JP', 'KO', 'ZH'))
 );
 
 create index if not exists idx_binder_cards_reserved_until on public.binder_cards(reserved_until)
   where status = 'reserved';
 
 create index if not exists idx_binder_cards_availability on public.binder_cards(is_for_sale, is_for_trade);
+
+create index if not exists idx_binder_cards_language on public.binder_cards(language);
 
 create index if not exists idx_binder_cards_binder on public.binder_cards(binder_id);
 create index if not exists idx_binder_cards_updated on public.binder_cards(updated_at desc);

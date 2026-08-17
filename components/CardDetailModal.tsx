@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { SlotCard } from '@/lib/sheets'
 import type { FullCard } from '@/app/api/cards/[cardId]/route'
 import { NO_IMAGE_PLACEHOLDER } from '@/lib/cardImage'
+import LanguageBadge from './LanguageBadge'
 
 import { TypeIcon } from './TypeIcon'
 
@@ -137,7 +138,10 @@ export default function CardDetailModal({ card, onClose }: CardDetailModalProps)
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-5 py-4">
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold text-white">{name}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="truncate text-lg font-semibold text-white">{name}</h2>
+              <LanguageBadge language={card.language} className="shrink-0" />
+            </div>
             <p className="truncate text-xs text-slate-500">
               {setLabel}
               {detail?.rarity ? ` · ${detail.rarity}` : ''}

@@ -27,7 +27,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const { data: card, error } = await admin
       .from('binder_cards')
       .select(
-        `id, binder_id, card_id, card_name, set_id, number, slot_number, market_price,\n         status, price_override, is_for_sale, is_for_trade, price, trade_notes,\n         condition, reserved_until,\n         binders!binder_cards_binder_id_fkey!inner(id, title, is_public, user_id)`
+        `id, binder_id, card_id, card_name, set_id, number, slot_number, market_price,\n         status, price_override, is_for_sale, is_for_trade, price, trade_notes,\n         condition, language, reserved_until,\n         binders!binder_cards_binder_id_fkey!inner(id, title, is_public, user_id)`
       )
       .eq('id', id)
       .maybeSingle()
@@ -71,6 +71,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         types: m?.types ?? null,
         status: card.status,
         condition: card.condition ?? null,
+        language: card.language ?? null,
         is_for_sale: card.is_for_sale,
         is_for_trade: card.is_for_trade,
         trade_notes: card.trade_notes ?? null,

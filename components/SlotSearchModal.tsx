@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import LanguagePills from './LanguagePills'
+import type { CardLanguage } from '@/lib/cardLanguage'
 
 export interface SearchResult {
   id: string
@@ -15,7 +17,7 @@ export interface SearchResult {
 interface SlotSearchModalProps {
   slotLabel: string
   onClose: () => void
-  onSelect: (card: SearchResult) => Promise<void>
+  onSelect: (card: SearchResult, language: CardLanguage) => Promise<void>
 }
 
 export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSearchModalProps) {
@@ -24,6 +26,7 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [language, setLanguage] = useState<CardLanguage>('ES')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -61,7 +64,7 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
     setSaving(card.id)
     setError(null)
     try {
-      await onSelect(card)
+      await onSelect(card, language)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar')
     } finally {
@@ -97,6 +100,14 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
             autoFocus
             className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200 placeholder-slate-600 outline-none transition-colors focus:border-binder-accent"
           />
+
+          {/* Idioma de la copia: misma impresión para toda la colección */}
+          <div className="mt-3">
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              Idioma de tu copia
+            </p>
+            <LanguagePills value={language} onChange={setLanguage} compact />
+          </div>
         </div>
 
         {error && <p className="px-5 pb-2 text-sm text-red-400">{error}</p>}

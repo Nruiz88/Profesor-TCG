@@ -5,6 +5,7 @@ import SiteNav from '@/components/SiteNav'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SlotSearchModal, { type SearchResult } from '@/components/SlotSearchModal'
+import type { CardLanguage } from '@/lib/cardLanguage'
 import ProfileSettings from '@/components/ProfileSettings'
 import ProfileRequiredModal from '@/components/ProfileRequiredModal'
 import EditCardModal from '@/components/EditCardModal'
@@ -304,7 +305,7 @@ export default function BinderPage() {
     }
   }
 
-  async function addCardToSlot(card: SearchResult) {
+  async function addCardToSlot(card: SearchResult, language: CardLanguage) {
     if (!binder || !slotTarget) throw new Error('Sin binder o slot objetivo')
 
     const slotNumber = slotTarget.sheetIndex * SLOTS_PER_SHEET + slotTarget.slotIndex + 1
@@ -318,7 +319,8 @@ export default function BinderPage() {
         card_id: card.id,
         card_name: card.name,
         set_id: card.set_id,
-        number: card.number
+        number: card.number,
+        language
       })
     })
     const data = await res.json()
@@ -557,8 +559,8 @@ export default function BinderPage() {
         <SlotSearchModal
           slotLabel={`Hoja ${slotTarget.sheetIndex + 1} · bolsillo ${slotTarget.slotIndex + 1}`}
           onClose={() => setSlotTarget(null)}
-          onSelect={async (card) => {
-            await addCardToSlot(card)
+          onSelect={async (card, language) => {
+            await addCardToSlot(card, language)
             setSlotTarget(null)
           }}
         />

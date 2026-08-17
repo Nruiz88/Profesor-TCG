@@ -6,6 +6,7 @@ import {
   isCardStatus,
   statusFromAvailability
 } from '@/lib/cardStatus'
+import { isCardLanguage } from '@/lib/cardLanguage'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +41,7 @@ interface PatchBody {
   price?: unknown
   trade_notes?: unknown
   condition?: unknown
+  language?: unknown
 }
 
 // Actualizar la modalidad de disponibilidad (availability), el precio manual y
@@ -119,6 +121,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
   }
 
+  // Idioma de la copia física de la carta
+  if (body.language !== undefined) {
+    if (!isCardLanguage(body.language)) {
+      return NextResponse.json({ error: 'Idioma inválido' }, { status: 400 })
+    }
+    updates.language = body.language
+  }
+
   // Backwards-compat: el body viejo seguía enviando status / price_override
   if (body.status !== undefined) {
     if (!isCardStatus(body.status)) {
@@ -150,7 +160,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select(
-        'id, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, reserved_until'
+        'id, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, reserved_until'
       )
       .single()
     if (error) throw error
