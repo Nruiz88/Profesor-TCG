@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import SiteNav from '@/components/SiteNav'
 import {
   normalizeOfferStatus,
   tradeIsFavorable,
@@ -92,7 +93,10 @@ export default function OffersPage() {
     new Date(iso).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' })
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="min-h-screen bg-[#090d16] text-slate-200">
+      <SiteNav active="offers" />
+
+      <div className="mx-auto max-w-4xl px-4 py-8">
       {/* Encabezado con acento neón */}
       <header className="relative mb-6 overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 p-6 backdrop-blur-xl">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/70 to-transparent" />
@@ -360,6 +364,7 @@ export default function OffersPage() {
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }

@@ -9,6 +9,7 @@ import WantlistSlot from '@/components/binder/WantlistSlot'
 import { buildSwapOfferUrl } from '@/lib/matchmaking'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
 import { REVIEW_TAGS } from '@/lib/reputation'
+import { pokedexLevel } from '@/lib/pokedex'
 import { createClient } from '@/lib/supabase/client'
 import { ChatIcon, CheckIcon, ShareIcon } from '@/components/icons'
 import type { ExploreCard } from '@/app/api/public/explore/route'
@@ -59,6 +60,8 @@ interface UserProfileViewProps {
   reviews: ProfileReview[]
   matchCount: number
   isOwnProfile: boolean
+  /** Especies Pokémon capturadas en los binders + total del catálogo */
+  pokedex?: { captured: number; total: number } | null
 }
 
 function Stars({ rating }: { rating: number }) {
@@ -133,7 +136,8 @@ export default function UserProfileView({
   wantlist,
   reviews,
   matchCount,
-  isOwnProfile
+  isOwnProfile,
+  pokedex
 }: UserProfileViewProps) {
   // Tab inicial desde la URL (?tab=settings) para que "Configurar perfil"
   // aterrice directo en la configuración del perfil propio.
@@ -312,6 +316,41 @@ export default function UserProfileView({
             </div>
           </div>
         </header>
+
+        {/* Pokédex: especies Pokémon capturadas en los binders (cosmético) */}
+        {pokedex && pokedex.total > 0 && (
+          <div className="mb-8 rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500/25 to-amber-400/25 text-xl ring-1 ring-rose-400/30">
+                  ⚡
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-white">Pokédex capturada</p>
+                  <p className="text-xs text-slate-400">
+                    {pokedex.captured} de {pokedex.total} Pokémon en sus binders
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-400/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-300">
+                {pokedexLevel(pokedex.captured).icon} {pokedexLevel(pokedex.captured).name}
+              </span>
+            </div>
+            <div
+              className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-800"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={pokedex.total}
+              aria-valuenow={pokedex.captured}
+              aria-label="Pokémon capturados"
+            >
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-400 transition-all duration-500"
+                style={{ width: `${Math.min(100, (pokedex.captured / pokedex.total) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Banner de matchmaking: el visitante tiene cartas que este perfil busca */}
         {matchCount > 0 && !isOwnProfile && (

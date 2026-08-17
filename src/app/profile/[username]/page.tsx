@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
-import { getCardMetadataMap, getSets } from '@/lib/catalog'
+import { countCatalogPokemonSpecies, getCardMetadataMap, getSets } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
+import { speciesFromCardName } from '@/lib/pokedex'
 import { effectivePrice } from '@/lib/cardStatus'
 import { findWantlistMatches } from '@/lib/matchmaking'
 import UserProfileView, { type ProfileReview } from '@/components/profile/UserProfileView'
@@ -51,12 +52,9 @@ async function loadReputation(
 // para renderizarlas con MarketCard (mismo shape que el marketplace).
 async function loadSaleCards(
   admin: QueryClient,
-  profile: { id: string; username: string; city: string | null; country: string | null; whatsapp_number: string | null }
+  profile: { id: string; username: string; city: string | null; country: string | null; whatsapp_number: string | null },
+  binders: { id: string; is_public: boolean }[]
 ): Promise<ExploreCard[]> {
-  const { data: binders } = await admin
-    .from('binders')
-    .select('id, is_public')
-    .eq('user_id', profile.id)
   if (!binders || binders.length === 0) return []
   const binderIds = binders.map((b: { id: string }) => b.id)
 
@@ -131,6 +129,36 @@ async function loadWantlist(
   )
 }
 
+// Pokédex del usuario: especies de Pokémon distintas en todos sus binders,
+// contra el total de especies del catálogo. Cosmético, se luce en el perfil.
+async function loadPokedex(
+  admin: QueryClient,
+  binderIds: string[]
+): Promise<{ captured: number; total: number } | null> {
+  if (binderIds.length === 0) return null
+  try {
+    const { data: rows } = await admin
+      .from('binder_cards')
+      .select('card_id')
+      .in('binder_id', binderIds)
+
+    const meta = await getCardMetadataMap()
+    const species = new Set<string>()
+    for (const r of rows || []) {
+      const m = meta.get(r.card_id)
+      // Solo cuentan cartas de Pokémon (no entrenadores ni energía)
+      if (m && m.supertype === 'Pokémon') {
+        species.add(speciesFromCardName(m.name))
+      }
+    }
+
+    const total = await countCatalogPokemonSpecies()
+    return { captured: species.size, total }
+  } catch {
+    return null
+  }
+}
+
 async function loadReviews(
   admin: QueryClient,
   profileId: string
@@ -184,11 +212,18 @@ export default async function UserProfilePage({
     .maybeSingle()
   if (!profile) notFound()
 
-  const [rep, saleCards, wantlist, reviews] = await Promise.all([
+  const { data: binders } = await admin
+    .from('binders')
+    .select('id, is_public')
+    .eq('user_id', profile.id)
+  const binderIds = (binders || []).map((b: { id: string }) => b.id)
+
+  const [rep, saleCards, wantlist, reviews, pokedex] = await Promise.all([
     loadReputation(admin, profile.id),
-    loadSaleCards(admin, profile),
+    loadSaleCards(admin, profile, binders || []),
     loadWantlist(admin, profile.id),
-    loadReviews(admin, profile.id)
+    loadReviews(admin, profile.id),
+    loadPokedex(admin, binderIds)
   ])
 
   const enrichedSaleCards: ExploreCard[] = saleCards.map((c) => ({
@@ -228,6 +263,7 @@ export default async function UserProfilePage({
       reviews={reviews}
       matchCount={matchCount}
       isOwnProfile={user?.id === profile.id}
+      pokedex={pokedex}
     />
   )
 }

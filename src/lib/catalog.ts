@@ -1,5 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
+import { speciesFromCardName } from './pokedex'
 
 export interface Card {
   id: string
@@ -158,4 +159,20 @@ export async function searchCards(query: string, limit = 40): Promise<Array<Card
   const index = await buildIndex()
   const sets = await getSets()
   return filterCards(query, index, sets, limit)
+}
+
+let catalogSpeciesCache: number | null = null
+
+// Total de especies Pokémon distintas del catálogo (denominador de la Pokédex
+// del perfil). Se calcula una sola vez y se cachea por instancia serverless.
+export async function countCatalogPokemonSpecies(): Promise<number> {
+  if (catalogSpeciesCache != null) return catalogSpeciesCache
+  const index = await buildIndex()
+  const species = new Set<string>()
+  for (const c of index) {
+    if (c.supertype !== 'Pokémon') continue
+    species.add(speciesFromCardName(c.name))
+  }
+  catalogSpeciesCache = species.size
+  return catalogSpeciesCache
 }
