@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import SiteNav from '@/components/SiteNav'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SlotSearchModal, { type SearchResult } from '@/components/SlotSearchModal'
@@ -12,18 +12,14 @@ import BinderSettingsModal from '@/components/BinderSettingsModal'
 import BinderToolbar from '@/components/BinderToolbar'
 import ProfileHeaderStats from '@/components/ProfileHeaderStats'
 import {
-  CompassIcon,
   FolderIcon,
-  HomeIcon,
   GearIcon,
   GlobeIcon,
   LockIcon,
-  LogoutIcon,
   PlusIcon,
   RefreshIcon,
   ShareIcon,
   ShieldIcon,
-  SwapIcon,
   TrashIcon,
   UserIcon
 } from '@/components/icons'
@@ -50,7 +46,6 @@ interface Binder {
 }
 
 export default function BinderPage() {
-  const router = useRouter()
   const [user, setUser] = useState<{ email: string | undefined; id: string } | null>(null)
   const [binders, setBinders] = useState<Binder[]>([])
   const [binder, setBinder] = useState<Binder | null>(null)
@@ -189,13 +184,6 @@ export default function BinderPage() {
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Error al eliminar binder')
     }
-  }
-
-  async function logout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/')
-    router.refresh()
   }
 
   async function togglePublic() {
@@ -340,22 +328,18 @@ export default function BinderPage() {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
-      <header className="sticky top-0 z-50 border-b border-slate-800/60 bg-[#090d16]/80 px-4 py-3 backdrop-blur-xl">
+      <SiteNav active="binder" />
+
+      <header className="border-b border-slate-800/60 bg-[#090d16]/80 px-4 py-3 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Profesor TCG</h1>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+          <h1 className="text-xl font-bold tracking-tight text-white">Mi Binder</h1>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
             <span className="font-medium text-slate-400">{binder?.title ?? '—'}</span>
             <span className="text-slate-700">•</span>
             <span>
               {totalCards} cartas en {sheets.length} hoja{sheets.length !== 1 ? 's' : ''}
             </span>
-            {user?.email && (
-              <>
-                <span className="text-slate-700">•</span>
-                <span className="truncate text-slate-500">{user.email}</span>
-              </>
-            )}
           </p>
         </div>
 
@@ -436,33 +420,6 @@ export default function BinderPage() {
 
           <span className="hidden h-6 w-px bg-slate-800 md:block" aria-hidden="true" />
 
-          {/* Navegación */}
-          <a
-            href="/"
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
-          >
-            <HomeIcon className="h-4 w-4" />
-            <span className="hidden lg:inline">Inicio</span>
-          </a>
-
-          <a
-            href="/explore"
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
-          >
-            <CompassIcon className="h-4 w-4" />
-            <span className="hidden lg:inline">Explorar</span>
-          </a>
-
-          <a
-            href="/offers"
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
-          >
-            <SwapIcon className="h-4 w-4" />
-            <span className="hidden lg:inline">Ofertas</span>
-          </a>
-
-          <span className="hidden h-6 w-px bg-slate-800 md:block" aria-hidden="true" />
-
           {/* Cuenta */}
           <button
             onClick={updatePrices}
@@ -494,13 +451,6 @@ export default function BinderPage() {
             <span className="hidden lg:inline">Perfil</span>
           </button>
 
-          <button
-            onClick={logout}
-            className="flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-red-600/15 hover:text-red-300"
-          >
-            <LogoutIcon className="h-4 w-4" />
-            <span className="hidden lg:inline">Salir</span>
-          </button>
         </div>
         </div>
       </header>
