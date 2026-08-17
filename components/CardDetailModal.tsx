@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react'
 import type { SlotCard } from '@/lib/sheets'
 import type { FullCard } from '@/app/api/cards/[cardId]/route'
 import { NO_IMAGE_PLACEHOLDER } from '@/lib/cardImage'
+import { effectivePrice } from '@/lib/cardStatus'
+import { formatPrice } from '@/lib/priceGuide'
 import LanguageBadge from './LanguageBadge'
+import PriceInputWithGuide from './PriceInputWithGuide'
 
 import { TypeIcon } from './TypeIcon'
 
@@ -77,10 +80,19 @@ function Chip({ children }: { children: React.ReactNode }) {
 
 interface CardDetailModalProps {
   card: SlotCard
+  /** Binder propio: habilita idioma + precio manual con guía externa */
+  canEdit?: boolean
+  /** Refresca el binder tras guardar el precio manual */
+  onSaved?: () => void
   onClose: () => void
 }
 
-export default function CardDetailModal({ card, onClose }: CardDetailModalProps) {
+export default function CardDetailModal({
+  card,
+  canEdit = false,
+  onSaved,
+  onClose
+}: CardDetailModalProps) {
   const [detail, setDetail] = useState<FullCard | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -118,10 +130,7 @@ export default function CardDetailModal({ card, onClose }: CardDetailModalProps)
   const name = detail?.name ?? card.card_name
   const setLabel = detail ? `${detail.set_name} · ${detail.number}` : `${card.set_id} · ${card.number}`
   const image = detail?.image ?? card.image
-  const price =
-    card.market_price != null && card.market_price > 0
-      ? card.market_price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      : null
+  const price = effectivePrice(card.market_price, card.price_override, card.price)
 
   return (
     <div
@@ -190,12 +199,15 @@ export default function CardDetailModal({ card, onClose }: CardDetailModalProps)
                     e.currentTarget.src = NO_IMAGE_PLACEHOLDER
                   }}
                 />
-                {price && (
+                {price != null && (
                   <div className="mt-3 rounded-xl border border-yellow-400/20 bg-slate-950 px-3 py-2 text-center">
                     <p className="text-[10px] uppercase tracking-widest text-yellow-400/50">
-                      Precio de mercado · TCGdex
+                      {card.is_user_reported ? 'Precio reportado por el usuario' : 'Precio de mercado'}
                     </p>
-                    <p className="text-lg font-bold text-yellow-400">${price} USD</p>
+                    <p className="text-lg font-bold text-yellow-400">
+                      {formatPrice(price, card.currency)}
+                      {card.is_user_reported ? ' ★' : ''}
+                    </p>
                   </div>
                 )}
               </div>
@@ -323,6 +335,18 @@ export default function CardDetailModal({ card, onClose }: CardDetailModalProps)
                     </span>
                   )}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Idioma + consulta de precio externa + precio manual (binder propio) */}
+          {canEdit && (
+            <div className="border-t border-slate-800 p-5">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                Idioma y precio manual
+              </p>
+              <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                <PriceInputWithGuide card={card} onSaved={onSaved} />
               </div>
             </div>
           )}

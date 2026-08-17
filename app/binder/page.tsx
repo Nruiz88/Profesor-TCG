@@ -540,6 +540,7 @@ export default function BinderPage() {
                       onRemoveSlot={removeSlot}
                       onEmptySlotClick={(slotIndex) => setSlotTarget({ sheetIndex, slotIndex })}
                       onEditCard={setEditCard}
+                      onCardUpdated={() => loadBinder()}
                     />
                   )
                 })}

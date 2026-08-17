@@ -17,6 +17,8 @@ interface BinderSheetProps {
   onRemoveSlot?: (slotId: string) => void
   onEmptySlotClick?: (slotIndex: number) => void
   onEditCard?: (card: SlotCard) => void
+  /** Refresca el binder tras guardar idioma/precio manual desde el detalle */
+  onCardUpdated?: () => void
   seller?: SellerInfo | null
   highlightCardId?: string | null
 }
@@ -27,6 +29,7 @@ export default function BinderSheet({
   onRemoveSlot,
   onEmptySlotClick,
   onEditCard,
+  onCardUpdated,
   seller,
   highlightCardId
 }: BinderSheetProps) {
@@ -164,7 +167,14 @@ export default function BinderSheet({
         ))}
       </div>
 
-      {selected && <CardDetailModal card={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <CardDetailModal
+          card={selected}
+          canEdit={!!onEditCard}
+          onSaved={onCardUpdated}
+          onClose={() => setSelected(null)}
+        />
+      )}
       {claimCard && seller && (
         <ClaimModal card={claimCard} seller={seller} onClose={() => setClaimCard(null)} />
       )}
