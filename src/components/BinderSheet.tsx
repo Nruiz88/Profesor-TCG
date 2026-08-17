@@ -111,6 +111,7 @@ export default function BinderSheet({
                   isForSale={card.is_for_sale}
                   isForTrade={card.is_for_trade}
                   price={card.price}
+                  reservedUntil={card.reserved_until}
                   className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap"
                 />
 

@@ -3,7 +3,13 @@
 import { useEffect, useState } from 'react'
 import type { SlotCard } from '@/lib/sheets'
 import type { SellerInfo } from '@/components/SellerInfoBadge'
-import { buildWhatsAppLink, claimMessage, claimPrice, binderSlotUrl } from '@/lib/claim'
+import {
+  buildWhatsAppLink,
+  claimMessage,
+  claimPrice,
+  binderSlotUrl,
+  formatReservedUntil
+} from '@/lib/claim'
 import { CARD_STATUS_META, normalizeStatus } from '@/lib/cardStatus'
 import MakeTradeOfferModal from './MakeTradeOfferModal'
 
@@ -21,6 +27,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
   const [showOffer, setShowOffer] = useState(false)
   const [claimState, setClaimState] = useState<ClaimState>('idle')
   const [claimError, setClaimError] = useState<string | null>(null)
+  const [reservedUntil, setReservedUntil] = useState<string | null>(null)
 
   const sellerName = seller?.username ? `@${seller.username}` : 'coleccionista'
   const price = claimPrice(card)
@@ -80,8 +87,17 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
       }
       if (!res.ok) throw new Error(data.error || 'Error al reclamar')
       setClaimState('ok')
-      // Abrir el deep link de WhatsApp con el mensaje del claim
-      window.open(claimUrl, '_blank', 'noopener,noreferrer')
+      setReservedUntil(data.reserved_until ?? null)
+      // Abrir el deep link de WhatsApp de forma confiable: window.open()
+      // después de un await suele ser bloqueado por el popup blocker, así que
+      // simulamos un click real en un <a target="_blank"> (como hizo el usuario).
+      const a = document.createElement('a')
+      a.href = claimUrl
+      a.target = '_blank'
+      a.rel = 'noopener noreferrer'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
     } catch (err) {
       setClaimState('error')
       setClaimError(err instanceof Error ? err.message : 'Error desconocido')
@@ -120,9 +136,22 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
         {/* Estado del claim */}
         {claimState === 'ok' && (
           <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-            ✅ <strong>¡Claim aplicado!</strong> La carta quedó <strong>reservada 24 horas</strong> para
-            vos. Te abrimos WhatsApp para coordinar con {sellerName}.
+            ✅ <strong>¡Claim aplicado!</strong> La carta quedó reservada para vos{" "}
+            {reservedUntil ? (
+              <strong>hasta {formatReservedUntil(reservedUntil)}</strong>
+            ) : (
+              <strong>24 horas</strong>
+            )}
+            . Te abrimos WhatsApp para coordinar con {sellerName}.
           </div>
+        )}
+        {claimState === 'ok' && loggedIn === true && (
+          <a
+            href="/binder"
+            className="mt-2 block text-center text-xs font-medium text-sky-400 transition-colors hover:text-sky-300"
+          >
+            Seguí el estado en Mis transacciones →
+          </a>
         )}
         {claimState === 'taken' && (
           <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">

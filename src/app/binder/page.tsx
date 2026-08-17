@@ -17,6 +17,7 @@ import BinderTabs, { type BinderTab } from '@/components/binder/BinderTabs'
 import WantlistSlot from '@/components/binder/WantlistSlot'
 import ProfileHeaderStats from '@/components/ProfileHeaderStats'
 import ClaimsPanel from '@/components/ClaimsPanel'
+import ReservedClaimsBanner from '@/components/ReservedClaimsBanner'
 import SellerReputationCard from '@/components/SellerReputationCard'
 import { GlobeIcon, LockIcon, PlusIcon, SparklesIcon } from '@/components/icons'
 import type { WantlistCard } from '@/types/wantlist'
@@ -514,6 +515,9 @@ export default function BinderPage() {
 
       {/* Reputación propia: rating, reseñas, claims y badge (misma ficha que ven los demás) */}
       {profile?.username && <SellerReputationCard username={profile.username} className="mb-6" />}
+
+      {/* Reservas activas: cartas del binder tomadas por claims (soft lock 24h) */}
+      <ReservedClaimsBanner cards={cards} onShowClaims={() => setShowClaims(true)} />
 
       {/* Aviso: cartas en venta/cambio con binder privado. Las cartas igual
           aparecen en el marketplace como publicación individual; el binder

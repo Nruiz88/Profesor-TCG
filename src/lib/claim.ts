@@ -24,6 +24,45 @@ export {
 
 export const CLAIM_WINDOW_MS = 24 * 60 * 60 * 1000 // 24h de reserva
 
+// Tiempo restante de una reserva (soft lock) en formato compacto:
+// "23h 12m", "1h 5m", "45m"… 0 (o negativo) devuelve "0m".
+export function formatCountdown(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return '0m'
+  const total = Math.floor(ms / 1000)
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  if (h >= 24) {
+    const d = Math.floor(h / 24)
+    return `${d}d ${h % 24}h`
+  }
+  if (h > 0) return `${h}h ${m}m`
+  return `${Math.max(1, m)}m`
+}
+
+// Fecha/hora en que vence una reserva, en formato local corto:
+// "hoy 18:30", "mañana 14:00", "20 ago 09:15"… Devuelve null si no hay
+// fecha válida.
+export function formatReservedUntil(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  const time = d.toLocaleTimeString('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  })
+  const now = new Date()
+  if (d.toDateString() === now.toDateString()) return `hoy ${time}`
+  const tomorrow = new Date(now)
+  tomorrow.setDate(now.getDate() + 1)
+  if (d.toDateString() === tomorrow.toDateString()) return `mañana ${time}`
+  const datePart = d
+    .toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+    .replace(/[-/.\s]+/g, ' ')
+    .trim()
+  return `${datePart} ${time}`
+}
+
 // Precio efectivo de una carta para el claim (price > override > mercado)
 export function claimPrice(card: {
   market_price: number | null
