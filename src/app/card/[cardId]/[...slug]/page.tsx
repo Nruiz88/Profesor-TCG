@@ -23,7 +23,15 @@ export async function generateMetadata({
   return {
     title,
     description,
-    openGraph: { title, description }
+    openGraph: {
+      title,
+      description,
+      // La página vive en un catch-all ([...slug]) y Next.js no hereda el
+      // opengraph-image.tsx del segmento padre [cardId], así que lo
+      // referenciamos explícitamente (la ruta /card/[cardId]/opengraph-image
+      // sí existe y se genera al vuelo con @vercel/og).
+      images: [{ url: `/card/${cardId}/opengraph-image`, width: 1200, height: 630, alt: 'Carta en Profesor TCG' }]
+    }
   }
 }
 
