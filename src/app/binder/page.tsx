@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import SiteNav from '@/components/SiteNav'
+import BinderSidebar from '@/components/BinderSidebar'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SlotSearchModal, { type SearchResult } from '@/components/SlotSearchModal'
@@ -14,19 +15,7 @@ import BinderToolbar from '@/components/BinderToolbar'
 import ProfileHeaderStats from '@/components/ProfileHeaderStats'
 import ClaimsPanel from '@/components/ClaimsPanel'
 import SellerReputationCard from '@/components/SellerReputationCard'
-import {
-  FolderIcon,
-  GearIcon,
-  GlobeIcon,
-  LockIcon,
-  PlusIcon,
-  RefreshIcon,
-  ShareIcon,
-  ShieldIcon,
-  SwapIcon,
-  TrashIcon,
-  UserIcon
-} from '@/components/icons'
+import { GlobeIcon, LockIcon } from '@/components/icons'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
 import type { Profile } from '@/lib/profile'
@@ -336,141 +325,71 @@ export default function BinderPage() {
     <div className="min-h-screen bg-[#090d16] text-slate-200">
       <SiteNav active="binder" />
 
-      <header className="border-b border-slate-800/60 bg-[#090d16]/80 px-4 py-3 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold tracking-tight text-white">Mi Binder</h1>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
-            <span className="font-medium text-slate-400">{binder?.title ?? '—'}</span>
-            <span className="text-slate-700">•</span>
-            <span>
-              {totalCards} cartas en {sheets.length} hoja{sheets.length !== 1 ? 's' : ''}
-            </span>
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Selector de carpeta + crear */}
-          <div className="flex h-10 items-center gap-1 rounded-xl border border-slate-800 bg-slate-900 pr-1">
-            <FolderIcon className="ml-3 h-4 w-4 shrink-0 text-slate-500" />
-            <select
-              value={binder?.id ?? ''}
-              onChange={(e) => e.target.value && selectBinder(e.target.value)}
-              className="h-full max-w-[10rem] bg-transparent pl-1.5 pr-1 text-sm font-medium text-slate-200 focus:outline-none"
-            >
-              {binders.length === 0 && <option value="">Sin binder</option>}
-              {binders.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.title}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={() => setSettingsModal('create')}
-              className="flex h-8 items-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
-              aria-label="Crear carpeta nueva"
-            >
-              <PlusIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Nuevo</span>
-            </button>
+      <div className="mx-auto w-full max-w-7xl px-4 py-4 lg:py-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          {/* Panel lateral: perfil, colecciones, acciones y herramientas */}
+          <div className="w-full lg:w-[17rem] lg:shrink-0">
+            <BinderSidebar
+              profile={profile}
+              user={user}
+              binders={binders}
+              activeBinderId={activeBinderId}
+              binder={binder}
+              totalCards={totalCards}
+              totalValue={totalValue}
+              saleCount={saleCount}
+              tradeCount={tradeCount}
+              updating={updating}
+              onSelectBinder={selectBinder}
+              onCreateBinder={() => setSettingsModal('create')}
+              onEditBinder={() => setSettingsModal('edit')}
+              onTogglePublic={togglePublic}
+              onCopyShareLink={copyShareLink}
+              onDeleteBinder={handleDeleteBinder}
+              onRefreshPrices={updatePrices}
+              onShowClaims={() => setShowClaims(true)}
+              onShowProfile={() => {
+                if (!profile) loadProfile()
+                setShowProfile(true)
+              }}
+            />
           </div>
 
-          <span className="hidden h-6 w-px bg-slate-800 md:block" aria-hidden="true" />
-
-          {/* Acciones de la carpeta actual */}
-          {binder && (
-            <>
-              <button
-                onClick={() => setSettingsModal('edit')}
-                className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
-              >
-                <GearIcon className="h-4 w-4" />
-                <span className="hidden lg:inline">Configurar</span>
-              </button>
-
-              <button
-                onClick={togglePublic}
-                className={`flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors ${
-                  binder.is_public
-                    ? 'bg-emerald-600/15 text-emerald-300 hover:bg-emerald-600/25'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`}
-                aria-label={binder.is_public ? 'Binder público' : 'Binder privado'}
-              >
-                {binder.is_public ? (
-                  <GlobeIcon className="h-4 w-4" />
-                ) : (
-                  <LockIcon className="h-4 w-4" />
+          {/* Contenido principal */}
+          <main className="min-w-0 flex-1">
+            <div className="mb-5">
+              <h1 className="text-2xl font-bold tracking-tight text-white">
+                {binder?.title ?? 'Mi Binder'}
+              </h1>
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+                {binder?.description && <span>{binder.description}</span>}
+                <span className="font-medium text-slate-400">
+                  {totalCards} carta{totalCards !== 1 ? 's' : ''}
+                </span>
+                <span className="text-slate-700">•</span>
+                <span>
+                  {sheets.length} hoja{sheets.length !== 1 ? 's' : ''}
+                </span>
+                {binder && (
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      binder.is_public
+                        ? 'bg-emerald-500/15 text-emerald-300'
+                        : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    {binder.is_public ? (
+                      <GlobeIcon className="h-3 w-3" />
+                    ) : (
+                      <LockIcon className="h-3 w-3" />
+                    )}
+                    {binder.is_public ? 'Público' : 'Privado'}
+                  </span>
                 )}
-                <span className="hidden lg:inline">{binder.is_public ? 'Público' : 'Privado'}</span>
-              </button>
+              </p>
+            </div>
 
-              <button
-                onClick={copyShareLink}
-                className="flex h-10 items-center gap-1.5 rounded-xl bg-binder-accent px-3 text-sm font-semibold text-white transition-colors hover:bg-rose-500"
-              >
-                <ShareIcon className="h-4 w-4" />
-                <span className="hidden lg:inline">Compartir</span>
-              </button>
-
-              <button
-                onClick={handleDeleteBinder}
-                className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-red-600/80 hover:text-white"
-                aria-label="Eliminar carpeta"
-              >
-                <TrashIcon className="h-4 w-4" />
-                <span className="hidden lg:inline">Eliminar</span>
-              </button>
-            </>
-          )}
-
-          <span className="hidden h-6 w-px bg-slate-800 md:block" aria-hidden="true" />
-
-          {/* Cuenta */}
-          <button
-            onClick={updatePrices}
-            disabled={updating || totalCards === 0}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700 disabled:opacity-50"
-          >
-            <RefreshIcon className="h-4 w-4" />
-            <span className="hidden lg:inline">{updating ? 'Actualizando…' : 'Precios'}</span>
-          </button>
-
-          <button
-            onClick={() => setShowClaims(true)}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-600/15 px-3 text-sm font-semibold text-sky-300 transition-colors hover:bg-sky-600/30"
-          >
-            <SwapIcon className="h-4 w-4" />
-            <span className="hidden lg:inline">Transacciones</span>
-          </button>
-
-          {profile?.is_admin && (
-            <a
-              href="/admin"
-              className="flex h-10 items-center gap-1.5 rounded-xl bg-violet-600/15 px-3 text-sm font-semibold text-violet-300 transition-colors hover:bg-violet-600/30"
-            >
-              <ShieldIcon className="h-4 w-4" />
-              <span className="hidden lg:inline">Admin</span>
-            </a>
-          )}
-
-          <button
-            onClick={() => {
-              if (!profile) loadProfile()
-              setShowProfile(true)
-            }}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
-          >
-            <UserIcon className="h-4 w-4" />
-            <span className="hidden lg:inline">Perfil</span>
-          </button>
-
-        </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl px-4 py-8">
-      <div className="mb-6">
+            <div className="mb-6">
         <ProfileHeaderStats
           totalCards={totalCards}
           totalValue={totalValue}
@@ -636,7 +555,9 @@ export default function BinderPage() {
       )}
 
       {showClaims && <ClaimsPanel onClose={() => setShowClaims(false)} />}
-      </main>
+          </main>
+        </div>
+      </div>
     </div>
   )
 }
