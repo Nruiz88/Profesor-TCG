@@ -117,22 +117,19 @@ export default function EditCardModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="modal-overlay z-50"
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl"
+        className="modal-card modal-card--md modal-card--scroll max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={`Editar ${card.card_name}`}
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Editar carta</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/20"
-          >
+        <div className="modal-header">
+          <h2 className="modal-title">Editar carta</h2>
+          <button onClick={onClose} className="modal-close">
             Cerrar
           </button>
         </div>
@@ -154,9 +151,7 @@ export default function EditCardModal({
 
         {/* Selector de modalidad */}
         <div className="mt-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-            Modalidad
-          </p>
+          <p className="field-label">Modalidad</p>
           <div className="mt-2 grid gap-2">
             {AVAILABILITIES.map((a) => (
               <button
@@ -197,7 +192,7 @@ export default function EditCardModal({
           <div className="mt-5">
             <label
               htmlFor="edit-trade-notes"
-              className="block text-xs font-semibold uppercase tracking-widest text-slate-400"
+              className="field-label"
             >
               ¿Qué busco a cambio?
             </label>
@@ -208,9 +203,9 @@ export default function EditCardModal({
               rows={2}
               maxLength={500}
               placeholder="Ej: Busco Full Arts de 151, cartas de tipo Fuego…"
-              className="mt-1.5 w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-binder-accent focus:outline-none"
+              className="field mt-1.5 resize-none"
             />
-            <p className="mt-1 text-right text-xs text-slate-600">{tradeNotes.length}/500</p>
+            <p className="field-hint text-right">{tradeNotes.length}/500</p>
           </div>
         )}
 
@@ -219,7 +214,7 @@ export default function EditCardModal({
           <div className="mt-5">
             <label
               htmlFor="edit-condition"
-              className="block text-xs font-semibold uppercase tracking-widest text-slate-400"
+              className="field-label"
             >
               Condición (opcional)
             </label>
@@ -227,7 +222,7 @@ export default function EditCardModal({
               id="edit-condition"
               value={condition}
               onChange={(e) => setCondition(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-binder-accent focus:outline-none"
+              className="field mt-1.5"
             >
               {CONDITIONS.map((c) => (
                 <option key={c || 'none'} value={c}>
@@ -235,16 +230,14 @@ export default function EditCardModal({
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-slate-600">
+            <p className="field-hint">
               Aparece en el mensaje del claim y en el kit (ej: Near Mint).
             </p>
           </div>
         )}
 
         {error && (
-          <p className="mt-4 rounded-xl border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-400">
-            {error}
-          </p>
+          <p className="banner banner--error mt-4">{error}</p>
         )}
 
         {/* Kit de Claim: texto estructurado + imagen 1080x1080 para vender en redes/grupos */}
@@ -266,14 +259,14 @@ export default function EditCardModal({
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+            className="btn-claim btn-claim--compact btn-claim--ghost"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-xl bg-binder-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-500 disabled:opacity-50"
+            className="btn-claim btn-claim--compact btn-claim--accent"
           >
             {saving ? 'Guardando…' : 'Guardar'}
           </button>

@@ -65,20 +65,17 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+    <div className="modal-overlay z-50" onClick={onClose}>
       <div
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl"
+        className="modal-card modal-card--panel-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+        <div className="modal-header modal-header--bordered">
           <div>
-            <h2 className="text-lg font-semibold text-white">Agregar carta · {slotLabel}</h2>
+            <h2 className="modal-title">Agregar carta · {slotLabel}</h2>
             <p className="text-xs text-slate-500">Buscá por nombre, número (015/084) o número + set</p>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 hover:bg-white/20"
-          >
+          <button onClick={onClose} className="modal-close">
             Cerrar
           </button>
         </div>
@@ -90,7 +87,7 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Ej: charizard · 015/084 · 015/084 pitch black"
             autoFocus
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200 placeholder-slate-600 outline-none transition-colors focus:border-binder-accent"
+            className="field field--search"
           />
 
           {/* Idioma de la copia: misma impresión para toda la colección */}

@@ -53,7 +53,7 @@ function StatBox({
   empty?: string
 }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+    <div className="panel-slate p-3">
       <p className="text-[10px] uppercase tracking-widest text-slate-500">{label}</p>
       {values && values.length > 0 ? (
         <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -135,21 +135,21 @@ export default function CardDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="modal-overlay z-50"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={`Detalle de ${name}`}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl"
+        className="modal-card modal-card--panel-4xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-5 py-4">
+        <div className="modal-header modal-header--bordered gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="truncate text-lg font-semibold text-white">{name}</h2>
+              <h2 className="modal-title truncate">{name}</h2>
               <LanguageBadge language={card.language} className="shrink-0" />
             </div>
             <p className="truncate text-xs text-slate-500">
@@ -157,10 +157,7 @@ export default function CardDetailModal({
               {detail?.rarity ? ` · ${detail.rarity}` : ''}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/20"
-          >
+          <button onClick={onClose} className="modal-close shrink-0">
             Cerrar
           </button>
         </div>
@@ -254,12 +251,12 @@ export default function CardDetailModal({
                 {/* Habilidades */}
                 {detail.abilities && detail.abilities.length > 0 && (
                   <section>
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                    <h3 className="section-label mb-2">
                       Habilidades
                     </h3>
                     <div className="space-y-2">
                       {detail.abilities.map((a, i) => (
-                        <div key={i} className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+                        <div key={i} className="panel-slate p-3">
                           <p className="text-sm font-semibold text-slate-200">
                             {a.name}
                             {a.type && (
@@ -276,12 +273,12 @@ export default function CardDetailModal({
                 {/* Ataques */}
                 {detail.attacks && detail.attacks.length > 0 && (
                   <section>
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                    <h3 className="section-label mb-2">
                       Ataques
                     </h3>
                     <div className="space-y-2">
                       {detail.attacks.map((atk, i) => (
-                        <div key={i} className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+                        <div key={i} className="panel-slate p-3">
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                             <div className="flex items-center gap-1">
                               {atk.cost && atk.cost.length > 0 ? (
@@ -308,7 +305,7 @@ export default function CardDetailModal({
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <StatBox label="Debilidad" values={detail.weaknesses} empty="Ninguna" />
                   <StatBox label="Resistencia" values={detail.resistances} empty="Ninguna" />
-                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+                  <div className="panel-slate p-3">
                     <p className="text-[10px] uppercase tracking-widest text-slate-500">Retirada</p>
                     {detail.retreatCost && detail.retreatCost.length > 0 ? (
                       <div className="mt-1.5 flex gap-1">

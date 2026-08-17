@@ -316,7 +316,7 @@ export default function ClaimKitModal({
       onClick={onClose}
     >
       <div
-        className="modal-card modal-card--lg modal-card--scroll"
+        className="modal-card modal-card--lg modal-card--scroll max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

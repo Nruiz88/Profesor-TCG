@@ -1,17 +1,20 @@
 /* ============================================================================
-   Circuito de Claim — CSS separado por función
+   Modales y formularios — CSS compartido por función
    ============================================================================
-   Estilos compartidos por los componentes del claim (compra/venta por
-   WhatsApp): modal, encabezado, banners de estado, botones y notas. Viven acá
-   para no repetir cadenas de utilidades Tailwind en cada componente.
-   Un componente combina varias clases; los estilos exclusivos de una pieza
-   (p. ej. el canvas del kit, el selector de estrellas) quedan inline.
+   Estilos compartidos por los modales de la app y el circuito de claim
+   (compra/venta por WhatsApp): overlay y tarjeta de modal, encabezado,
+   banners de estado, botones, notas, cajas interiores y campos de formulario.
+   Viven acá para no repetir cadenas de utilidades Tailwind en cada
+   componente. Un componente combina varias clases; los estilos exclusivos de
+   una pieza (p. ej. el canvas del kit, el selector de estrellas, los tabs)
+   quedan inline.
 
    Nota de arquitectura: este archivo no usa @layer components porque Tailwind
    solo permite capas en el archivo que declara @tailwind (globals.css). Las
    reglas quedan fuera de capas y las variantes del mismo archivo se resuelven
    por orden de definición (las que van después ganan sobre las mismas
-   propiedades, p. ej. btn-claim--compact sobre btn-claim).
+   propiedades, p. ej. field--search sobre field). Los z-index y los márgenes
+   se aplican inline en cada uso según la capa y el contexto.
    ========================================================================== */
 
 /* ---- Modal: overlay y tarjeta -------------------------------------------- */
@@ -36,12 +39,22 @@
   @apply w-full max-w-3xl p-6;
 }
 
-.modal-card--scroll {
-  @apply max-h-[92vh] overflow-y-auto;
-}
-
+/* Panel de lista: solo el contenido scrollea dentro de la tarjeta.
+   El max-h se ajusta por variante (--xl, --4xl) o inline si hace falta. */
 .modal-card--panel {
   @apply flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden;
+}
+
+.modal-card--panel-xl {
+  @apply flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden;
+}
+
+.modal-card--panel-4xl {
+  @apply flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden;
+}
+
+.modal-card--scroll {
+  @apply overflow-y-auto;
 }
 
 /* ---- Encabezado del modal ------------------------------------------------- */
@@ -84,7 +97,7 @@
   @apply inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors;
 }
 
-/* Variante más compacta (panel de transacciones, barras de acción) */
+/* Variante más compacta (paneles, barras de acción) */
 .btn-claim--compact {
   @apply px-4 py-2.5;
 }
@@ -113,4 +126,33 @@
 /* ---- Nota al pie ------------------------------------------------------------ */
 .note {
   @apply text-center text-[11px] text-slate-600;
+}
+
+/* ---- Cajas interiores -------------------------------------------------------- */
+/* Tarjeta oscura de detalle (stats, ataques, habilidades, ítems de lista). */
+.panel-slate {
+  @apply rounded-xl border border-slate-800 bg-slate-950;
+}
+
+/* ---- Encabezados de sección --------------------------------------------------- */
+.section-label {
+  @apply text-xs font-semibold uppercase tracking-widest text-slate-500;
+}
+
+/* ---- Campos de formulario ------------------------------------------------------ */
+.field-label {
+  @apply block text-xs font-semibold uppercase tracking-widest text-slate-400;
+}
+
+.field {
+  @apply w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-binder-accent focus:outline-none;
+}
+
+/* Variante de búsqueda (input del modal de búsqueda de cartas) */
+.field--search {
+  @apply border-slate-800 px-4 py-3 text-slate-200 outline-none transition-colors;
+}
+
+.field-hint {
+  @apply mt-1 text-xs text-slate-600;
 }

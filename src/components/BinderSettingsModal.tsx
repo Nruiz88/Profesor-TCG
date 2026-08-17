@@ -56,31 +56,28 @@ export default function BinderSettingsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="modal-overlay z-50"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl"
+        className="modal-card modal-card--md"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={isCreate ? 'Crear carpeta' : `Configurar ${binder.title}`}
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">
+        <div className="modal-header">
+          <h2 className="modal-title">
             {isCreate ? 'Nueva carpeta' : 'Configurar carpeta'}
           </h2>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/20"
-          >
+          <button onClick={onClose} className="modal-close">
             Cerrar
           </button>
         </div>
 
         <div className="mt-5 space-y-4">
           <div>
-            <label htmlFor="binder-title" className="block text-xs font-semibold uppercase tracking-widest text-slate-400">
+            <label htmlFor="binder-title" className="field-label">
               Nombre
             </label>
             <input
@@ -90,12 +87,12 @@ export default function BinderSettingsModal({
               onChange={(e) => setTitle(e.target.value)}
               maxLength={60}
               placeholder="Ej: Mi colección"
-              className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-binder-accent focus:outline-none"
+              className="field mt-1.5"
             />
           </div>
 
           <div>
-            <label htmlFor="binder-desc" className="block text-xs font-semibold uppercase tracking-widest text-slate-400">
+            <label htmlFor="binder-desc" className="field-label">
               Descripción (opcional)
             </label>
             <textarea
@@ -105,9 +102,9 @@ export default function BinderSettingsModal({
               rows={2}
               maxLength={300}
               placeholder="Ej: Cartas de mi infancia, hago trueques…"
-              className="mt-1.5 w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-binder-accent focus:outline-none"
+              className="field mt-1.5 resize-none"
             />
-            <p className="mt-1 text-right text-xs text-slate-600">{description.length}/300</p>
+            <p className="field-hint text-right">{description.length}/300</p>
           </div>
 
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
@@ -127,14 +124,14 @@ export default function BinderSettingsModal({
 
           {!isCreate && cards.length > 0 && (
             <div>
-              <label htmlFor="binder-cover" className="block text-xs font-semibold uppercase tracking-widest text-slate-400">
+              <label htmlFor="binder-cover" className="field-label">
                 Carta de portada
               </label>
               <select
                 id="binder-cover"
                 value={coverCardId}
                 onChange={(e) => setCoverCardId(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 focus:border-binder-accent focus:outline-none"
+                className="field mt-1.5 text-slate-200"
               >
                 <option value="">Automática (primera en venta/cambio)</option>
                 {cards.map((c) => (
@@ -148,22 +145,20 @@ export default function BinderSettingsModal({
         </div>
 
         {error && (
-          <p className="mt-4 rounded-xl border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-400">
-            {error}
-          </p>
+          <p className="banner banner--error mt-4">{error}</p>
         )}
 
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+            className="btn-claim btn-claim--compact btn-claim--ghost"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-xl bg-binder-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-500 disabled:opacity-50"
+            className="btn-claim btn-claim--compact btn-claim--accent"
           >
             {saving ? 'Guardando…' : isCreate ? 'Crear carpeta' : 'Guardar cambios'}
           </button>
