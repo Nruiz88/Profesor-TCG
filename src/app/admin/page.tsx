@@ -98,6 +98,8 @@ export default function AdminPage() {
   const [data, setData] = useState<Overview | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<'users' | 'activity' | 'integrations'>('users')
+  const [search, setSearch] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -169,6 +171,16 @@ export default function AdminPage() {
   }
 
   const { users, cards, binders, offers, marketValue, recent } = data
+
+  // Filtro client-side de usuarios (nombre o ubicación) para tablas largas
+  const q = search.trim().toLowerCase()
+  const filteredUsers = q
+    ? users.rows.filter(
+        (u) =>
+          u.username.toLowerCase().includes(q) ||
+          formatLocation(u.city, u.country).toLowerCase().includes(q)
+      )
+    : users.rows
 
   const kpis = [
     {
@@ -289,143 +301,223 @@ export default function AdminPage() {
         </span>
       </div>
 
-      {/* Tabla de usuarios */}
-      <section className="mt-8">
-        <div className="mb-3 flex items-center gap-2">
-          <UserIcon className="h-4 w-4 text-slate-400" />
-          <h2 className="text-lg font-bold text-white">Usuarios</h2>
-        </div>
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="bg-slate-900/80 text-[10px] uppercase tracking-widest text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Usuario</th>
-                <th className="px-4 py-3">Ubicación</th>
-                <th className="px-4 py-3 text-center">Binders</th>
-                <th className="px-4 py-3 text-center">Cartas</th>
-                <th className="px-4 py-3 text-center">Venta</th>
-                <th className="px-4 py-3 text-center">Cambio</th>
-                <th className="px-4 py-3">Registro</th>
-                <th className="px-4 py-3">Rol</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/70 bg-slate-900/40">
-              {users.rows.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
-                    Sin usuarios todavía
-                  </td>
-                </tr>
-              )}
-              {users.rows.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-800/40">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/binder/${encodeURIComponent(u.username)}`}
-                      className="font-semibold text-violet-400 hover:underline"
-                    >
-                      @{u.username}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-slate-400">
-                    {formatLocation(u.city, u.country) || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center gap-1 text-slate-300">
-                      {u.binderCount > 0 && (u.hasPublicBinder ? (
-                        <GlobeIcon className="h-3.5 w-3.5 text-emerald-400" />
-                      ) : (
-                        <LockIcon className="h-3.5 w-3.5 text-slate-500" />
-                      ))}
-                      {u.binderCount}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center font-semibold text-white">{u.cardCount}</td>
-                  <td className="px-4 py-3 text-center text-emerald-400">{u.saleCount}</td>
-                  <td className="px-4 py-3 text-center text-sky-400">{u.tradeCount}</td>
-                  <td className="px-4 py-3 text-slate-400">{formatDate(u.created_at)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {u.is_admin ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
-                          <ShieldIcon className="h-3 w-3" /> ADMIN
+      {/* Tabs: redistribuyen el contenido para que el panel no sea eterno */}
+      <div className="mt-8 flex flex-wrap gap-1 rounded-xl border border-slate-800 bg-slate-900 p-1">
+        <button
+          type="button"
+          onClick={() => setTab('users')}
+          aria-pressed={tab === 'users'}
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === 'users'
+              ? 'bg-binder-accent text-white shadow'
+              : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+          }`}
+        >
+          👥 Usuarios
+          <span
+            className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+              tab === 'users' ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-400'
+            }`}
+          >
+            {users.total}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('activity')}
+          aria-pressed={tab === 'activity'}
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === 'activity'
+              ? 'bg-binder-accent text-white shadow'
+              : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+          }`}
+        >
+          📈 Actividad reciente
+          <span
+            className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+              tab === 'activity' ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-400'
+            }`}
+          >
+            {recent.length}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('integrations')}
+          aria-pressed={tab === 'integrations'}
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === 'integrations'
+              ? 'bg-binder-accent text-white shadow'
+              : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+          }`}
+        >
+          🔌 Integraciones
+        </button>
+      </div>
+
+      {/* Usuarios: con filtro y scroll interno para tablas largas */}
+      {tab === 'users' && (
+        <section className="mt-6">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <UserIcon className="h-4 w-4 text-slate-400" />
+              <h2 className="text-lg font-bold text-white">Usuarios</h2>
+              <span className="text-xs text-slate-500">
+                {filteredUsers.length} de {users.total}
+              </span>
+            </div>
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filtrar por usuario o ubicación…"
+              aria-label="Filtrar usuarios"
+              className="w-full max-w-xs rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none transition-colors focus:border-binder-accent"
+            />
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-slate-800">
+            <div className="max-h-[60vh] overflow-auto">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead className="sticky top-0 z-10 bg-slate-900 text-[10px] uppercase tracking-widest text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Usuario</th>
+                    <th className="px-4 py-3">Ubicación</th>
+                    <th className="px-4 py-3 text-center">Binders</th>
+                    <th className="px-4 py-3 text-center">Cartas</th>
+                    <th className="px-4 py-3 text-center">Venta</th>
+                    <th className="px-4 py-3 text-center">Cambio</th>
+                    <th className="px-4 py-3">Registro</th>
+                    <th className="px-4 py-3">Rol</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/70 bg-slate-900/40">
+                  {filteredUsers.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                        {q ? 'Sin coincidencias para tu búsqueda' : 'Sin usuarios todavía'}
+                      </td>
+                    </tr>
+                  )}
+                  {filteredUsers.map((u) => (
+                    <tr key={u.id} className="hover:bg-slate-800/40">
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/binder/${encodeURIComponent(u.username)}`}
+                          className="font-semibold text-violet-400 hover:underline"
+                        >
+                          @{u.username}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {formatLocation(u.city, u.country) || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center gap-1 text-slate-300">
+                          {u.binderCount > 0 && (u.hasPublicBinder ? (
+                            <GlobeIcon className="h-3.5 w-3.5 text-emerald-400" />
+                          ) : (
+                            <LockIcon className="h-3.5 w-3.5 text-slate-500" />
+                          ))}
+                          {u.binderCount}
                         </span>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
-                      <button
-                        onClick={() => handleVerify(u)}
-                        title={u.is_verified ? 'Quitar verificación' : 'Marcar como verificado'}
-                        aria-label={`${u.is_verified ? 'Quitar' : 'Marcar'} verificación de @${u.username}`}
-                        className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs transition-colors ${
-                          u.is_verified
-                            ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
-                            : 'border-slate-700 text-slate-600 hover:border-emerald-500/40 hover:text-emerald-400'
-                        }`}
-                      >
-                        ⚡
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                      </td>
+                      <td className="px-4 py-3 text-center font-semibold text-white">{u.cardCount}</td>
+                      <td className="px-4 py-3 text-center text-emerald-400">{u.saleCount}</td>
+                      <td className="px-4 py-3 text-center text-sky-400">{u.tradeCount}</td>
+                      <td className="px-4 py-3 text-slate-400">{formatDate(u.created_at)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          {u.is_admin ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
+                              <ShieldIcon className="h-3 w-3" /> ADMIN
+                            </span>
+                          ) : (
+                            <span className="text-slate-600">—</span>
+                          )}
+                          <button
+                            onClick={() => handleVerify(u)}
+                            title={u.is_verified ? 'Quitar verificación' : 'Marcar como verificado'}
+                            aria-label={`${u.is_verified ? 'Quitar' : 'Marcar'} verificación de @${u.username}`}
+                            className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs transition-colors ${
+                              u.is_verified
+                                ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
+                                : 'border-slate-700 text-slate-600 hover:border-emerald-500/40 hover:text-emerald-400'
+                            }`}
+                          >
+                            ⚡
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Actividad reciente: tabla con scroll interno */}
+      {tab === 'activity' && (
+        <section className="mt-6">
+          <div className="mb-3 flex items-center gap-2">
+            <ActivityIcon className="h-4 w-4 text-slate-400" />
+            <h2 className="text-lg font-bold text-white">Actividad reciente</h2>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-slate-800">
+            <div className="max-h-[60vh] overflow-auto">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead className="sticky top-0 z-10 bg-slate-900 text-[10px] uppercase tracking-widest text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Carta</th>
+                    <th className="px-4 py-3">Set</th>
+                    <th className="px-4 py-3">Estado</th>
+                    <th className="px-4 py-3 text-right">Precio</th>
+                    <th className="px-4 py-3">Dueño</th>
+                    <th className="px-4 py-3">Última actualización</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/70 bg-slate-900/40">
+                  {recent.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                        Sin actividad todavía
+                      </td>
+                    </tr>
+                  )}
+                  {recent.map((c, i) => (
+                    <tr key={i} className="hover:bg-slate-800/40">
+                      <td className="px-4 py-3 font-semibold text-white">{c.card_name}</td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {c.set_id} · {c.number}
+                      </td>
+                      <td className="px-4 py-3">{statusBadge(c.status)}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-emerald-400">
+                        {c.price != null ? `$${fmtUsd(c.price)}` : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">@{c.username}</td>
+                      <td className="px-4 py-3 text-slate-500">
+                        <span className="inline-flex items-center gap-1">
+                          <ClockIcon className="h-3 w-3" />
+                          {formatDate(c.updated_at)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Integraciones y API keys */}
-      <AdminIntegrations />
-
-      {/* Actividad reciente */}
-      <section className="mt-8">
-        <div className="mb-3 flex items-center gap-2">
-          <ActivityIcon className="h-4 w-4 text-slate-400" />
-          <h2 className="text-lg font-bold text-white">Actividad reciente</h2>
-        </div>
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="bg-slate-900/80 text-[10px] uppercase tracking-widest text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Carta</th>
-                <th className="px-4 py-3">Set</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3 text-right">Precio</th>
-                <th className="px-4 py-3">Dueño</th>
-                <th className="px-4 py-3">Última actualización</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/70 bg-slate-900/40">
-              {recent.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                    Sin actividad todavía
-                  </td>
-                </tr>
-              )}
-              {recent.map((c, i) => (
-                <tr key={i} className="hover:bg-slate-800/40">
-                  <td className="px-4 py-3 font-semibold text-white">{c.card_name}</td>
-                  <td className="px-4 py-3 text-slate-400">
-                    {c.set_id} · {c.number}
-                  </td>
-                  <td className="px-4 py-3">{statusBadge(c.status)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-emerald-400">
-                    {c.price != null ? `$${fmtUsd(c.price)}` : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-slate-400">@{c.username}</td>
-                  <td className="px-4 py-3 text-slate-500">
-                    <span className="inline-flex items-center gap-1">
-                      <ClockIcon className="h-3 w-3" />
-                      {formatDate(c.updated_at)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {tab === 'integrations' && (
+        <section className="mt-6">
+          <AdminIntegrations />
+        </section>
+      )}
     </main>
   )
 }
