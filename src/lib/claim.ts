@@ -8,7 +8,19 @@ import { effectivePrice } from '@/lib/cardStatus'
 // Los mensajes y deep links de WhatsApp viven en lib/whatsapp.ts (re-exportados).
 // ---------------------------------------------------------------------------
 
-export { buildWhatsAppLink, claimMessage, sellerKitText, type ClaimParams } from './whatsapp'
+export {
+  buildWhatsAppLink,
+  claimMessage,
+  formatWhatsAppMessage,
+  generateWhatsAppUrl,
+  normalizeWhatsAppLanguage,
+  sanitizeWhatsAppPhone,
+  sanitizeWhatsAppText,
+  sellerKitText,
+  type ClaimParams,
+  type WhatsAppLanguage,
+  type WhatsAppMessageParams
+} from './whatsapp'
 
 export const CLAIM_WINDOW_MS = 24 * 60 * 60 * 1000 // 24h de reserva
 
