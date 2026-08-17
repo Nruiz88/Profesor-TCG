@@ -13,6 +13,7 @@ import BinderSettingsModal from '@/components/BinderSettingsModal'
 import BinderToolbar from '@/components/BinderToolbar'
 import ProfileHeaderStats from '@/components/ProfileHeaderStats'
 import ClaimsPanel from '@/components/ClaimsPanel'
+import SellerReputationCard from '@/components/SellerReputationCard'
 import {
   FolderIcon,
   GearIcon,
@@ -477,6 +478,9 @@ export default function BinderPage() {
           tradeCount={tradeCount}
         />
       </div>
+
+      {/* Reputación propia: rating, reseñas, claims y badge (misma ficha que ven los demás) */}
+      {profile?.username && <SellerReputationCard username={profile.username} className="mb-6" />}
 
       {/* Aviso: cartas en venta/cambio con binder privado. Las cartas igual
           aparecen en el marketplace como publicación individual; el binder

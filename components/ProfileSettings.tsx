@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { isValidWhatsApp, whatsAppLink, type Profile } from '@/lib/profile'
+import type { ReputationInfo } from '@/lib/reputation'
+import { levelBadge } from '@/lib/reputation'
 
 interface ProfileSettingsProps {
   profile: Profile | null
@@ -17,6 +19,7 @@ export default function ProfileSettings({ profile, onSaved, onClose }: ProfileSe
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [reputation, setReputation] = useState<ReputationInfo | null>(null)
 
   useEffect(() => {
     setUsername(profile?.username ?? '')
@@ -24,6 +27,27 @@ export default function ProfileSettings({ profile, onSaved, onClose }: ProfileSe
     setCity(profile?.city ?? '')
     setCountry(profile?.country ?? '')
   }, [profile])
+
+  // Reputación propia (rating, reseñas, ventas, claims, verificado)
+  useEffect(() => {
+    let active = true
+    const name = username.trim()
+    if (!name) {
+      setReputation(null)
+      return
+    }
+    fetch(`/api/reputation/${encodeURIComponent(name)}`)
+      .then(async (res) => {
+        const body = await res.json()
+        if (active && res.ok && body.reputation) setReputation(body.reputation)
+      })
+      .catch(() => {
+        if (active) setReputation(null)
+      })
+    return () => {
+      active = false
+    }
+  }, [username])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -91,6 +115,38 @@ export default function ProfileSettings({ profile, onSaved, onClose }: ProfileSe
         <p className="mt-1 text-sm text-slate-500">
           Así te ven otros coleccionistas cuando compartís tu binder.
         </p>
+
+        {/* Resumen de reputación (lo mismo que ven los demás en tu ficha) */}
+        {reputation && (
+          <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              {reputation.ratingAvg != null ? (
+                <span className="flex items-center gap-1 font-bold text-yellow-400">
+                  ★ {reputation.ratingAvg.toFixed(1)}
+                  <span className="font-normal text-slate-500">
+                    ({reputation.reviewCount})
+                  </span>
+                </span>
+              ) : (
+                <span className="text-slate-500">Sin reseñas aún</span>
+              )}
+              <span className="text-slate-400">💵 {reputation.totalSales} ventas</span>
+              <span className="text-slate-400">🔄 {reputation.totalTrades} cambios</span>
+              <span className="text-slate-400">✅ {reputation.completedClaims} claims</span>
+            </div>
+            <span
+              className={`mt-2 inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-bold ${
+                reputation.isVerified
+                  ? 'bg-emerald-500/15 text-emerald-300'
+                  : reputation.completedClaims >= 5
+                    ? 'bg-amber-500/15 text-amber-300'
+                    : 'bg-slate-800 text-slate-300'
+              }`}
+            >
+              {levelBadge(reputation).icon} {levelBadge(reputation).label}
+            </span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
           <label className="block">

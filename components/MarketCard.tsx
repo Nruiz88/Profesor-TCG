@@ -167,6 +167,15 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
             </p>
             <p className="truncate text-xs text-slate-500">
               @{card.username}
+              {card.ratingAvg != null && (
+                <span className="ml-1 font-bold text-yellow-400">★ {card.ratingAvg.toFixed(1)}</span>
+              )}
+              {card.reviewCount > 0 && (
+                <span className="text-slate-600"> ({card.reviewCount})</span>
+              )}
+              {card.isVerified && (
+                <span className="ml-0.5 text-emerald-400" title="Verificado">⚡</span>
+              )}
               {location && ` · ${location}`}
             </p>
           </div>

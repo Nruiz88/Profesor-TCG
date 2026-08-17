@@ -56,6 +56,8 @@ interface SellerProfile {
   city: string | null
   country: string | null
   whatsapp_number: string | null
+  rating_avg?: number | null
+  is_verified?: boolean
 }
 
 // Perfiles por user_id — consulta aparte porque binders.user_id apunta a
@@ -67,7 +69,7 @@ async function getProfilesByUserId(
   if (userIds.length === 0) return new Map()
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, city, country, whatsapp_number')
+    .select('id, username, city, country, whatsapp_number, rating_avg, is_verified')
     .in('id', userIds)
   if (error) throw error
   return new Map(
@@ -78,13 +80,17 @@ async function getProfilesByUserId(
         city: string | null
         country: string | null
         whatsapp_number: string | null
+        rating_avg?: number | null
+        is_verified?: boolean
       }) => [
         p.id,
         {
           username: p.username,
           city: p.city,
           country: p.country,
-          whatsapp_number: p.whatsapp_number
+          whatsapp_number: p.whatsapp_number,
+          rating_avg: p.rating_avg,
+          is_verified: !!p.is_verified
         }
       ]
     )
@@ -110,6 +116,9 @@ export interface ExploreCard {
   city: string | null
   country: string | null
   whatsapp_number: string | null
+  ratingAvg: number | null
+  reviewCount: number
+  isVerified: boolean
   binder_public: boolean
   updated_at: string
 }
@@ -231,6 +240,25 @@ async function getCards(
   ])
   const setNameById = new Map(sets.map((s) => [s.id, s.name]))
 
+  // Conteo de reseñas por vendedor (para mostrar ★ y (n) en las tarjetas)
+  const reviewCounts = new Map<string, number>()
+  if (userIds.length > 0) {
+    try {
+      const { data: reviewRows } = await supabase
+        .from('reviews')
+        .select('reviewed_user_id')
+        .in('reviewed_user_id', userIds)
+      for (const r of reviewRows || []) {
+        reviewCounts.set(
+          r.reviewed_user_id,
+          (reviewCounts.get(r.reviewed_user_id) ?? 0) + 1
+        )
+      }
+    } catch {
+      // reseñas aún sin migrar: el ★ simplemente no se muestra
+    }
+  }
+
   const enriched: ExploreCard[] = []
   for (const r of rows) {
     const m = meta.get(r.card_id)
@@ -263,6 +291,11 @@ async function getCards(
       city: seller?.city ?? null,
       country: seller?.country ?? null,
       whatsapp_number: seller?.whatsapp_number ?? null,
+      ratingAvg: (reviewCounts.get(r.binders?.user_id ?? '') ?? 0) > 0
+        ? Number(seller?.rating_avg ?? null)
+        : null,
+      reviewCount: reviewCounts.get(r.binders?.user_id ?? '') ?? 0,
+      isVerified: !!seller?.is_verified,
       binder_public: !!r.binders?.is_public,
       updated_at: r.updated_at
     })
