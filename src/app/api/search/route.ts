@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
 import { searchCards, getSets, getSetById } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
+import { validate, extractParams } from '@/lib/validate'
+import { searchSchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const q = searchParams.get('q') || ''
+  const params = validate(searchSchema, extractParams(req))
+  if (params.error) return params.error
+  const { q } = params.data
 
   if (q.trim().length < 2) {
     return NextResponse.json({ results: [] })

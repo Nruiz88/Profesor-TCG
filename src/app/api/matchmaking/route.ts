@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { findWantlistMatches } from '@/lib/matchmaking'
+import { validate, extractParams } from '@/lib/validate'
+import { matchmakingSchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,8 +11,9 @@ export const dynamic = 'force-dynamic'
 // en venta (for_sale) del vendedor indicado. Usa service role para leer los
 // binders del vendedor incluso si están privados.
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const sellerId = searchParams.get('sellerId')
+  const params = validate(matchmakingSchema, extractParams(req))
+  if (params.error) return params.error
+  const { sellerId } = params.data
 
   const supabase = await createClient()
 
@@ -20,10 +23,6 @@ export async function GET(req: Request) {
   } = await supabase.auth.getUser()
   if (authError || !user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  }
-
-  if (!sellerId) {
-    return NextResponse.json({ error: 'Falta sellerId' }, { status: 400 })
   }
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY

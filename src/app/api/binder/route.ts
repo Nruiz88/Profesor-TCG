@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCardMetadataMap, getSets } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
+import { validate, extractParams } from '@/lib/validate'
+import { binderSchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,9 +19,9 @@ export async function GET(req: Request) {
   }
 
   try {
-    const { searchParams } = new URL(req.url)
-    const binderId = searchParams.get('binderId')
-    const all = searchParams.get('all') === '1'
+    const params = validate(binderSchema, extractParams(req))
+    if (params.error) return params.error
+    const { binderId, all } = params.data
 
     let binder: { id: string; title: string; is_public: boolean } | null = null
 
