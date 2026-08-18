@@ -1,32 +1,25 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
  * Pokémon fantasma que aparecen y desaparecen en el fondo.
- * Cada uno aparece individualmente, se mueve suavemente, y se desvanece.
- * Inspirado en el comportamiento de Gengar/Gastly en los juegos.
+ * Máximo 3 visibles a la vez, rotando entre 3 grupos.
+ * Cada uno aparece, se mueve, y se desvanece como un fantasma.
  */
 
 interface Ghost {
   id: number
   name: string
-  /** Posición inicial aleatoria */
   x: number
   y: number
-  /** Tamaño en px */
   size: number
-  /** Duración total del ciclo (aparecer + moverse + desaparecer) */
   duration: number
-  /** Delay antes de aparecer */
-  delay: number
-  /** Dirección del movimiento horizontal */
   driftX: number
-  /** Dirección del movimiento vertical */
   driftY: number
 }
 
-const GHOSTS = [
+const ALL_GHOSTS = [
   { id: 94, name: 'Gengar' },
   { id: 92, name: 'Gastly' },
   { id: 93, name: 'Haunter' },
@@ -39,54 +32,86 @@ const GHOSTS = [
   { id: 609, name: 'Chandelure' }
 ]
 
+// 3 grupos de ~3-4 para rotar
+const GROUPS: number[][] = [
+  [0, 1, 2],       // Gengar, Gastly, Haunter
+  [3, 4, 5, 6],    // Misdreavus, Litwick, Phantump, Dreepy
+  [7, 8, 9]        // Sableye, Spiritomb, Chandelure
+]
+
 function spriteUrl(id: number): string {
   return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
 }
 
-function randomBetween(min: number, max: number): number {
+function rand(min: number, max: number): number {
   return Math.random() * (max - min) + min
 }
 
-function generateGhosts(): Ghost[] {
-  return GHOSTS.map((g) => ({
+function randomizeGhost(g: { id: number; name: string }): Ghost {
+  return {
     ...g,
-    x: randomBetween(5, 90),
-    y: randomBetween(5, 85),
-    size: randomBetween(60, 120),
-    duration: randomBetween(8, 16),
-    delay: randomBetween(0, 20),
-    driftX: randomBetween(-30, 30),
-    driftY: randomBetween(-40, -10)
-  }))
+    x: rand(5, 85),
+    y: rand(5, 75),
+    size: rand(80, 160),
+    duration: rand(10, 18),
+    driftX: rand(-40, 40),
+    driftY: rand(-50, -15)
+  }
+}
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
 }
 
 export default function GhostPokemon() {
-  const [ghosts, setGhosts] = useState<Ghost[]>([])
+  const [visible, setVisible] = useState<Ghost[]>([])
+  const groupIndex = useRef(0)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
-    setGhosts(generateGhosts())
+  const showNextGroup = useCallback(() => {
+    const group = GROUPS[groupIndex.current % GROUPS.length]
+    const shuffled = shuffleArray(group)
+    const selected = shuffled.slice(0, 3).map((i) => randomizeGhost(ALL_GHOSTS[i]))
+    setVisible(selected)
+    groupIndex.current++
+
+    // Rotar cada 12-18 segundos
+    const nextDelay = rand(12000, 18000)
+    timerRef.current = setTimeout(showNextGroup, nextDelay)
   }, [])
 
-  if (ghosts.length === 0) return null
+  useEffect(() => {
+    showNextGroup()
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [showNextGroup])
+
+  if (visible.length === 0) return null
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
       <style>{`
-        @keyframes ghost-appear {
-          0%   { opacity: 0; transform: translateY(10px) scale(0.7); filter: blur(4px); }
-          15%  { opacity: 0.2; transform: translateY(0) scale(1); filter: blur(0); }
-          85%  { opacity: 0.15; transform: translate(var(--drift-x), var(--drift-y)) scale(1); filter: blur(0); }
-          100% { opacity: 0; transform: translate(calc(var(--drift-x) * 1.3), calc(var(--drift-y) * 1.5)) scale(0.6); filter: blur(6px); }
+        @keyframes ghost-in {
+          0%   { opacity: 0; transform: translateY(15px) scale(0.6); filter: blur(6px); }
+          20%  { opacity: 0.45; transform: translateY(0) scale(1); filter: blur(0); }
+          80%  { opacity: 0.35; transform: translate(var(--dx), var(--dy)) scale(1); filter: blur(0); }
+          100% { opacity: 0; transform: translate(calc(var(--dx) * 1.4), calc(var(--dy) * 1.5)) scale(0.5); filter: blur(8px); }
         }
         .ghost-sprite {
-          animation: ghost-appear var(--duration) ease-in-out var(--delay) infinite;
+          animation: ghost-in var(--dur) ease-in-out forwards;
           will-change: opacity, transform, filter;
         }
       `}</style>
 
-      {ghosts.map((g) => (
+      {visible.map((g) => (
         <img
-          key={g.id}
+          key={`${g.id}-${Date.now()}`}
           src={spriteUrl(g.id)}
           alt=""
           className="ghost-sprite absolute"
@@ -95,10 +120,9 @@ export default function GhostPokemon() {
             top: `${g.y}%`,
             width: g.size,
             height: g.size,
-            '--drift-x': `${g.driftX}px`,
-            '--drift-y': `${g.driftY}px`,
-            '--duration': `${g.duration}s`,
-            '--delay': `${g.delay}s`,
+            '--dx': `${g.driftX}px`,
+            '--dy': `${g.driftY}px`,
+            '--dur': `${g.duration}s`,
             opacity: 0
           } as React.CSSProperties}
           loading="lazy"
