@@ -16,10 +16,25 @@ const args = process.argv.slice(2)
 const onlySets = args.includes('--only-sets')
 const setFilter = new Set(args.filter((a) => !a.startsWith('--')))
 
-async function download(url) {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return res.json()
+async function download(url, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url)
+      if (res.ok) return res.json()
+      if (res.status === 429 || res.status >= 500) {
+        const wait = Math.pow(2, i) * 2000
+        console.log(`  ⏳ ${res.status}, retry en ${wait/1000}s...`)
+        await new Promise(r => setTimeout(r, wait))
+        continue
+      }
+      throw new Error(`HTTP ${res.status}`)
+    } catch (err) {
+      if (i === retries - 1) throw err
+      const wait = Math.pow(2, i) * 2000
+      await new Promise(r => setTimeout(r, wait))
+    }
+  }
+  throw new Error(`Failed after ${retries} retries`)
 }
 
 async function mapLimit(items, limit, fn) {

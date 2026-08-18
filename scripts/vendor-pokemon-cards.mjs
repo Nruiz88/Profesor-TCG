@@ -61,10 +61,27 @@ const DEFAULTS = `
 }
 `
 
-async function download(url) {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`HTTP ${res.status} para ${url}`)
-  return res
+async function download(url, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url)
+      if (res.ok) return res
+      // Rate limit o server error: retry con backoff
+      if (res.status === 429 || res.status >= 500) {
+        const wait = Math.pow(2, i) * 2000 // 2s, 4s, 8s
+        console.log(`  ⏳ ${res.status} para ${url.split('/').pop()}, retry en ${wait/1000}s...`)
+        await new Promise(r => setTimeout(r, wait))
+        continue
+      }
+      throw new Error(`HTTP ${res.status} para ${url}`)
+    } catch (err) {
+      if (i === retries - 1) throw err
+      const wait = Math.pow(2, i) * 2000
+      console.log(`  ⏳ Error de red, retry en ${wait/1000}s...`)
+      await new Promise(r => setTimeout(r, wait))
+    }
+  }
+  throw new Error(`Failed after ${retries} retries: ${url}`)
 }
 
 async function main() {
