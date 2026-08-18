@@ -176,31 +176,42 @@ export default function ExplorePage() {
       <SiteNav label="Explorar" active="explore" />
 
       <main className="mx-auto max-w-7xl px-4 py-10">
-        {/* Hero */}
+        {/* Hero simplificado */}
         <section className="relative overflow-hidden">
           <div
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(244,63,94,0.12),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(59,130,246,0.08),transparent_55%)]"
             aria-hidden="true"
           />
           <div className="relative max-w-3xl">
-            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-rose-500">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-400" />
-              </span>
-              Marketplace en vivo
-            </p>
-            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              El mercado{' '}
+            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              🛍️ El mercado{' '}
               <span className="bg-gradient-to-r from-rose-400 to-amber-400 bg-clip-text text-transparent">
                 de la comunidad
               </span>
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
-              Cartas en venta e intercambio con precio en vivo, filtros por tipo y contacto directo
-              por WhatsApp.
+              Cartas en venta e intercambio con precio en vivo.{' '}
+              <span className="font-semibold text-emerald-300">Contactá directo por WhatsApp</span>{' '}
+              con un clic.
             </p>
           </div>
+        </section>
+
+        {/* Cómo funciona: 3 pasos */}
+        <section className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[
+            { icon: '🔍', title: 'Explorá', desc: 'Filtrá por tipo, rareza o idioma' },
+            { icon: '💚', title: 'Contactá', desc: 'Un clic te abre WhatsApp con el vendedor' },
+            { icon: '🤝', title: 'Coordiná', desc: 'Acordá precio y entrega, ¡listo!' }
+          ].map((step) => (
+            <div key={step.title} className="flex items-center gap-3 rounded-2xl border border-slate-800/60 bg-slate-900/30 px-4 py-3">
+              <span className="text-2xl">{step.icon}</span>
+              <div>
+                <p className="text-sm font-bold text-white">{step.title}</p>
+                <p className="text-[11px] text-slate-500">{step.desc}</p>
+              </div>
+            </div>
+          ))}
         </section>
 
         {/* Switch de vista (fuera de la caja de filtros) */}
@@ -320,7 +331,8 @@ className={`flex shrink-0 items-center justify-center rounded-xl border bg-slate
                         }`}
                       >
                         <span aria-hidden="true">{CARD_LANGUAGE_META[lang].flag}</span>{' '}
-                        {lang}
+                        <span className="hidden sm:inline">{CARD_LANGUAGE_META[lang].label}</span>
+                        <span className="sm:hidden">{lang}</span>
                       </button>
                     )
                   })}

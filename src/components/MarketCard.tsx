@@ -162,7 +162,10 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
             {card.set_name}
             {card.rarity ? ` · ${card.rarity}` : ''}
             {card.language
-              ? ` · ${CARD_LANGUAGE_META[normalizeLanguage(card.language)].flag} ${card.language}`
+              ? (() => {
+                  const meta = CARD_LANGUAGE_META[normalizeLanguage(card.language)]
+                  return ` · ${meta.flag} ${meta.label}`
+                })()
               : ''}
           </p>
         </div>

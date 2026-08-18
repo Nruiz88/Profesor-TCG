@@ -133,33 +133,42 @@ export default function BuscadosPage() {
       <SiteNav label="Buscados" active="buscados" />
 
       <main className="mx-auto max-w-7xl px-4 py-10">
-        {/* Hero */}
+        {/* Hero simplificado */}
         <section className="relative overflow-hidden">
           <div
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(217,70,239,0.12),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(168,85,247,0.08),transparent_55%)]"
             aria-hidden="true"
           />
           <div className="relative max-w-3xl">
-            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-fuchsia-400">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-fuchsia-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-fuchsia-400" />
-              </span>
-              Wantlist de la comunidad en vivo
-            </p>
-            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              Cartas que la comunidad{' '}
+            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              🃏 Cartas que la comunidad{' '}
               <span className="bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
                 está buscando
               </span>
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
-              Coleccionistas de todo el país publican acá las cartas que les faltan para su
-              colección. Si tenés alguna, ofrecé un{' '}
-              <span className="font-semibold text-fuchsia-300">Swap directo por WhatsApp</span> en
-              un clic.
+              Si tenés alguna de estas cartas, ofrecé un{' '}
+              <span className="font-semibold text-emerald-300">Swap directo por WhatsApp</span>{' '}
+              en un clic. ¡Así de simple!
             </p>
           </div>
+        </section>
+
+        {/* Cómo funciona: 3 pasos */}
+        <section className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[
+            { icon: '🔍', title: 'Buscá', desc: 'Encontrá la carta que alguien necesita' },
+            { icon: '💬', title: 'Contactá', desc: 'Un clic te abre WhatsApp con el mensaje listo' },
+            { icon: '🤝', title: 'Coordiná', desc: 'Acordá el intercambio y ¡listo!' }
+          ].map((step) => (
+            <div key={step.title} className="flex items-center gap-3 rounded-2xl border border-slate-800/60 bg-slate-900/30 px-4 py-3">
+              <span className="text-2xl">{step.icon}</span>
+              <div>
+                <p className="text-sm font-bold text-white">{step.title}</p>
+                <p className="text-[11px] text-slate-500">{step.desc}</p>
+              </div>
+            </div>
+          ))}
         </section>
 
         {/* Caja de filtros */}
@@ -297,21 +306,20 @@ export default function BuscadosPage() {
           )}
         </section>
 
-        {/* CTA para sumar la propia wantlist */}
-        <section className="mt-16 overflow-hidden rounded-3xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-600/10 via-slate-900/60 to-violet-600/10 px-6 py-10 text-center">
-          <SparklesIcon className="mx-auto h-8 w-8 text-fuchsia-400" />
-          <h2 className="mt-3 text-2xl font-bold tracking-tight text-white">
-            ¿Estás buscando cartas para tu colección?
+        {/* CTA: sumar la propia wantlist */}
+        <section className="mt-12 overflow-hidden rounded-3xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-600/10 via-slate-900/60 to-violet-600/10 px-6 py-8 text-center">
+          <h2 className="text-xl font-bold tracking-tight text-white">
+            ✨ ¿Buscás cartas para tu colección?
           </h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-slate-400">
-            Agregá tu Wantlist desde tu Binder: las cartas aparecen acá para toda la comunidad y
-            cualquiera que las tenga puede ofrecerte un Swap directo por WhatsApp.
+          <p className="mx-auto mt-2 max-w-lg text-sm text-slate-400">
+            Agregá tu Wantlist y que la comunidad te ofrezca un Swap por WhatsApp.
           </p>
           <a
             href="/binder"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-fuchsia-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-fuchsia-900/40 transition-colors hover:bg-fuchsia-500"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-900/40 transition-colors hover:bg-emerald-500"
           >
-            Agregar mis buscadas
+            <span>💬</span>
+            Crear mi wantlist
           </a>
         </section>
       </main>

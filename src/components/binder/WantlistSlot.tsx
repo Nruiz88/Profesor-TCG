@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import PokemonCard from '@/components/PokemonCard'
-import { TrashIcon } from '@/components/icons'
+import { ChatIcon, TrashIcon } from '@/components/icons'
 import { CURRENCIES, formatPrice, type Currency } from '@/lib/priceGuide'
 import { toSlotCard, type SlotCard } from '@/lib/sheets'
 import type { WantlistCard } from '@/types/wantlist'
@@ -139,8 +139,9 @@ export default function WantlistSlot({
             href={offerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2.5 block rounded-lg bg-fuchsia-500 px-2.5 py-1.5 text-center text-xs font-bold text-white transition-colors hover:bg-fuchsia-600"
+            className="mt-2.5 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-2 text-center text-xs font-bold text-white shadow-lg shadow-emerald-950/40 transition-all hover:-translate-y-0.5 hover:bg-emerald-500"
           >
+            <ChatIcon className="h-3.5 w-3.5" />
             ¡Yo la tengo!
           </a>
         ) : null}

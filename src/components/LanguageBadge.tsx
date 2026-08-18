@@ -17,7 +17,8 @@ export default function LanguageBadge({
       className={`pointer-events-none inline-flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-slate-200 shadow-sm ring-1 ring-white/15 backdrop-blur-sm ${className}`}
     >
       <span aria-hidden="true">{meta.flag}</span>
-      {lang}
+      <span className="hidden sm:inline">{meta.label}</span>
+      <span className="sm:hidden">{lang}</span>
     </span>
   )
 }
