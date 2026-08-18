@@ -7,6 +7,7 @@ import type { ExploreBinder, ExploreCard, ExploreFacets } from '@/app/api/public
 import { ENERGY_TYPES, TypeIcon } from '@/components/TypeIcon'
 import { CARD_LANGUAGES, CARD_LANGUAGE_META } from '@/lib/cardLanguage'
 import { ChevronDownIcon, SearchIcon, XIcon } from '@/components/icons'
+import GhostPokemon from '@/components/GhostPokemon'
 
 type View = 'cards' | 'binders'
 type Mode = 'all' | 'for_sale' | 'for_trade'
@@ -171,7 +172,8 @@ export default function ExplorePage() {
   const activeMode = MODES.find((m) => m.id === mode) ?? MODES[0]
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-200">
+    <div className="relative min-h-screen bg-[#090d16] text-slate-200">
+      <GhostPokemon />
       {/* Header flotante glass */}
       <SiteNav label="Explorar" active="explore" />
 
