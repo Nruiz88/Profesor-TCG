@@ -39,9 +39,19 @@ export interface SetData {
 }
 
 const CACHE_DIR = path.join(process.cwd(), 'src', 'content')
+const CONTENT_DIRS = [path.join(CACHE_DIR, 'en'), path.join(CACHE_DIR, 'ja')]
 const GITHUB_BASE = 'https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master'
 
 async function readLocal(file: string): Promise<string | null> {
+  // Busca en ambas carpetas (en/ y ja/) para soportar la división por idioma
+  for (const dir of CONTENT_DIRS) {
+    try {
+      return await readFile(path.join(dir, file), 'utf8')
+    } catch {
+      // no está en esta carpeta, probar la siguiente
+    }
+  }
+  // Fallback: archivo en la raíz (sets.json, index.json)
   try {
     return await readFile(path.join(CACHE_DIR, file), 'utf8')
   } catch {
@@ -89,17 +99,23 @@ async function buildIndex(): Promise<Array<CardData & { setId: string }>> {
     return parsed
   }
 
-  // Fallback: escanear los archivos por set (cache vieja sin index.json)
-  const files = await readdir(CACHE_DIR)
-  const cardFiles = files.filter((f) => f.endsWith('.json') && f !== 'sets.json' && f !== 'index.json')
-
+  // Fallback: escanear los archivos por set en ambas carpetas
   const all: Array<CardData & { setId: string }> = []
-  for (const file of cardFiles) {
-    const setId = file.replace('.json', '')
-    const content = await readFile(path.join(CACHE_DIR, file), 'utf8')
-    const cards: CardData[] = JSON.parse(content)
-    for (const card of cards) {
-      all.push({ ...card, setId })
+  for (const dir of CONTENT_DIRS) {
+    let files: string[]
+    try { files = await readdir(dir) } catch { continue }
+    const cardFiles = files.filter((f) => f.endsWith('.json'))
+    for (const file of cardFiles) {
+      const setId = file.replace('.json', '')
+      try {
+        const content = await readFile(path.join(dir, file), 'utf8')
+        const cards: CardData[] = JSON.parse(content)
+        for (const card of cards) {
+          all.push({ ...card, setId })
+        }
+      } catch {
+        // archivo corrupto o ilegible
+      }
     }
   }
 
@@ -171,6 +187,9 @@ export async function countCatalogPokemonSpecies(): Promise<number> {
   const species = new Set<string>()
   for (const c of index) {
     if (c.supertype !== 'Pokémon') continue
+    // Solo nombres en escritura latina: los sets japoneses/chinos duplican las
+    // mismas especies (ヒトカゲ == Charmander) y no deben inflar el total.
+    if (!/^[A-Za-z]/.test(c.name)) continue
     species.add(speciesFromCardName(c.name))
   }
   catalogSpeciesCache = species.size

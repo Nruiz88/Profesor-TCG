@@ -6,7 +6,7 @@ const nextConfig = {
   // functions de Vercel: las lecturas dinámicas de FS no son trazables por
   // @vercel/nft, así que sin esto los JSON podrían faltar en producción.
   outputFileTracingIncludes: {
-    '/**/*': ['./src/content/**']
+    '/**/*': ['./src/content/en/**', './src/content/ja/**']
   },
   images: {
     // Conversión automática de imágenes a formatos de última generación.

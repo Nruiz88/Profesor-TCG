@@ -10,6 +10,7 @@ import { resolveCardImage } from '@/lib/cardImage'
 export const dynamic = 'force-dynamic'
 
 const CACHE_DIR = path.join(process.cwd(), 'src', 'content')
+const CONTENT_DIRS = [path.join(CACHE_DIR, 'en'), path.join(CACHE_DIR, 'ja')]
 const TCGDEX_ES = (id: string) => `https://api.tcgdex.net/v2/es/cards/${encodeURIComponent(id)}`
 
 export interface FullCard {
@@ -103,11 +104,14 @@ async function fetchTcgdexEs(cardId: string): Promise<TcgdexCard | null> {
 }
 
 async function readLocal(file: string): Promise<string | null> {
-  try {
-    return await readFile(path.join(CACHE_DIR, file), 'utf8')
-  } catch {
-    return null
+  for (const dir of CONTENT_DIRS) {
+    try {
+      return await readFile(path.join(dir, file), 'utf8')
+    } catch {
+      // buscar en la siguiente carpeta
+    }
   }
+  return null
 }
 
 // Merge: los campos traducidos de TCGdex es priman; el resto queda del catálogo local

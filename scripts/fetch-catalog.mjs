@@ -7,6 +7,7 @@ const ROOT = join(__dirname, '..')
 // Salida estática: src/content/ se incluye en el bundle de producción
 // (outputFileTracingIncludes) para consumo con cero latencia de red.
 const CACHE_DIR = join(ROOT, 'src', 'content')
+const EN_DIR = join(CACHE_DIR, 'en')
 
 const BASE = 'https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master'
 const CONCURRENCY = 8
@@ -38,35 +39,39 @@ async function mapLimit(items, limit, fn) {
 // Solo guarda los campos que usa la búsqueda para mantener el archivo liviano.
 async function buildIndex() {
   const all = []
-  const files = await readdir(CACHE_DIR)
-  for (const file of files) {
-    if (!file.endsWith('.json') || file === 'sets.json' || file === 'index.json') continue
-    const setId = file.replace('.json', '')
-    try {
-      const cards = JSON.parse(await readFile(join(CACHE_DIR, file), 'utf8'))
-      for (const card of cards) {
-        all.push({
-          id: card.id,
-          name: card.name,
-          supertype: card.supertype,
-          subtypes: card.subtypes,
-          number: card.number,
-          rarity: card.rarity,
-          hp: card.hp,
-          types: card.types,
-          images: card.images,
-          setId
-        })
+  const dirs = [EN_DIR, join(CACHE_DIR, 'ja')]
+  for (const dir of dirs) {
+    let files
+    try { files = await readdir(dir) } catch { continue }
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue
+      const setId = file.replace('.json', '')
+      try {
+        const cards = JSON.parse(await readFile(join(dir, file), 'utf8'))
+        for (const card of cards) {
+          all.push({
+            id: card.id,
+            name: card.name,
+            supertype: card.supertype,
+            subtypes: card.subtypes,
+            number: card.number,
+            rarity: card.rarity,
+            hp: card.hp,
+            types: card.types,
+            images: card.images,
+            setId
+          })
+        }
+      } catch {
+        // archivo de set ausente o corrupto: se saltea
       }
-    } catch {
-      // archivo de set ausente o corrupto: se saltea
     }
   }
   return all
 }
 
 async function main() {
-  await mkdir(CACHE_DIR, { recursive: true })
+  await mkdir(EN_DIR, { recursive: true })
 
   console.log('Descargando sets…')
   const sets = await download(`${BASE}/sets/en.json`)
@@ -86,7 +91,7 @@ async function main() {
     const url = `${BASE}/cards/en/${set.id}.json`
     try {
       const cards = await download(url)
-      await writeFile(join(CACHE_DIR, `${set.id}.json`), JSON.stringify(cards))
+      await writeFile(join(EN_DIR, `${set.id}.json`), JSON.stringify(cards))
       ok++
       return `✓ ${set.id} (${cards.length})`
     } catch (err) {
