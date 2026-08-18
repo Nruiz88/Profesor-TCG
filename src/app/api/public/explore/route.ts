@@ -7,6 +7,8 @@ import { effectivePrice } from '@/lib/cardStatus'
 import { isCardLanguage, normalizeLanguage } from '@/lib/cardLanguage'
 import { speciesFromCardName } from '@/lib/pokedex'
 import { computeTrainerScore } from '@/lib/trainer'
+import { validate, extractParams } from '@/lib/validate'
+import { exploreSchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -143,19 +145,13 @@ interface PublicBinderRow {
 }
 
 export async function GET(req: Request) {
-  const supabase = await createClient()
-  const { searchParams } = new URL(req.url)
+  const params = validate(exploreSchema, extractParams(req))
+  if (params.error) return params.error
+  const { view, mode, q: rawQ, set: setFilter, rarity: rarityFilter, city: cityFilter, type: typeFilter, language: languageFilter, sort, limit: rawLimit } = params.data
+  const q = rawQ.trim()
+  const limit = Math.min(rawLimit, MAX_LIMIT)
 
-  const view = searchParams.get('view') === 'binders' ? 'binders' : 'cards'
-  const mode = searchParams.get('mode') ?? 'all'
-  const q = (searchParams.get('q') ?? '').trim()
-  const setFilter = searchParams.get('set') ?? ''
-  const rarityFilter = searchParams.get('rarity') ?? ''
-  const cityFilter = (searchParams.get('city') ?? '').trim()
-  const typeFilter = searchParams.get('type') ?? ''
-  const languageFilter = searchParams.get('language') ?? ''
-  const sort = searchParams.get('sort') ?? 'recent'
-  const limit = Math.min(parseInt(searchParams.get('limit') ?? '60', 10) || 60, MAX_LIMIT)
+  const supabase = await createClient()
 
   try {
     if (view === 'binders') {

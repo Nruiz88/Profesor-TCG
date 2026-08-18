@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getCardMetadataMap } from '@/lib/catalog'
 import { pokeWalletSearch } from '@/lib/pokeWallet'
+import { validate, extractParams } from '@/lib/validate'
+import { priceSchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,10 +18,9 @@ const priceCache = new Map<string, number | null>()
 // 2. PokeWallet como fuente de respaldo si TCGdex no tiene valor (solo si hay
 //    API key configurada; se lee en el servidor, nunca en el cliente).
 export async function GET(req: Request) {
-  const cardId = (new URL(req.url).searchParams.get('cardId') ?? '').trim()
-  if (!cardId) {
-    return NextResponse.json({ error: 'Falta cardId' }, { status: 400 })
-  }
+  const params = validate(priceSchema, extractParams(req))
+  if (params.error) return params.error
+  const { cardId } = params.data
 
   if (priceCache.has(cardId)) {
     return NextResponse.json({ cardId, price: priceCache.get(cardId) ?? null })

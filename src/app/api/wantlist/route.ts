@@ -4,6 +4,8 @@ import { resolveCardImage } from '@/lib/cardImage'
 import { getCardMetadataMap } from '@/lib/catalog'
 import { sanitizePlainText, sanitizeCardTitle } from '@/lib/sanitize'
 import { normalizeCurrency } from '@/lib/priceGuide'
+import { validateJson } from '@/lib/validate'
+import { createWantlistSchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,41 +63,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  let body: {
-    card_id?: unknown
-    card_name?: unknown
-    set_id?: unknown
-    set_name?: unknown
-    number?: unknown
-    max_budget?: unknown
-    currency?: unknown
-  }
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 })
-  }
+  const bodyResult = await validateJson(createWantlistSchema, req)
+  if (bodyResult.error) return bodyResult.error
+  const { card_id: cardId, card_name: cardName, set_id: setId, set_name, number } = bodyResult.data
 
-  const cardId = typeof body.card_id === 'string' ? body.card_id.trim() : ''
-  const cardName = typeof body.card_name === 'string' ? body.card_name.trim() : ''
-  const setId = typeof body.set_id === 'string' ? body.set_id.trim() : ''
-  const number = typeof body.number === 'string' ? body.number.trim() : ''
-  if (!cardId || !cardName || !setId || !number) {
-    return NextResponse.json({ error: 'Faltan datos de la carta' }, { status: 400 })
-  }
-
-  const set_name =
-    typeof body.set_name === 'string' && body.set_name.trim() !== ''
-      ? body.set_name.trim().slice(0, 120)
-      : null
-
+  const budgetRaw = (bodyResult.data as any).max_budget
   let maxBudget: number | null = null
-  if (body.max_budget !== undefined && body.max_budget !== null && body.max_budget !== '') {
-    const parsed = Number(body.max_budget)
-    if (!Number.isFinite(parsed) || parsed < 0) {
-      return NextResponse.json({ error: 'Presupuesto inválido' }, { status: 400 })
+  if (budgetRaw !== undefined && budgetRaw !== null && budgetRaw !== '') {
+    const parsed = Number(budgetRaw)
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      maxBudget = Math.round(parsed * 100) / 100
     }
-    maxBudget = Math.round(parsed * 100) / 100
   }
 
   try {
@@ -110,7 +88,7 @@ export async function POST(req: Request) {
           set_name: set_name ? sanitizePlainText(set_name) : null,
           number,
           max_budget: maxBudget,
-          currency: normalizeCurrency(body.currency)
+          currency: normalizeCurrency((bodyResult.data as any).currency)
         },
         { onConflict: 'user_id,card_id' }
       )

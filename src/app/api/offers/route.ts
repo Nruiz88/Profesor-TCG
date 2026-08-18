@@ -12,6 +12,8 @@ import {
   type TradeOfferView,
   type UserSnapshot
 } from '@/lib/tradeOffers'
+import { validate, extractParams } from '@/lib/validate'
+import { offersSchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,8 +53,9 @@ export async function GET(req: Request) {
   }
 
   try {
-    const { searchParams } = new URL(req.url)
-    const inbox = searchParams.get('inbox') === 'sent' ? 'sent' : 'received'
+    const params = validate(offersSchema, extractParams(req))
+    if (params.error) return params.error
+    const { inbox } = params.data
 
     let query = supabase
       .from('trade_offers')

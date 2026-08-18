@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { effectivePrice } from '@/lib/cardStatus'
+import { validate, extractParams } from '@/lib/validate'
+import { activitySchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,11 +40,11 @@ interface ActivityRow {
 // reservas recientes), para el ticker animado de la home. Público: solo ve
 // binders públicos vía RLS.
 export async function GET(req: Request) {
+  const params = validate(activitySchema, extractParams(req))
+  if (params.error) return params.error
+  const limit = Math.min(params.data.limit, 60)
+
   const supabase = await createClient()
-  const limit = Math.min(
-    parseInt(new URL(req.url).searchParams.get('limit') ?? '24', 10) || 24,
-    60
-  )
 
   try {
     const { data, error } = await supabase

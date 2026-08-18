@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCardMetadataMap } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
+import { validate, extractParams } from '@/lib/validate'
+import { wantlistSchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -94,14 +96,13 @@ interface WantlistRow {
 }
 
 export async function GET(req: Request) {
-  const supabase = await createClient()
-  const { searchParams } = new URL(req.url)
+  const params = validate(wantlistSchema, extractParams(req))
+  if (params.error) return params.error
+  const { q: rawQ, type: typeFilter, city: cityFilter, limit: rawLimit, offset } = params.data
+  const q = rawQ.trim()
+  const limit = Math.min(rawLimit, MAX_LIMIT)
 
-  const q = (searchParams.get('q') ?? '').trim()
-  const typeFilter = searchParams.get('type') ?? ''
-  const cityFilter = (searchParams.get('city') ?? '').trim()
-  const limit = Math.min(parseInt(searchParams.get('limit') ?? '60', 10) || 60, MAX_LIMIT)
-  const offset = Math.max(parseInt(searchParams.get('offset') ?? '0', 10) || 0, 0)
+  const supabase = await createClient()
 
   try {
     // wantlist_cards es pública de lectura por RLS: las cartas que la comunidad
