@@ -8,6 +8,7 @@ import LiveWantlistFeed from '@/components/LiveWantlistFeed'
 import LiveActivityTicker from '@/components/LiveActivityTicker'
 import TradeFairnessWidget from '@/components/TradeFairnessWidget'
 import ClaimSimulator from '@/components/ClaimSimulator'
+import GhostPokemon from '@/components/GhostPokemon'
 import { createClient } from '@/lib/supabase/server'
 import {
   CardsIcon,
@@ -132,7 +133,8 @@ export default async function LandingPage() {
   } = await supabase.auth.getUser()
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-300">
+    <div className="relative min-h-screen bg-slate-950 text-slate-300">
+      <GhostPokemon />
       {/* Nav */}
       <SiteNav
         active="home"
