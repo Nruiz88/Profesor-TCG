@@ -35,7 +35,14 @@ function toWantlistCard(w: PublicWantlistEntry): WantlistCard {
  * de WhatsApp "¡Yo la tengo!" apuntando al slot de su binder; si el visitante
  * no puede ofertar, muestra un link "Ver carta" a la página pública.
  */
-export default function WantlistGrid({ entries }: { entries: PublicWantlistEntry[] }) {
+export default function WantlistGrid({
+  entries,
+  compact = false
+}: {
+  entries: PublicWantlistEntry[]
+  /** Modo compacto (home): cartas ~30% más chicas con más columnas. */
+  compact?: boolean
+}) {
   const [viewer, setViewer] = useState<{
     username?: string
     slotByCardId: Record<string, string>
@@ -105,23 +112,37 @@ export default function WantlistGrid({ entries }: { entries: PublicWantlistEntry
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+    <div
+      className={
+        compact
+          ? 'grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6'
+          : 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'
+      }
+    >
       {entries.map((w) => {
         const offerUrl = buildOfferUrl(w)
         return (
           <div key={w.id}>
-            <div className="mb-2 flex items-center justify-between gap-2 px-1">
+            {/* Header del buscador: avatar + username + ciudad */}
+            <div className="mb-1.5 flex items-center gap-1.5">
               <Link
                 href={`/profile/${encodeURIComponent(w.username)}`}
-                className="min-w-0 truncate text-xs font-semibold text-fuchsia-300 transition-colors hover:text-fuchsia-200"
                 title={`@${w.username} busca ${w.card_name}`}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-600 to-fuchsia-400 text-[9px] font-black text-white shadow shadow-fuchsia-900/50"
               >
-                <span className="text-slate-500">@</span>
-                {w.username}
-                <span className="text-slate-500"> busca</span>
+                {(w.username[0] ?? '?').toUpperCase()}
+              </Link>
+              <Link
+                href={`/profile/${encodeURIComponent(w.username)}`}
+                className="min-w-0 truncate text-[11px] font-bold text-fuchsia-300 transition-colors hover:text-fuchsia-200"
+                title={`@${w.username}`}
+              >
+                @{w.username}
               </Link>
               {w.city && (
-                <span className="shrink-0 truncate text-[10px] text-slate-500">{w.city}</span>
+                <span className="ml-auto flex shrink-0 items-center gap-0.5 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-fuchsia-200">
+                  {w.city}
+                </span>
               )}
             </div>
 

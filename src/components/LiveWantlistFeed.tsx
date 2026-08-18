@@ -7,7 +7,7 @@ import type { PublicWantlistEntry } from '@/app/api/public/wantlist/route'
 function SkeletonTile() {
   return (
     <div>
-      <div className="shimmer mb-2 h-4 w-1/2 rounded" />
+      <div className="shimmer mb-1.5 h-4 w-1/2 rounded" />
       <div className="overflow-hidden rounded-xl border border-fuchsia-500/20 bg-slate-950">
         <div className="shimmer aspect-[63/88] rounded-t-xl" />
         <div className="space-y-2 p-2.5">
@@ -49,8 +49,8 @@ export default function LiveWantlistFeed() {
   return (
     <div>
       {entries === null ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
+        <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          {Array.from({ length: 12 }).map((_, i) => (
             <SkeletonTile key={i} />
           ))}
         </div>
@@ -63,7 +63,7 @@ export default function LiveWantlistFeed() {
           </p>
         </div>
       ) : (
-        <WantlistGrid entries={entries} />
+        <WantlistGrid entries={entries} compact />
       )}
     </div>
   )
