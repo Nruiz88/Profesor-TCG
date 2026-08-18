@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRightIcon, SearchIcon, SwapIcon, TagIcon, XIcon } from './icons'
+import { SearchIcon, SwapIcon, TagIcon, XIcon } from './icons'
 import { ENERGY_TYPES, TypeIcon } from './TypeIcon'
 import LanguagePills from './LanguagePills'
 import SearchResultCard from './SearchResultCard'
@@ -16,9 +16,6 @@ interface BinderToolbarProps {
   onToggleTrade: () => void
   typeFilter: string | null
   onTypeChange: (type: string | null) => void
-  pageCount: number
-  currentPage: number // 0-based
-  onJumpPage: (page: number) => void // 1-based
   shownCount: number
   totalCount: number
   /** Agrega una carta del catálogo al binder (en el bolsillo vacío más próximo) */
@@ -26,8 +23,8 @@ interface BinderToolbarProps {
 }
 
 // Barra de herramientas del binder: buscador del catálogo completo (nombre o
-// número) que agrega directo al bolsillo vacío más próximo, filtros del visor
-// (tipo de energía + disponibilidad) y salto directo a página.
+// número) que agrega directo al bolsillo vacío más próximo y filtros del visor
+// (tipo de energía + disponibilidad). La paginación vive en SheetPagination.
 export default function BinderToolbar({
   saleOnly,
   onToggleSale,
@@ -35,14 +32,10 @@ export default function BinderToolbar({
   onToggleTrade,
   typeFilter,
   onTypeChange,
-  pageCount,
-  currentPage,
-  onJumpPage,
   shownCount,
   totalCount,
   onAddCard
 }: BinderToolbarProps) {
-  const [jumpInput, setJumpInput] = useState('')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -107,20 +100,11 @@ export default function BinderToolbar({
     }
   }
 
-  function handleJump() {
-    const n = parseInt(jumpInput, 10)
-    if (!Number.isNaN(n) && n >= 1) {
-      onJumpPage(n)
-      setJumpInput('')
-    }
-  }
-
   return (
     <div className="mb-6 rounded-3xl border border-slate-800/90 bg-slate-900/40 p-4 backdrop-blur-xl">
-      {/* Buscador del catálogo + salto a página */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <div className="relative flex-1">
-          <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-rose-500" />
+      {/* Buscador del catálogo */}
+      <div className="relative">
+        <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-rose-500" />
           <input
             type="search"
             value={query}
@@ -200,29 +184,6 @@ export default function BinderToolbar({
             </>
           )}
         </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-slate-500">Ir a página</span>
-          <input
-            type="number"
-            min={1}
-            max={pageCount}
-            value={jumpInput}
-            onChange={(e) => setJumpInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleJump()}
-            className="w-16 rounded-xl border border-slate-800 bg-slate-950/80 px-2.5 py-2 text-sm text-white focus:border-rose-500/50 focus:outline-none"
-            aria-label="Número de página"
-          />
-          <button
-            onClick={handleJump}
-            className="flex items-center gap-1 rounded-xl bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700"
-            aria-label="Ir a la página"
-          >
-            Ir
-            <ArrowRightIcon className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
 
       {/* Fila de tipos de energía (Pokédex style) */}
       <div className="mt-4">

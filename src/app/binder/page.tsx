@@ -15,11 +15,10 @@ import BinderSettingsModal from '@/components/BinderSettingsModal'
 import BinderToolbar from '@/components/BinderToolbar'
 import BinderTabs, { type BinderTab } from '@/components/binder/BinderTabs'
 import WantlistSlot from '@/components/binder/WantlistSlot'
-import ProfileHeaderStats from '@/components/ProfileHeaderStats'
 import ClaimsPanel from '@/components/ClaimsPanel'
 import ReservedClaimsBanner from '@/components/ReservedClaimsBanner'
 import SellerReputationCard from '@/components/SellerReputationCard'
-import { GlobeIcon, LockIcon, PlusIcon, ShareIcon, SparklesIcon } from '@/components/icons'
+import { GearIcon, GlobeIcon, LockIcon, PlusIcon, ShareIcon, SparklesIcon } from '@/components/icons'
 import type { WantlistCard } from '@/types/wantlist'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
@@ -33,7 +32,6 @@ import {
   findNextEmptySlot,
   groupIntoSheets,
   padSheet,
-  sheetPageCount,
   toSlotCard,
   type SlotCard
 } from '@/lib/sheets'
@@ -340,6 +338,8 @@ export default function BinderPage() {
     (sum, c) => sum + (effectivePrice(c.market_price, c.price_override, c.price) ?? 0),
     0
   )
+  const fmtValue = (n: number) =>
+    n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   // Filtros del visor (disponibilidad + tipo) — client-side, sin refetch.
   // El buscador del toolbar ya no filtra el binder: busca en el catálogo
@@ -507,48 +507,59 @@ export default function BinderPage() {
 
           {/* Contenido principal */}
           <main className="min-w-0 flex-1">
-            <div className="mb-5">
-              <h1 className="text-2xl font-bold tracking-tight text-white">
-                {binder?.title ?? 'Mi Binder'}
-              </h1>
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
-                {binder?.description && <span>{binder.description}</span>}
-                <span className="font-medium text-slate-400">
-                  {totalCards} carta{totalCards !== 1 ? 's' : ''}
-                </span>
-                <span className="text-slate-700">•</span>
-                <span>
-                  {sheets.length} hoja{sheets.length !== 1 ? 's' : ''}
-                </span>
-                {binder && (
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                      binder.is_public
-                        ? 'bg-emerald-500/15 text-emerald-300'
-                        : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    {binder.is_public ? (
-                      <GlobeIcon className="h-3 w-3" />
-                    ) : (
-                      <LockIcon className="h-3 w-3" />
+            <div className="mb-5 overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
+              <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-xl font-bold tracking-tight text-white">
+                      {binder?.title ?? 'Mi Binder'}
+                    </h1>
+                    {binder && (
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          binder.is_public
+                            ? 'bg-emerald-500/15 text-emerald-300'
+                            : 'bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        {binder.is_public ? (
+                          <GlobeIcon className="h-3 w-3" />
+                        ) : (
+                          <LockIcon className="h-3 w-3" />
+                        )}
+                        {binder.is_public ? 'Público' : 'Privado'}
+                      </span>
                     )}
-                    {binder.is_public ? 'Público' : 'Privado'}
-                  </span>
-                )}
-              </p>
+                  </div>
+                  {binder?.description && (
+                    <p className="mt-0.5 truncate text-sm text-slate-500">{binder.description}</p>
+                  )}
+                  <p className="mt-1 text-xs text-slate-500">
+                    {totalCards} carta{totalCards !== 1 ? 's' : ''} · {sheets.length} hoja
+                    {sheets.length !== 1 ? 's' : ''} ·{' '}
+                    <span className="font-semibold text-yellow-400/90">${fmtValue(totalValue)} USD</span>
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <button
+                    onClick={copyShareLink}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500"
+                  >
+                    <ShareIcon className="h-4 w-4" />
+                    Compartir link
+                  </button>
+                  <button
+                    onClick={() => setSettingsModal('edit')}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm font-semibold text-slate-300 transition-colors hover:border-slate-600 hover:text-white"
+                  >
+                    <GearIcon className="h-4 w-4" />
+                    Configurar
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="mb-6">
-        <ProfileHeaderStats
-          totalCards={totalCards}
-          totalValue={totalValue}
-          saleCount={saleCount}
-          tradeCount={tradeCount}
-        />
-      </div>
-
-      <div className="mb-6">
         <BinderTabs active={tab} onChange={setTab} wantlistCount={wantlist.length} />
       </div>
 
@@ -660,11 +671,6 @@ export default function BinderPage() {
             onToggleTrade={() => setTradeOnly((v) => !v)}
             typeFilter={typeFilter}
             onTypeChange={setTypeFilter}
-            pageCount={sheetPageCount(sheets.length)}
-            currentPage={currentSheet}
-            onJumpPage={(n) =>
-              setCurrentSheet(Math.min(sheetPageCount(sheets.length) - 1, Math.max(0, n - 1)))
-            }
             shownCount={filteredCards.length}
             totalCount={totalCards}
             onAddCard={addCardToNearestSlot}

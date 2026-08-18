@@ -375,12 +375,6 @@ export default function BinderSidebar({
                   <SwapIcon className="h-4 w-4 text-sky-400" />
                   Mis transacciones
                 </button>
-                {profileUrl && (
-                  <Link href={profileUrl} className={`${MENU_BTN} ${MENU_NEUTRAL}`}>
-                    <ArrowRightIcon className="h-4 w-4 text-rose-400" />
-                    Ver mi perfil público
-                  </Link>
-                )}
                 {profile?.is_admin && (
                   <a href="/admin" className={`${MENU_BTN} ${MENU_NEUTRAL}`}>
                     <ShieldIcon className="h-4 w-4 text-violet-400" />
