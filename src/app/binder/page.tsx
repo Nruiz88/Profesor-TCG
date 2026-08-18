@@ -15,6 +15,7 @@ import BinderSettingsModal from '@/components/BinderSettingsModal'
 import BinderToolbar from '@/components/BinderToolbar'
 import BinderTabs, { type BinderTab } from '@/components/binder/BinderTabs'
 import WantlistSlot from '@/components/binder/WantlistSlot'
+import dynamic from 'next/dynamic'
 import ClaimsPanel from '@/components/ClaimsPanel'
 import ReservedClaimsBanner from '@/components/ReservedClaimsBanner'
 import SellerReputationCard from '@/components/SellerReputationCard'
@@ -29,6 +30,19 @@ import type { TrainerScore } from '@/lib/trainer'
 import { effectivePrice, type Availability } from '@/lib/cardStatus'
 import type { Currency } from '@/lib/priceGuide'
 import type { CardCondition } from '@/lib/cardCondition'
+
+const EditableBinderGrid = dynamic(() => import('@/components/binder/EditableBinderGrid'), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+      <div className="grid grid-cols-3 gap-2.5">
+        {Array.from({ length: 9 }).map((_, i) => (
+          <div key={i} className="aspect-[63/88] animate-pulse rounded-xl bg-slate-800/50" />
+        ))}
+      </div>
+    </div>
+  )
+})
 import {
   SLOTS_PER_SHEET,
   findNextEmptySlot,
@@ -74,6 +88,9 @@ export default function BinderPage() {
   const [wantlistLoading, setWantlistLoading] = useState(false)
   const [showWantlistSearch, setShowWantlistSearch] = useState(false)
   const [showPokedex, setShowPokedex] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [pendingOrder, setPendingOrder] = useState<(SlotCard | null)[] | null>(null)
 
   const loadBinder = useCallback(async (binderId?: string) => {
     try {
@@ -409,6 +426,62 @@ export default function BinderPage() {
     }
   }
 
+  function handleReorder(sheetIndex: number, newSlots: (SlotCard | null)[]) {
+    setPendingOrder(newSlots)
+    setHasUnsavedChanges(true)
+    // Actualizar las hojas en estado local para feedback inmediato
+    setCards((prev) => {
+      const updated = [...prev]
+      for (let i = 0; i < newSlots.length; i++) {
+        const slotNumber = sheetIndex * SLOTS_PER_SHEET + i + 1
+        if (newSlots[i]) {
+          updated.push({ ...newSlots[i]!, slot_number: slotNumber })
+        }
+      }
+      // Quitar las cartas que estaban en esa hoja y re-agregar con nuevos números
+      const baseSlot = sheetIndex * SLOTS_PER_SHEET + 1
+      const withoutSheet = updated.filter(
+        (c) => c.slot_number < baseSlot || c.slot_number >= baseSlot + SLOTS_PER_SHEET
+      )
+      const reordered = newSlots
+        .map((s, i) => (s ? { ...s, slot_number: baseSlot + i } : null))
+        .filter(Boolean) as SlotCard[]
+      return [...withoutSheet, ...reordered]
+    })
+  }
+
+  async function saveOrder() {
+    if (!binder || !pendingOrder) return
+    setMessage(null)
+    try {
+      // Actualizar slot_number de cada carta en el binder
+      const updates = pendingOrder
+        .map((s, i) => {
+          if (!s) return null
+          return fetch(`/api/binder/slots/${s.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slot_number: s.slot_number })
+          })
+        })
+        .filter(Boolean)
+      await Promise.all(updates)
+      setHasUnsavedChanges(false)
+      setPendingOrder(null)
+      await loadBinder()
+      setMessage('Orden guardado.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Error al guardar el orden')
+    }
+  }
+
+  function cancelEdit() {
+    setIsEditing(false)
+    setHasUnsavedChanges(false)
+    setPendingOrder(null)
+    loadBinder()
+  }
+
   async function removeSlot(slotId: string) {
     try {
       const res = await fetch(`/api/binder/slots/${slotId}`, { method: 'DELETE' })
@@ -704,17 +777,35 @@ export default function BinderPage() {
         </>
       ) : (
         <>
-          <BinderToolbar
-            saleOnly={saleOnly}
-            onToggleSale={() => setSaleOnly((v) => !v)}
-            tradeOnly={tradeOnly}
-            onToggleTrade={() => setTradeOnly((v) => !v)}
-            typeFilter={typeFilter}
-            onTypeChange={setTypeFilter}
-            shownCount={filteredCards.length}
-            totalCount={totalCards}
-            onOpenSearch={() => setShowPokedex(true)}
-          />
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <BinderToolbar
+              saleOnly={saleOnly}
+              onToggleSale={() => setSaleOnly((v) => !v)}
+              tradeOnly={tradeOnly}
+              onToggleTrade={() => setTradeOnly((v) => !v)}
+              typeFilter={typeFilter}
+              onTypeChange={setTypeFilter}
+              shownCount={filteredCards.length}
+              totalCount={totalCards}
+              onOpenSearch={() => setShowPokedex(true)}
+            />
+            <button
+              onClick={() => {
+                if (isEditing) {
+                  cancelEdit()
+                } else {
+                  setIsEditing(true)
+                }
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all ${
+                isEditing
+                  ? 'bg-fuchsia-500 text-white shadow-lg shadow-fuchsia-900/40 hover:bg-fuchsia-400'
+                  : 'border border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-600 hover:text-white'
+              }`}
+            >
+              {isEditing ? '✋ Terminar edición' : '✏️ Editar orden'}
+            </button>
+          </div>
 
           {filteredCards.length === 0 && hasActiveFilters ? (
             <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-16 text-center">
@@ -729,16 +820,19 @@ export default function BinderPage() {
                 {[0, 1].map((offset) => {
                   const sheetIndex = currentSheet * 2 + offset
                   const sheetCards = sheets[sheetIndex]
+                  const currentSlots = sheetCards ? padSheet(sheetCards) : Array(9).fill(null)
                   return (
-                    <BinderSheet
+                    <EditableBinderGrid
                       key={sheetIndex}
                       sheetNumber={sheetIndex + 1}
-                      slots={sheetCards ? padSheet(sheetCards) : Array(9).fill(null)}
+                      slots={currentSlots}
+                      isEditing={isEditing}
                       onRemoveSlot={removeSlot}
                       onEmptySlotClick={(slotIndex) => setSlotTarget({ sheetIndex, slotIndex })}
                       onEditCard={setEditCard}
                       onMarkSold={markCardSold}
                       onCardUpdated={() => loadBinder()}
+                      onReorder={(newSlots) => handleReorder(sheetIndex, newSlots)}
                     />
                   )
                 })}
@@ -832,6 +926,27 @@ export default function BinderPage() {
           }}
           onClose={() => setSettingsModal(null)}
         />
+      )}
+
+      {/* Banner flotante: cambios sin guardar */}
+      {hasUnsavedChanges && (
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-fuchsia-500/50 bg-slate-900/95 px-5 py-3 shadow-[0_0_30px_rgba(217,70,239,0.3)] backdrop-blur-xl">
+          <span className="text-sm font-semibold text-fuchsia-200">
+            Tenés cambios sin guardar
+          </span>
+          <button
+            onClick={saveOrder}
+            className="rounded-xl bg-fuchsia-500 px-4 py-2 text-sm font-bold text-white shadow-lg transition-colors hover:bg-fuchsia-400"
+          >
+            Guardar Orden
+          </button>
+          <button
+            onClick={cancelEdit}
+            className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-400 transition-colors hover:text-white"
+          >
+            Cancelar
+          </button>
+        </div>
       )}
 
       {showClaims && <ClaimsPanel onClose={() => setShowClaims(false)} />}

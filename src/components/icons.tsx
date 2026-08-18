@@ -257,3 +257,14 @@ export const PokeballIcon = (p: IconProps) => (
     <path d="M9.3 7 7.4 5.2M14.7 7l1.9-1.8" />
   </Svg>
 )
+
+export const GripVerticalIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="9" cy="12" r="1" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="12" r="1" fill="currentColor" stroke="none" />
+    <circle cx="9" cy="6" r="1" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="6" r="1" fill="currentColor" stroke="none" />
+    <circle cx="9" cy="18" r="1" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="18" r="1" fill="currentColor" stroke="none" />
+  </Svg>
+)
