@@ -13,7 +13,7 @@ import { pokedexLevel } from '@/lib/pokedex'
 import type { TrainerScore } from '@/lib/trainer'
 import TrainerScoreCard from './TrainerScoreCard'
 import { createClient } from '@/lib/supabase/client'
-import { ChatIcon, CheckIcon, ShareIcon } from '@/components/icons'
+import { ChatIcon, CheckIcon, ShareIcon, SparklesIcon } from '@/components/icons'
 import type { ExploreCard } from '@/app/api/public/explore/route'
 import type { WantlistCard } from '@/types/wantlist'
 
@@ -160,6 +160,7 @@ export default function UserProfileView({
   } | null>(null)
 
   const location = formatLocation(profile.city, profile.country)
+  const memberSince = profile.created_at ? formatDate(profile.created_at) : null
 
   // Deep links "¡Yo la tengo!": la sesión del visitante permite apuntar al
   // slot exacto de su binder dentro del mensaje de WhatsApp.
@@ -246,17 +247,23 @@ export default function UserProfileView({
 
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         {/* Header de identidad y reputación */}
-        <header className="relative mb-8 overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl">
-          {/* Acento neón superior */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/70 to-transparent" />
-          {/* Glow decorativo de fondo */}
-          <div className="pointer-events-none absolute -top-28 left-1/2 h-56 w-[28rem] -translate-x-1/2 rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <header className="relative mb-10 overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl">
+          {/* Acentos neón superior e inferior */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/80 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sky-500/50 to-transparent" />
+          {/* Glows decorativos de fondo */}
+          <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-fuchsia-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -right-16 h-64 w-64 rounded-full bg-sky-500/10 blur-3xl" />
+          {/* Patrón sutil de cuadrícula */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:18px_18px]" />
 
           <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
             {/* Identidad */}
             <div className="flex items-center gap-5">
-              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-fuchsia-500/40 via-rose-500/30 to-sky-500/40 text-3xl font-black text-white ring-2 ring-fuchsia-400/50 shadow-[0_0_35px_rgba(217,70,239,0.35)]">
-                {initial}
+              <div className="relative shrink-0">
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-fuchsia-500/50 via-rose-500/40 to-sky-500/40 text-4xl font-black text-white ring-2 ring-fuchsia-400/60 shadow-[0_0_45px_rgba(217,70,239,0.4)]">
+                  {initial}
+                </div>
                 {profile.isVerified && (
                   <span
                     className="absolute -right-1.5 -top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-sm text-white shadow-lg shadow-emerald-900/50 ring-2 ring-slate-900"
@@ -269,7 +276,7 @@ export default function UserProfileView({
 
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="truncate text-2xl font-bold tracking-tight text-white">
+                  <h1 className="truncate bg-gradient-to-r from-white via-rose-100 to-fuchsia-200 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
                     {profile.username}
                   </h1>
                   {profile.isVerified && (
@@ -278,12 +285,22 @@ export default function UserProfileView({
                     </span>
                   )}
                 </div>
-                <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 truncate text-sm text-slate-400">
-                  <span className="text-slate-600">@{profile.username}</span>
+                <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-slate-400">
+                  <span className="font-mono text-slate-500">@{profile.username}</span>
                   {location && (
                     <>
-                      <span className="text-slate-700">·</span>
-                      <span>📍 {location}</span>
+                      <span className="text-slate-700">•</span>
+                      <span className="inline-flex items-center gap-1 rounded-full border border-slate-700/80 bg-slate-900/70 px-2.5 py-1 text-xs font-semibold text-slate-300">
+                        📍 {location}
+                      </span>
+                    </>
+                  )}
+                  {memberSince && (
+                    <>
+                      <span className="text-slate-700">•</span>
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500">
+                        🗓️ Miembro desde {memberSince}
+                      </span>
                     </>
                   )}
                 </p>
@@ -294,24 +311,25 @@ export default function UserProfileView({
             <div className="flex flex-col gap-4 lg:items-end">
               <div className="flex flex-wrap items-center gap-2">
                 {ratingAvg != null ? (
-                  <span className="inline-flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 px-3 py-1.5">
-                    <Stars rating={ratingAvg} />
+                  <div className="inline-flex items-center gap-2 rounded-xl border border-amber-400/20 bg-slate-950/70 px-3 py-2">
+                    <span className="text-base">⭐</span>
                     <span className="text-sm font-bold text-amber-400">{ratingAvg.toFixed(1)}</span>
                     <span className="text-xs text-slate-500">
                       {reviewCount} reseña{reviewCount !== 1 ? 's' : ''}
                     </span>
-                  </span>
+                  </div>
                 ) : (
-                  <span className="rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-500">
-                    Sin reseñas aún
-                  </span>
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs text-slate-500">
+                    ⭐ Sin reseñas aún
+                  </div>
                 )}
-                <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-3 py-1.5">
+                <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-slate-950/70 px-3 py-2">
+                  <span className="text-base">🤝</span>
                   <span className="text-sm font-bold text-emerald-300">{completedClaims}</span>
                   <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400/70">
                     tratos
                   </span>
-                </span>
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -320,7 +338,7 @@ export default function UserProfileView({
                     href={whatsAppLink(profile.whatsapp_number)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-950/50 transition-colors hover:bg-emerald-500"
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-950/50 transition-all hover:-translate-y-0.5 hover:bg-emerald-500"
                   >
                     <ChatIcon width={16} height={16} />
                     Enviar WhatsApp
@@ -328,7 +346,7 @@ export default function UserProfileView({
                 ) : null}
                 <button
                   onClick={handleShare}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700"
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2.5 text-sm font-semibold text-slate-200 transition-all hover:-translate-y-0.5 hover:bg-slate-700"
                 >
                   <ShareIcon width={16} height={16} />
                   Compartir Perfil
@@ -396,76 +414,65 @@ export default function UserProfileView({
         )}
 
         {/* Control de pestañas */}
-        <div className="mb-6 flex flex-wrap gap-1 rounded-xl border border-slate-800 bg-slate-900 p-1">
-          <button
-            type="button"
-            onClick={() => setTab('sale')}
-            aria-pressed={tab === 'sale'}
-            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-              tab === 'sale'
-                ? 'bg-binder-accent text-white shadow'
-                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-            }`}
-          >
-            🛍️ En Venta / Trade
-            <span
-              className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-                tab === 'sale' ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-400'
+        <div className="mb-6 flex flex-wrap gap-2">
+          {[
+            {
+              id: 'sale' as const,
+              icon: '🛍️',
+              label: 'En Venta / Trade',
+              count: saleCards.length,
+              activeClass: 'from-rose-500 to-orange-500'
+            },
+            {
+              id: 'wantlist' as const,
+              icon: '✨',
+              label: 'Cartas Buscadas',
+              count: wantlist.length,
+              activeClass: 'from-fuchsia-600 to-violet-500'
+            },
+            {
+              id: 'reviews' as const,
+              icon: '⭐',
+              label: 'Reseñas',
+              count: reviews.length,
+              activeClass: 'from-amber-500 to-yellow-500'
+            }
+          ].map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              aria-pressed={tab === t.id}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                tab === t.id
+                  ? `bg-gradient-to-r ${t.activeClass} text-white shadow-lg shadow-black/40`
+                  : 'border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-600 hover:text-white'
               }`}
             >
-              {saleCards.length}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('wantlist')}
-            aria-pressed={tab === 'wantlist'}
-            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-              tab === 'wantlist'
-                ? 'bg-fuchsia-500 text-white shadow'
-                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-            }`}
-          >
-            ✨ Cartas Buscadas
-            <span
-              className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-                tab === 'wantlist' ? 'bg-white/20 text-white' : 'bg-fuchsia-500/20 text-fuchsia-300'
-              }`}
-            >
-              {wantlist.length}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('reviews')}
-            aria-pressed={tab === 'reviews'}
-            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-              tab === 'reviews'
-                ? 'bg-binder-accent text-white shadow'
-                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-            }`}
-          >
-            ⭐ Reseñas
-            <span
-              className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-                tab === 'reviews' ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-400'
-              }`}
-            >
-              {reviews.length}
-            </span>
-          </button>
+              <span>{t.icon}</span>
+              {t.label}
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                  tab === t.id ? 'bg-white/25 text-white' : 'bg-white/10 text-slate-400'
+                }`}
+              >
+                {t.count}
+              </span>
+            </button>
+          ))}
           {isOwnProfile && (
             <button
               type="button"
               onClick={() => setTab('settings')}
               aria-pressed={tab === 'settings'}
-              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
                 tab === 'settings'
-                  ? 'bg-binder-accent text-white shadow'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                  ? 'bg-gradient-to-r from-slate-600 to-slate-500 text-white shadow-lg shadow-black/40'
+                  : 'border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-600 hover:text-white'
               }`}
             >
-              ⚙️ Configuración
+              <span>⚙️</span>
+              Configuración
             </button>
           )}
         </div>
@@ -479,10 +486,28 @@ export default function UserProfileView({
               description={`@${profile.username} todavía no tiene cartas en venta o intercambio.`}
             />
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {saleCards.map((card) => (
-                <MarketCard key={card.id} card={card} />
-              ))}
+            <div>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-500/5 px-4 py-3">
+                <p className="flex items-center gap-2 text-sm font-semibold text-rose-200">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-400" />
+                  </span>
+                  {saleCards.length} carta{saleCards.length !== 1 ? 's' : ''} disponible
+                  {saleCards.length !== 1 ? 's' : ''} para vender o intercambiar
+                </p>
+                <Link
+                  href="/explore"
+                  className="text-xs font-semibold text-rose-300 underline-offset-4 transition-colors hover:text-rose-200 hover:underline"
+                >
+                  Ver el mercado completo →
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {saleCards.map((card) => (
+                  <MarketCard key={card.id} card={card} />
+                ))}
+              </div>
             </div>
           ))}
 
@@ -495,11 +520,12 @@ export default function UserProfileView({
             />
           ) : (
             <div>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/5 px-4 py-3">
-                <p className="text-sm font-semibold text-fuchsia-200">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/10 px-4 py-3">
+                <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-400/40 bg-fuchsia-500/10 px-3 py-1 text-xs font-bold text-fuchsia-300">
+                  <SparklesIcon width={13} height={13} />
                   @{profile.username} busca {wantlist.length} carta
                   {wantlist.length !== 1 ? 's' : ''}
-                </p>
+                </span>
                 <button
                   type="button"
                   onClick={handleShareWantlist}
