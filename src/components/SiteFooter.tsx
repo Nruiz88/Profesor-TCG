@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ChatIcon, GithubIcon, InstagramIcon } from '@/components/icons'
+import KofiButton from '@/components/KofiButton'
 
 export default function SiteFooter() {
   return (
@@ -89,6 +90,18 @@ export default function SiteFooter() {
               </a>
             </li>
           </ul>
+        </div>
+      </div>
+      <div className="border-t border-slate-800/60 bg-slate-900/50 py-8">
+        <div className="mx-auto max-w-6xl px-4 text-center">
+          <p className="mx-auto max-w-lg text-sm leading-relaxed text-slate-400">
+            Profesor TCG es y seguirá siendo <span className="font-semibold text-white">100% gratuito</span>{' '}
+            sin comisiones. Si querés ayudarnos a mantener los servidores activos y seguir sumando
+            funciones, podés invitarnos un café:
+          </p>
+          <div className="mt-4 flex justify-center">
+            <KofiButton />
+          </div>
         </div>
       </div>
       <div className="border-t border-slate-800/60 py-6">

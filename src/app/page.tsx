@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import SiteNav from '@/components/SiteNav'
-import SiteFooter from '@/components/SiteFooter'
 import FeaturesStatsBar from '@/components/FeaturesStatsBar'
 import HeroBinderDemo from '@/components/HeroBinderDemo'
 import CommunityStatsBar from '@/components/CommunityStatsBar'
@@ -466,8 +465,6 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <SiteFooter />
     </div>
   )
 }

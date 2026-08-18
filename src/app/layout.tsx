@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import './vendor/pokemon-cards/pokemon-cards.css'
 import '../components/modals.css'
+import SiteFooter from '@/components/SiteFooter'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
@@ -21,7 +22,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   )
 }

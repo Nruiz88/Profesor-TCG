@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import SiteNav from '@/components/SiteNav'
-import SiteFooter from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function PrivacidadPage() {
@@ -164,8 +163,6 @@ export default async function PrivacidadPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <SiteFooter />
     </div>
   )
 }

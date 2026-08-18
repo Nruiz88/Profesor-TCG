@@ -227,7 +227,6 @@ export default function PokedexSearchModal({
             <div
               ref={scrollRef}
               className="h-full overflow-y-auto px-2 py-2"
-              style={{ contain: 'strict' }}
             >
               <div
                 style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}
