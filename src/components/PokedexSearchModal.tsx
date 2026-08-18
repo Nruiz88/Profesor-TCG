@@ -177,7 +177,7 @@ export default function PokedexSearchModal({
                 <img
                   src={card.image}
                   alt=""
-                  className="h-14 w-10 shrink-0 rounded-md object-cover ring-1 ring-white/10"
+                  className="h-20 w-14 shrink-0 rounded-lg object-cover ring-1 ring-white/10"
                 />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{card.name}</span>
