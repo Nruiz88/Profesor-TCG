@@ -234,31 +234,40 @@ export default async function LandingPage() {
       </section>
 
       {/* Wantlist de la comunidad en vivo */}
-      <section className="border-t border-slate-800/60 bg-slate-900/40 py-20">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+      <section className="relative overflow-hidden border-t border-fuchsia-500/10 bg-slate-900/40 py-20 sm:py-24">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(217,70,239,0.14),transparent_55%),radial-gradient(ellipse_at_top_left,rgba(168,85,247,0.1),transparent_55%)]"
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto max-w-6xl px-4">
+          <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="max-w-2xl">
-              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-fuchsia-400">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-fuchsia-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-fuchsia-400" />
+              <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-400/40 bg-fuchsia-500/10 px-3 py-1 text-xs font-bold text-fuchsia-300">
+                <SparklesIcon width={13} height={13} />
+                Wantlist de la comunidad
+              </span>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                Lo último que están{' '}
+                <span className="bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
+                  buscando
                 </span>
-                Cartas Buscadas en vivo
-              </p>
-              <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">
-                Lo último que la comunidad está buscando
               </h2>
-              <p className="mt-3 text-slate-400">
+              <p className="mt-3 text-base leading-relaxed text-slate-400">
                 Cada coleccionista agrega a su Wantlist las cartas que le faltan. Si tenés alguna,
-                ofrecé un Swap directo por WhatsApp en un clic.
+                ofrecé un <span className="font-semibold text-fuchsia-300">Swap por WhatsApp</span>{' '}
+                en un clic y cerrá el trato directo.
               </p>
             </div>
             <Link
-              href="/explore"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:border-fuchsia-500 hover:text-white"
+              href="/buscados"
+              className="group inline-flex items-center gap-2 rounded-xl bg-fuchsia-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-fuchsia-900/50 transition-all hover:-translate-y-0.5 hover:bg-fuchsia-500"
             >
-              Buscar en el mercado
-              <ArrowRightIcon width={15} height={15} />
+              Ver todos los buscados
+              <ArrowRightIcon
+                width={17}
+                height={17}
+                className="transition-transform group-hover:translate-x-0.5"
+              />
             </Link>
           </div>
 

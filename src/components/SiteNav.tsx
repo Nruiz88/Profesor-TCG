@@ -16,7 +16,7 @@ interface SiteNavProps {
   /** Texto que se agrega tras el logo, ej: "Explorar" */
   label?: string
   /** Página actual para resaltar el link correspondiente */
-  active?: 'home' | 'explore' | 'binder' | 'offers'
+  active?: 'home' | 'explore' | 'buscados' | 'binder' | 'offers'
   /** Usuario ya resuelto en el servidor (evita el parpadeo de "Ingresar") */
   initialUser?: NavUser | null
 }
@@ -135,6 +135,9 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
           <Link href="/explore" className={linkClass(active === 'explore')}>
             Explorar
           </Link>
+          <Link href="/buscados" className={linkClass(active === 'buscados')}>
+            Buscados
+          </Link>
           {user && (
             <>
               <Link href="/binder" className={linkClass(active === 'binder')}>
@@ -222,6 +225,9 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
                 </Link>
                 <Link href="/explore" className={mobileLinkClass(active === 'explore')}>
                   Explorar
+                </Link>
+                <Link href="/buscados" className={mobileLinkClass(active === 'buscados')}>
+                  Buscados
                 </Link>
                 {user && (
                   <>
