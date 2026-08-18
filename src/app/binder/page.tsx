@@ -27,6 +27,7 @@ import { fetchJson } from '@/lib/utils'
 import type { Profile } from '@/lib/profile'
 import type { TrainerScore } from '@/lib/trainer'
 import { effectivePrice, type Availability } from '@/lib/cardStatus'
+import type { Currency } from '@/lib/priceGuide'
 import {
   SLOTS_PER_SHEET,
   findNextEmptySlot,
@@ -180,6 +181,21 @@ export default function BinderPage() {
       await loadWantlist()
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Error al actualizar el presupuesto')
+    }
+  }
+
+  async function updateWantlistCurrency(id: string, currency: Currency) {
+    try {
+      const res = await fetch(`/api/wantlist/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currency })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error')
+      await loadWantlist()
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Error al actualizar la moneda')
     }
   }
 
@@ -657,6 +673,7 @@ export default function BinderPage() {
                   owner
                   onRemove={removeFromWantlist}
                   onBudgetChange={updateWantlistBudget}
+                  onCurrencyChange={updateWantlistCurrency}
                 />
               ))}
             </div>

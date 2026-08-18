@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { normalizeCurrency } from '@/lib/priceGuide'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  let body: { max_budget?: unknown }
+  let body: { max_budget?: unknown; currency?: unknown }
   try {
     body = await req.json()
   } catch {
@@ -31,13 +32,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     maxBudget = Math.round(parsed * 100) / 100
   }
 
+  const currency = normalizeCurrency(body.currency)
+
   try {
     const { data, error } = await supabase
       .from('wantlist_cards')
-      .update({ max_budget: maxBudget })
+      .update({ max_budget: maxBudget, currency })
       .eq('id', id)
       .eq('user_id', user.id)
-      .select('id, max_budget')
+      .select('id, max_budget, currency')
       .single()
     if (error) throw error
 

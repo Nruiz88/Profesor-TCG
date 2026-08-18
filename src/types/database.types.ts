@@ -95,7 +95,7 @@ export type Database = {
           condition: string | null
           language: 'ES' | 'EN' | 'JP' | 'KO' | 'ZH'
           manual_price: number | null
-          currency: 'USD' | 'EUR' | 'ARS'
+          currency: 'USD' | 'EUR' | 'ARS' | 'MXN' | 'CLP'
           is_user_reported: boolean
           reserved_until: string | null
           updated_at: string
@@ -118,7 +118,7 @@ export type Database = {
           condition?: string | null
           language?: 'ES' | 'EN' | 'JP' | 'KO' | 'ZH'
           manual_price?: number | null
-          currency?: 'USD' | 'EUR' | 'ARS'
+          currency?: 'USD' | 'EUR' | 'ARS' | 'MXN' | 'CLP'
           is_user_reported?: boolean
           reserved_until?: string | null
           updated_at?: string

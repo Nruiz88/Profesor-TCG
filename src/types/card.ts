@@ -28,7 +28,7 @@ export type Availability =
 export type CardLanguage = 'ES' | 'EN' | 'JP' | 'KO' | 'ZH'
 
 /** Moneda del precio (SQL binder_cards.currency). */
-export type Currency = 'USD' | 'EUR' | 'ARS'
+export type Currency = 'USD' | 'EUR' | 'ARS' | 'MXN' | 'CLP'
 
 // ---------------------------------------------------------------------------
 // UnifiedCard — contrato normalizado que consumen componentes, APIs y páginas.

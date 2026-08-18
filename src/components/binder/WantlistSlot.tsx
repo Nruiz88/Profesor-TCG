@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import PokemonCard from '@/components/PokemonCard'
 import { TrashIcon } from '@/components/icons'
-import { formatPrice } from '@/lib/priceGuide'
+import { CURRENCIES, formatPrice, type Currency } from '@/lib/priceGuide'
 import { toSlotCard, type SlotCard } from '@/lib/sheets'
 import type { WantlistCard } from '@/types/wantlist'
 
@@ -15,6 +15,7 @@ interface WantlistSlotProps {
   offerUrl?: string
   onRemove?: (id: string) => void
   onBudgetChange?: (id: string, budget: number | null) => void
+  onCurrencyChange?: (id: string, currency: Currency) => void
 }
 
 function formatBudgetLabel(budget: number, currency: string): string {
@@ -62,7 +63,8 @@ export default function WantlistSlot({
   owner = false,
   offerUrl,
   onRemove,
-  onBudgetChange
+  onBudgetChange,
+  onCurrencyChange
 }: WantlistSlotProps) {
   const [budget, setBudget] = useState(entry.max_budget ?? '')
   const slotCard = toWantlistSlotCard(entry)
@@ -111,6 +113,18 @@ export default function WantlistSlot({
                 {entry.currency}
               </span>
             </div>
+            <select
+              value={entry.currency}
+              onChange={(e) => onCurrencyChange?.(entry.id, e.target.value as Currency)}
+              aria-label="Moneda del presupuesto"
+              className="rounded-lg border border-slate-700 bg-slate-950 px-1.5 py-1.5 text-[9px] font-semibold uppercase text-slate-400 outline-none transition-colors focus:border-fuchsia-500"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.id}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               onClick={() => onRemove?.(entry.id)}

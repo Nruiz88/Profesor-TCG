@@ -9,7 +9,9 @@ export type { Currency } from '@/types/card'
 export const CURRENCIES: { id: Currency; label: string; symbol: string }[] = [
   { id: 'USD', label: 'Dólar (USD)', symbol: '$' },
   { id: 'EUR', label: 'Euro (EUR)', symbol: '€' },
-  { id: 'ARS', label: 'Peso (ARS)', symbol: '$' }
+  { id: 'ARS', label: 'Peso (ARS)', symbol: '$' },
+  { id: 'MXN', label: 'Peso mexicano (MXN)', symbol: '$' },
+  { id: 'CLP', label: 'Peso chileno (CLP)', symbol: '$' }
 ]
 
 export function isCurrency(value: unknown): value is Currency {
@@ -29,6 +31,8 @@ export function formatPrice(value: number, currency: unknown): string {
   })
   if (c === 'EUR') return `€${n}`
   if (c === 'ARS') return `$${n} ARS`
+  if (c === 'MXN') return `$${n} MXN`
+  if (c === 'CLP') return `$${n} CLP`
   return `$${n}`
 }
 
