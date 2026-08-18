@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { isCardLanguage } from '@/lib/cardLanguage'
+import { isCardCondition } from '@/lib/cardCondition'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ interface SlotInput {
   set_id: string
   number: string
   language?: string
+  condition?: string | null
 }
 
 export async function POST(req: Request) {
@@ -62,6 +64,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Idioma inválido' }, { status: 400 })
     }
 
+    // Estado físico (opcional): solo nomenclaturas estándar del TCG
+    const condition =
+      typeof body.condition === 'string' && body.condition.trim() !== ''
+        ? body.condition.trim().slice(0, 40)
+        : null
+    if (condition !== null && !isCardCondition(condition)) {
+      return NextResponse.json({ error: 'Condición inválida' }, { status: 400 })
+    }
+
     // Precio desde la caché global card_prices si ya está cargada
     const { data: priceRow } = await supabase
       .from('card_prices')
@@ -79,6 +90,7 @@ export async function POST(req: Request) {
         set_id: body.set_id,
         number: body.number,
         language,
+        condition,
         market_price: marketPrice,
         updated_at: new Date().toISOString()
       },

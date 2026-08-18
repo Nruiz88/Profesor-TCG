@@ -28,6 +28,7 @@ import type { Profile } from '@/lib/profile'
 import type { TrainerScore } from '@/lib/trainer'
 import { effectivePrice, type Availability } from '@/lib/cardStatus'
 import type { Currency } from '@/lib/priceGuide'
+import type { CardCondition } from '@/lib/cardCondition'
 import {
   SLOTS_PER_SHEET,
   findNextEmptySlot,
@@ -434,7 +435,11 @@ export default function BinderPage() {
     )
   }
 
-  async function addCardToSlot(card: SearchResult, language: CardLanguage) {
+  async function addCardToSlot(
+    card: SearchResult,
+    language: CardLanguage,
+    condition?: CardCondition | ''
+  ) {
     if (!binder || !slotTarget) throw new Error('Sin binder o slot objetivo')
 
     const slotNumber = slotTarget.sheetIndex * SLOTS_PER_SHEET + slotTarget.slotIndex + 1
@@ -449,7 +454,8 @@ export default function BinderPage() {
         card_name: card.name,
         set_id: card.set_id,
         number: card.number,
-        language
+        language,
+        condition: condition || null
       })
     })
     await loadBinder()
@@ -458,7 +464,11 @@ export default function BinderPage() {
   // Agrega la carta al bolsillo vacío más próximo (primer slot libre).
   // Es el flujo principal: el buscador del toolbar agrega sin tener que
   // elegir un bolsillo primero.
-  async function addCardToNearestSlot(card: SearchResult, language: CardLanguage) {
+  async function addCardToNearestSlot(
+    card: SearchResult,
+    language: CardLanguage,
+    condition?: CardCondition | ''
+  ) {
     if (!binder) throw new Error('Sin binder')
 
     const slotNumber = findNextEmptySlot(cards)
@@ -472,7 +482,8 @@ export default function BinderPage() {
         card_name: card.name,
         set_id: card.set_id,
         number: card.number,
-        language
+        language,
+        condition: condition || null
       })
     })
     await loadBinder()
@@ -735,8 +746,8 @@ export default function BinderPage() {
         <SlotSearchModal
           slotLabel={`Hoja ${slotTarget.sheetIndex + 1} · bolsillo ${slotTarget.slotIndex + 1}`}
           onClose={() => setSlotTarget(null)}
-          onSelect={async (card, language) => {
-            await addCardToSlot(card, language)
+          onSelect={async (card, language, condition) => {
+            await addCardToSlot(card, language, condition)
             setSlotTarget(null)
           }}
         />
@@ -745,6 +756,7 @@ export default function BinderPage() {
       {showWantlistSearch && (
         <SlotSearchModal
           slotLabel="a buscar"
+          showCondition={false}
           onClose={() => setShowWantlistSearch(false)}
           onSelect={async (card) => {
             try {

@@ -9,6 +9,7 @@ import ClaimModal from './ClaimModal'
 import { effectivePrice, normalizeStatus } from '@/lib/cardStatus'
 import { formatPrice } from '@/lib/priceGuide'
 import LanguageBadge from './LanguageBadge'
+import ConditionBadge from './ConditionBadge'
 import type { SellerInfo } from './SellerInfoBadge'
 
 interface BinderSheetProps {
@@ -87,6 +88,12 @@ export default function BinderSheet({
                   className="absolute left-1.5 top-1.5"
                 />
 
+                {/* Estado físico (NM, EX, …) bajo el idioma */}
+                <ConditionBadge
+                  condition={card.condition}
+                  className="absolute left-1.5 top-9"
+                />
+
                 {/* Precio efectivo (manual del usuario o mercado) */}
                 {(() => {
                   const price = effectivePrice(card.market_price, card.price_override, card.price)
@@ -158,7 +165,7 @@ export default function BinderSheet({
                         onMarkSold(card.id)
                       }
                     }}
-                    className="absolute left-1.5 top-9 rounded-full bg-emerald-600/90 px-2 py-1 text-[10px] font-bold text-white opacity-0 shadow-md transition-opacity hover:bg-emerald-500 group-hover:opacity-100"
+                    className="absolute left-1.5 top-16 rounded-full bg-emerald-600/90 px-2 py-1 text-[10px] font-bold text-white opacity-0 shadow-md transition-opacity hover:bg-emerald-500 group-hover:opacity-100"
                     aria-label={`Marcar ${card.card_name} como vendida`}
                   >
                     ✔ Vendida

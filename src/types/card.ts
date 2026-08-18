@@ -30,6 +30,9 @@ export type CardLanguage = 'ES' | 'EN' | 'JP' | 'KO' | 'ZH'
 /** Moneda del precio (SQL binder_cards.currency). */
 export type Currency = 'USD' | 'EUR' | 'ARS' | 'MXN' | 'CLP'
 
+/** Estado físico de la copia (SQL binder_cards.condition). Nomenclaturas TCG. */
+export type CardCondition = 'M' | 'NM' | 'EX' | 'VG' | 'GD' | 'PL' | 'PO'
+
 // ---------------------------------------------------------------------------
 // UnifiedCard — contrato normalizado que consumen componentes, APIs y páginas.
 // ---------------------------------------------------------------------------

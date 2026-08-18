@@ -5,6 +5,7 @@ import Link from 'next/link'
 import SiteNav from '@/components/SiteNav'
 import LanguageBadge from '@/components/LanguageBadge'
 import { formatPrice } from '@/lib/priceGuide'
+import { formatCondition } from '@/lib/cardCondition'
 import { slugify } from '@/lib/utils'
 import PokemonCard from '@/components/PokemonCard'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
@@ -189,7 +190,7 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
             </div>
             <p className="mt-1 text-sm text-slate-400">
               {card.set_id.toUpperCase()} · #{card.number}
-              {card.condition && <span className="ml-2 text-slate-500">· {card.condition}</span>}
+              {card.condition && <span className="ml-2 text-slate-500">· {formatCondition(card.condition)}</span>}
             </p>
 
             {/* Precio */}

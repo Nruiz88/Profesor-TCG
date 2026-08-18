@@ -13,6 +13,7 @@
 
 import { CARD_LANGUAGE_META, normalizeLanguage } from '@/lib/cardLanguage'
 import { formatPrice } from '@/lib/priceGuide'
+import { formatCondition } from '@/lib/cardCondition'
 import type { ClaimParams } from '@/types/claim'
 
 export type { ClaimParams }
@@ -112,7 +113,9 @@ export function formatWhatsAppMessage(params: WhatsAppMessageParams): string {
   const cardName = sanitizeWhatsAppText(params.cardName)
   const setName = sanitizeWhatsAppText(params.setName)
   const cardNumber = sanitizeWhatsAppText(params.cardNumber)
-  const condition = sanitizeWhatsAppText(params.condition)
+  const condition = params.condition
+    ? sanitizeWhatsAppText(formatCondition(params.condition) ?? '')
+    : ''
   const offeredCardName = sanitizeWhatsAppText(params.offeredCardName)
   const slotUrl = sanitizeWhatsAppText(params.slotUrl)
   const languageLabel = WHATSAPP_LANGUAGE_LABEL[normalizeWhatsAppLanguage(params.language)]
@@ -192,7 +195,7 @@ export function buildWhatsAppLink(phone: string, message: string): string {
 // la carta (con su og:image) y el vendedor pueda ubicarla al toque.
 export function claimMessage(p: ClaimParams): string {
   const seller = p.sellerName ? `@${p.sellerName}` : 'coleccionista'
-  const cond = p.condition ? ` (Estado: ${p.condition})` : ''
+  const cond = p.condition ? ` (Estado: ${formatCondition(p.condition)})` : ''
   const lang = p.language
     ? ` (Idioma: ${CARD_LANGUAGE_META[normalizeLanguage(p.language)].label})`
     : ''
@@ -218,7 +221,7 @@ export function sellerKitText(p: ClaimParams): string {
       `🌐 Idioma: ${CARD_LANGUAGE_META[normalizeLanguage(p.language)].label}`
     )
   lines.push(`🏷️ Precio: 💵 *${fmtPrice(p.price, p.currency)}*`)
-  if (p.condition) lines.push(`✨ Estado: ${p.condition}`)
+  if (p.condition) lines.push(`✨ Estado: ${formatCondition(p.condition)}`)
   lines.push('')
   lines.push(`🔗 Publicación de la carta: ${p.cardUrl}`)
   lines.push('')

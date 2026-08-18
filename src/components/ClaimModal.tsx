@@ -11,6 +11,7 @@ import {
   formatReservedUntil
 } from '@/lib/claim'
 import { CARD_STATUS_META, normalizeStatus } from '@/lib/cardStatus'
+import { formatCondition } from '@/lib/cardCondition'
 import { readPendingClaim, savePendingClaim, clearPendingClaim } from '@/lib/pendingClaim'
 import MakeTradeOfferModal from './MakeTradeOfferModal'
 
@@ -185,7 +186,7 @@ export default function ClaimModal({ card, seller, onClose }: ClaimModalProps) {
 
         <p className="mt-1 text-sm text-slate-500">
           {card.set_id.toUpperCase()} {card.number}
-          {card.condition && <span className="ml-2 text-slate-400">· {card.condition}</span>}
+          {card.condition && <span className="ml-2 text-slate-400">· {formatCondition(card.condition)}</span>}
           {status !== 'collection' && (
             <span className="ml-2 rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300">
               {CARD_STATUS_META[status].label}

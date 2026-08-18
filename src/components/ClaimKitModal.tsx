@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { SlotCard } from '@/lib/sheets'
 import { cardPublicUrl, claimPrice, sellerKitText } from '@/lib/claim'
+import { formatCondition } from '@/lib/cardCondition'
 import type { Availability } from '@/lib/cardStatus'
 
 interface ClaimKitModalProps {
@@ -174,7 +175,7 @@ function drawKit(
   if (opts.condition) {
     ctx.fillStyle = '#94a3b8'
     ctx.font = '600 28px system-ui, sans-serif'
-    ctx.fillText(`Estado: ${opts.condition}`, W / 2, barY + 100)
+    ctx.fillText(`Estado: ${formatCondition(opts.condition) ?? opts.condition}`, W / 2, barY + 100)
   }
 
   // Marca de agua

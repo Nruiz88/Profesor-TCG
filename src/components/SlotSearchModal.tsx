@@ -4,21 +4,38 @@ import { useEffect, useRef, useState } from 'react'
 import LanguagePills from './LanguagePills'
 import SearchResultCard from './SearchResultCard'
 import type { CardLanguage } from '@/lib/cardLanguage'
+import {
+  CARD_CONDITIONS,
+  formatCondition,
+  type CardCondition
+} from '@/lib/cardCondition'
 import type { SearchResult } from '@/types'
 
 interface SlotSearchModalProps {
   slotLabel: string
   onClose: () => void
-  onSelect: (card: SearchResult, language: CardLanguage) => Promise<void>
+  /** false cuando el destino no guarda condición (ej: la wantlist). */
+  showCondition?: boolean
+  onSelect: (
+    card: SearchResult,
+    language: CardLanguage,
+    condition: CardCondition | ''
+  ) => Promise<void>
 }
 
-export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSearchModalProps) {
+export default function SlotSearchModal({
+  slotLabel,
+  onClose,
+  showCondition = true,
+  onSelect
+}: SlotSearchModalProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [language, setLanguage] = useState<CardLanguage>('ES')
+  const [condition, setCondition] = useState<CardCondition | ''>('')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -56,7 +73,7 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
     setSaving(card.id)
     setError(null)
     try {
-      await onSelect(card, language)
+      await onSelect(card, language, condition)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar')
     } finally {
@@ -97,6 +114,28 @@ export default function SlotSearchModal({ slotLabel, onClose, onSelect }: SlotSe
             </p>
             <LanguagePills value={language} onChange={setLanguage} compact />
           </div>
+
+          {/* Estado físico con nomenclaturas estándar del TCG */}
+          {showCondition && (
+            <div className="mt-3">
+              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Estado de la carta
+              </p>
+              <select
+                value={condition}
+                onChange={(e) => setCondition(e.target.value as CardCondition | '')}
+                aria-label="Estado de la carta"
+                className="field mt-1.5"
+              >
+                <option value="">Sin especificar</option>
+                {CARD_CONDITIONS.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {formatCondition(c.id) ?? c.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {error && <p className="px-5 pb-2 text-sm text-red-400">{error}</p>}

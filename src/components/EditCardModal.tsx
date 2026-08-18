@@ -11,11 +11,13 @@ import {
 import { isProfileComplete, type Profile } from '@/lib/profile'
 import { normalizeLanguage, type CardLanguage } from '@/lib/cardLanguage'
 import { normalizeCurrency, type Currency } from '@/lib/priceGuide'
+import {
+  CARD_CONDITIONS,
+  formatCondition,
+  isCardCondition
+} from '@/lib/cardCondition'
 import PriceInputWithGuide from './PriceInputWithGuide'
 import ClaimKitModal from './ClaimKitModal'
-
-// Condiciones físicas habituales del TCG (opcional, para el mensaje del claim)
-const CONDITIONS = ['', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Played']
 
 interface EditCardModalProps {
   card: SlotCard
@@ -60,6 +62,16 @@ export default function EditCardModal({
 
   const withSale = availability === 'solo_venta' || availability === 'venta_o_cambio'
   const withTrade = availability === 'solo_cambio' || availability === 'venta_o_cambio'
+
+  // Opciones de condición: nomenclaturas estándar + el valor legacy (texto
+  // libre) que ya estuviera guardado, para no perderlo al re-guardar.
+  const conditionOptions: { id: string; label: string }[] = CARD_CONDITIONS.map((c) => ({
+    id: c.id,
+    label: formatCondition(c.id) ?? c.id
+  }))
+  if (condition !== '' && !isCardCondition(condition)) {
+    conditionOptions.unshift({ id: condition, label: condition })
+  }
 
   function parsePrice(): number | null {
     const v = priceInput.trim()
@@ -216,7 +228,7 @@ export default function EditCardModal({
               htmlFor="edit-condition"
               className="field-label"
             >
-              Condición (opcional)
+              Condición
             </label>
             <select
               id="edit-condition"
@@ -224,14 +236,16 @@ export default function EditCardModal({
               onChange={(e) => setCondition(e.target.value)}
               className="field mt-1.5"
             >
-              {CONDITIONS.map((c) => (
-                <option key={c || 'none'} value={c}>
-                  {c === '' ? 'Sin especificar' : c}
+              <option value="">Sin especificar</option>
+              {conditionOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
                 </option>
               ))}
             </select>
             <p className="field-hint">
-              Aparece en el mensaje del claim y en el kit (ej: Near Mint).
+              Nomenclatura estándar del TCG (NM = Near Mint). Aparece en el mensaje del claim y en
+              el kit.
             </p>
           </div>
         )}
