@@ -10,6 +10,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { resolveCardImage } from '@/lib/cardImage'
+import { normalizeLanguage } from '@/lib/cardLanguage'
 import { effectivePrice } from '@/lib/cardStatus'
 import { countCatalogPokemonSpecies, getCardMetadataMap, getSets } from '@/lib/catalog'
 import { speciesFromCardName } from '@/lib/pokedex'
@@ -63,6 +64,7 @@ interface BinderCardRow {
   market_price: number | null
   price_override?: number | null
   price?: number | null
+  language?: string
 }
 
 // Portada: la carta configurada como cover_card_id, o la primera por slot.
@@ -85,7 +87,7 @@ async function pickCover(
   const cover =
     (coverId ? cards.find((c) => c.id === coverId) : undefined) ?? cards[0]
   return {
-    image: await resolveCardImage(cover.set_id, cover.number),
+    image: await resolveCardImage(cover.set_id, cover.number, normalizeLanguage(cover.language)),
     cardName: cover.card_name
   }
 }
@@ -190,7 +192,7 @@ export async function getCardOgData(cardId: string): Promise<OgCardData | null> 
   const { data: card, error } = await admin
     .from('binder_cards')
     .select(
-      `id, binder_id, card_id, card_name, set_id, number, status, reserved_until,
+      `id, binder_id, card_id, card_name, set_id, number, language, status, reserved_until,
        market_price, price_override, is_for_sale, is_for_trade, price, manual_price,
        currency, is_user_reported,
        binders!binder_cards_binder_id_fkey!inner(id, user_id)`
@@ -219,7 +221,7 @@ export async function getCardOgData(cardId: string): Promise<OgCardData | null> 
     number: card.number,
     price: effectivePrice(card.market_price, card.price_override, card.price),
     currency: card.currency ?? 'USD',
-    image: await resolveCardImage(card.set_id, card.number),
+    image: await resolveCardImage(card.set_id, card.number, normalizeLanguage(card.language)),
     username: owner?.username ?? null,
     isReserved: card.status === 'reserved'
   }

@@ -68,7 +68,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
           types: m?.types ?? null,
           // pokemontcg.io sirve el reverso de la carta en lugar de 404 limpio:
           // resolvemos la imagen real o un placeholder "Sin imagen"
-          image: await resolveCardImage(c.set_id, c.number)
+          image: await resolveCardImage(c.set_id, c.number, c.language)
         }
       })
     )

@@ -60,7 +60,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
     const enriched = await Promise.all(
       (cards || []).map(async (c) => ({
         ...c,
-        image: await resolveCardImage(c.set_id, c.number)
+        image: await resolveCardImage(c.set_id, c.number, c.language)
       }))
     )
 

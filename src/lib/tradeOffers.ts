@@ -48,6 +48,7 @@ export interface CardSnapshot {
   market_price: number | null
   price: number | null
   price_override: number | null
+  language?: string
 }
 
 // Snapshot del perfil (username / whatsapp / ubicación) al crear la oferta

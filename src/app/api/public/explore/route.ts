@@ -4,7 +4,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getCardMetadataMap, getSets } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
 import { effectivePrice } from '@/lib/cardStatus'
-import { isCardLanguage } from '@/lib/cardLanguage'
+import { isCardLanguage, normalizeLanguage } from '@/lib/cardLanguage'
 import { speciesFromCardName } from '@/lib/pokedex'
 import { computeTrainerScore } from '@/lib/trainer'
 
@@ -402,7 +402,7 @@ async function getCards(
       is_user_reported: r.is_user_reported ?? false,
       status,
       price,
-      image: await resolveCardImage(r.set_id, r.number),
+      image: await resolveCardImage(r.set_id, r.number, normalizeLanguage(r.language)),
       username: seller?.username ?? 'coleccionista',
       city: seller?.city ?? null,
       country: seller?.country ?? null,

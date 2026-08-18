@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveCardImage } from '@/lib/cardImage'
+import { normalizeLanguage } from '@/lib/cardLanguage'
 import { effectivePrice } from '@/lib/cardStatus'
 import {
   normalizeOfferStatus,
@@ -77,7 +78,7 @@ export async function GET(req: Request) {
         const offeredSnaps = r.offered_snapshot ?? []
 
         const requested: OfferCardView = requestedSnap
-          ? cardView(requestedSnap, await resolveCardImage(requestedSnap.set_id, requestedSnap.number))
+          ? cardView(requestedSnap, await resolveCardImage(requestedSnap.set_id, requestedSnap.number, normalizeLanguage(requestedSnap.language)))
           : {
               id: r.requested_card_id,
               card_name: 'Carta eliminada',
@@ -88,7 +89,7 @@ export async function GET(req: Request) {
             }
 
         const offered: OfferCardView[] = await Promise.all(
-          offeredSnaps.map(async (s) => cardView(s, await resolveCardImage(s.set_id, s.number)))
+          offeredSnaps.map(async (s) => cardView(s, await resolveCardImage(s.set_id, s.number, normalizeLanguage(s.language))))
         )
 
         const totalRequested = requested.price ?? 0

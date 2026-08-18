@@ -80,7 +80,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         manual_price: card.manual_price ?? null,
         currency: card.currency ?? 'USD',
         is_user_reported: card.is_user_reported ?? false,
-        image: await resolveCardImage(card.set_id, card.number)
+        image: await resolveCardImage(card.set_id, card.number, card.language)
       },
       binder: { id: binder.id, title: binder.title, is_public: binder.is_public },
       owner: owner
