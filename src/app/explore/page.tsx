@@ -177,26 +177,30 @@ export default function ExplorePage() {
 
       <main className="mx-auto max-w-7xl px-4 py-10">
         {/* Hero */}
-        <section className="max-w-3xl">
-          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-rose-500">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-400" />
-            </span>
-            Marketplace en vivo · Comunidad TCG
-          </p>
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            Explorá el marketplace{' '}
-            <span className="bg-gradient-to-r from-rose-400 to-amber-400 bg-clip-text text-transparent">
-              de la comunidad
-            </span>
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
-            Cartas en venta e intercambio publicadas por coleccionistas de todo el país. Filtrá por
-            tipo de energía, compará y contactá directo por WhatsApp con{' '}
-            <span className="font-semibold text-emerald-400">Claim</span> o{' '}
-            <span className="font-semibold text-blue-400">Swap</span>.
-          </p>
+        <section className="relative overflow-hidden">
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(244,63,94,0.12),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(59,130,246,0.08),transparent_55%)]"
+            aria-hidden="true"
+          />
+          <div className="relative max-w-3xl">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-rose-500">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-400" />
+              </span>
+              Marketplace en vivo
+            </p>
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              El mercado{' '}
+              <span className="bg-gradient-to-r from-rose-400 to-amber-400 bg-clip-text text-transparent">
+                de la comunidad
+              </span>
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
+              Cartas en venta e intercambio con precio en vivo, filtros por tipo y contacto directo
+              por WhatsApp.
+            </p>
+          </div>
         </section>
 
         {/* Switch de vista (fuera de la caja de filtros) */}
@@ -272,11 +276,11 @@ export default function ExplorePage() {
                         aria-pressed={active}
                         title={t.label}
                         aria-label={t.label}
-                        className={`flex shrink-0 items-center justify-center rounded-xl border bg-slate-950 p-2 transition-all ${
-                          active
-                            ? `scale-105 ring-2 ring-rose-500/60 ${t.borderClass}`
-                            : `border-slate-800 hover:${t.borderClass.replace('40', '70')} hover:brightness-125`
-                        }`}
+className={`flex shrink-0 items-center justify-center rounded-xl border bg-slate-950 p-2 transition-all ${
+  active
+    ? `scale-105 ring-2 ring-rose-500/60 ${t.borderClass}`
+    : 'border-slate-800 hover:brightness-125'
+}`}
                       >
                         <TypeIcon type={t.id} lg />
                       </button>
@@ -387,11 +391,18 @@ export default function ExplorePage() {
 
           {/* Estado de filtros */}
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-800/60 pt-3">
-            <p className="text-xs text-slate-500">
-              {view === 'cards'
-                ? `${hasMore ? 'Mostrando ' : ''}${cards.length} carta${cards.length !== 1 ? 's' : ''}${hasMore ? '+' : ''} · ${activeMode.label.toLowerCase()}${typeFilter ? ` · ${ENERGY_TYPES.find((t) => t.id === typeFilter)?.label ?? typeFilter}` : ''}${languageFilter ? ` · ${CARD_LANGUAGE_META[languageFilter as keyof typeof CARD_LANGUAGE_META]?.label ?? languageFilter}` : ''}`
-                : `${binders.length} binder${binders.length !== 1 ? 's' : ''} destacado${binders.length !== 1 ? 's' : ''}`}
-            </p>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-rose-500/25 bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-bold text-rose-300">
+                {view === 'cards'
+                  ? `${cards.length}${hasMore ? '+' : ''}`
+                  : String(binders.length)}
+              </span>
+              <p className="text-xs text-slate-500">
+                {view === 'cards'
+                  ? `${activeMode.label.toLowerCase()}${typeFilter ? ` · ${ENERGY_TYPES.find((t) => t.id === typeFilter)?.label ?? typeFilter}` : ''}${languageFilter ? ` · ${CARD_LANGUAGE_META[languageFilter as keyof typeof CARD_LANGUAGE_META]?.label ?? languageFilter}` : ''}`
+                  : 'binders destacados'}
+              </p>
+            </div>
             {hasActiveFilters && (
               <button
                 onClick={() => {

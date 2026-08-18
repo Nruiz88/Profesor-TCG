@@ -25,6 +25,18 @@ function binderHref(card: ExploreCard): string {
 const fmtUsd = (n: number) =>
   n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+function SkeletonCard() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/40 p-3.5">
+      <div className="shimmer aspect-[63/88] rounded-xl" />
+      <div className="mt-3 space-y-2">
+        <div className="shimmer h-3.5 w-3/4 rounded" />
+        <div className="shimmer h-3 w-1/2 rounded" />
+      </div>
+    </div>
+  )
+}
+
 export default function MarketGrid({
   cards,
   loading
@@ -34,9 +46,11 @@ export default function MarketGrid({
 }) {
   if (loading) {
     return (
-      <p className="py-20 text-center text-sm text-slate-500">
-        Buscando cartas de la comunidad…
-      </p>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
+      </div>
     )
   }
 
@@ -186,7 +200,20 @@ export function BindersGrid({
 }) {
   if (loading) {
     return (
-      <p className="py-20 text-center text-sm text-slate-500">Buscando binders destacados…</p>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/40"
+          >
+            <div className="shimmer aspect-[16/9]" />
+            <div className="flex items-center justify-between gap-2 p-3">
+              <div className="shimmer h-4 w-24 rounded" />
+              <div className="shimmer h-8 w-24 rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
     )
   }
 
