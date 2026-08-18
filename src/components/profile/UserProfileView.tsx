@@ -37,7 +37,7 @@ export interface ProfileInfo {
   created_at?: string
 }
 
-type ProfileTab = 'sale' | 'wantlist' | 'reviews' | 'settings'
+type ProfileTab = 'sale' | 'wantlist' | 'collection' | 'reviews' | 'settings'
 
 // La sección de configuración (edición + cambio de contraseña) se carga solo
 // cuando el dueño del perfil abre su pestaña: bundle aparte, carga inicial
@@ -51,6 +51,15 @@ const ProfileSettingsSection = dynamic(
     )
   }
 )
+
+export interface SetCollection {
+  setId: string
+  setName: string
+  series: string
+  owned: number
+  total: number
+  percentage: number
+}
 
 interface UserProfileViewProps {
   profile: ProfileInfo
@@ -66,6 +75,10 @@ interface UserProfileViewProps {
   pokedex?: { captured: number; total: number } | null
   /** Puntos de Entrenador (XP + rango) calculados server-side */
   trainerScore?: TrainerScore
+  /** Colección agrupada por set (para la pestaña Colección) */
+  collectionBySet?: SetCollection[]
+  /** Showcase: cartas más valiosas del binder */
+  showcaseCards?: ExploreCard[]
 }
 
 function Stars({ rating }: { rating: number }) {
@@ -142,7 +155,9 @@ export default function UserProfileView({
   matchCount,
   isOwnProfile,
   pokedex,
-  trainerScore
+  trainerScore,
+  collectionBySet = [],
+  showcaseCards = []
 }: UserProfileViewProps) {
   // Tab inicial desde la URL (?tab=settings) para que "Configurar perfil"
   // aterrice directo en la configuración del perfil propio.
@@ -356,6 +371,58 @@ export default function UserProfileView({
           </div>
         </header>
 
+        {/* Showcase: cartas más valiosas destacadas en la parte superior */}
+        {showcaseCards.length > 0 && (
+          <div className="mb-8">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-lg">🌟</span>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">
+                Cartas Destacadas
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {showcaseCards.map((card) => (
+                <div
+                  key={card.id}
+                  className="group relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/40 p-3 backdrop-blur-xl transition-all hover:-translate-y-1 hover:border-amber-500/30 hover:shadow-[0_0_25px_rgba(245,158,11,0.15)]"
+                >
+                  <div className="aspect-[2.5/3.5] overflow-hidden rounded-xl bg-slate-800">
+                    {card.image ? (
+                      <img
+                        src={card.image}
+                        alt={card.card_name}
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-2xl text-slate-600">
+                        🃏
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <p className="truncate text-xs font-bold text-white">{card.card_name}</p>
+                    <p className="mt-0.5 truncate text-[10px] text-slate-500">
+                      {card.set_name} · {card.number}
+                    </p>
+                    {card.price != null && card.price > 0 && (
+                      <p className="mt-1 text-xs font-bold text-amber-400">
+                        ${card.price.toFixed(2)} USD
+                      </p>
+                    )}
+                  </div>
+                  {/* Badge de rareza */}
+                  {card.rarity && (
+                    <span className="absolute right-2 top-2 rounded-md bg-slate-950/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-300 backdrop-blur-sm">
+                      {card.rarity}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Pokédex: especies Pokémon capturadas en los binders (cosmético) */}
         {pokedex && pokedex.total > 0 && (
           <div className="mb-8 rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl">
@@ -429,6 +496,13 @@ export default function UserProfileView({
               label: 'Cartas Buscadas',
               count: wantlist.length,
               activeClass: 'from-fuchsia-600 to-violet-500'
+            },
+            {
+              id: 'collection' as const,
+              icon: '📦',
+              label: 'Colección',
+              count: collectionBySet.length,
+              activeClass: 'from-sky-500 to-cyan-500'
             },
             {
               id: 'reviews' as const,
@@ -540,6 +614,135 @@ export default function UserProfileView({
                   <WantlistSlot key={w.id} entry={w} offerUrl={buildOfferUrl(w) ?? undefined} />
                 ))}
               </div>
+            </div>
+          ))}
+
+        {tab === 'collection' &&
+          (collectionBySet.length === 0 ? (
+            <EmptyState
+              icon="📦"
+              title="Sin colección"
+              description={`@${profile.username} todavía no tiene cartas en su binder.`}
+            />
+          ) : (
+            <div>
+              {/* Stats resumen */}
+              {(() => {
+                const totalOwned = collectionBySet.reduce((s, c) => s + c.owned, 0)
+                const totalAll = collectionBySet.reduce((s, c) => s + c.total, 0)
+                const avgPct = totalAll > 0 ? Math.round((totalOwned / totalAll) * 100) : 0
+                const completedSets = collectionBySet.filter((c) => c.percentage >= 100).length
+                const series = [...new Set(collectionBySet.map((c) => c.series).filter(Boolean))]
+                return (
+                  <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
+                      <p className="text-2xl font-extrabold text-white">{collectionBySet.length}</p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Sets</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
+                      <p className="text-2xl font-extrabold text-white">{totalOwned.toLocaleString()}</p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cartas</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
+                      <p className="text-2xl font-extrabold text-sky-400">~{avgPct}%</p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Promedio</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
+                      <p className="text-2xl font-extrabold text-emerald-400">{completedSets}</p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Completados</p>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Sets agrupados por serie */}
+              {(() => {
+                const grouped = new Map<string, typeof collectionBySet>()
+                for (const sc of collectionBySet) {
+                  const key = sc.series || 'Otros'
+                  if (!grouped.has(key)) grouped.set(key, [])
+                  grouped.get(key)!.push(sc)
+                }
+                // Series ordenadas: la que más sets tiene primero
+                const sortedSeries = [...grouped.entries()].sort((a, b) => b[1].length - a[1].length)
+
+                return sortedSeries.map(([seriesName, sets]) => {
+                  const seriesOwned = sets.reduce((s, c) => s + c.owned, 0)
+                  const seriesTotal = sets.reduce((s, c) => s + c.total, 0)
+                  const seriesPct = seriesTotal > 0 ? Math.round((seriesOwned / seriesTotal) * 100) : 0
+                  return (
+                    <div key={seriesName} className="mb-6">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-white">{seriesName}</h3>
+                        <span className="text-[10px] font-medium text-slate-500">
+                          {sets.length} set{sets.length !== 1 ? 's' : ''} · {seriesOwned} cartas · ~{seriesPct}%
+                        </span>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {sets.map((sc) => (
+                          <div
+                            key={sc.setId}
+                            className="group rounded-2xl border border-slate-800/80 bg-slate-900/40 p-4 backdrop-blur-xl transition-colors hover:border-sky-500/30"
+                          >
+                            <div className="flex items-start gap-3">
+                              {/* Logo del set */}
+                              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-800">
+                                <img
+                                  src={`https://images.pokemontcg.io/${sc.setId}/logo.png`}
+                                  alt={sc.setName}
+                                  className="h-full w-full object-contain p-0.5"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    ;(e.target as HTMLImageElement).style.display = 'none'
+                                  }}
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="min-w-0 truncate text-sm font-bold text-white">{sc.setName}</p>
+                                  <span
+                                    className={`shrink-0 rounded-lg px-2 py-1 text-xs font-bold ${
+                                      sc.percentage >= 100
+                                        ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30'
+                                        : sc.percentage >= 50
+                                          ? 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30'
+                                          : sc.percentage >= 20
+                                            ? 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30'
+                                            : 'bg-slate-700/50 text-slate-400 ring-1 ring-slate-600/30'
+                                    }`}
+                                  >
+                                    {sc.percentage}%
+                                  </span>
+                                </div>
+                                <div className="mt-2">
+                                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                    <span>{sc.owned} de {sc.total}</span>
+                                    <span>{sc.percentage}%</span>
+                                  </div>
+                                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                                    <div
+                                      className={`h-full rounded-full transition-all duration-500 ${
+                                        sc.percentage >= 100
+                                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                                          : sc.percentage >= 50
+                                            ? 'bg-gradient-to-r from-sky-500 to-cyan-400'
+                                            : sc.percentage >= 20
+                                              ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                                              : 'bg-gradient-to-r from-slate-600 to-slate-500'
+                                      }`}
+                                      style={{ width: `${sc.percentage}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
             </div>
           ))}
 

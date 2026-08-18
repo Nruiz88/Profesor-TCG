@@ -219,6 +219,124 @@ async function loadPokedex(
   }
 }
 
+// Showcase: las 4 cartas más caras del binder del usuario, para mostrar
+// como tarjetas destacadas en la parte superior del perfil (tipo pkmn.gg).
+async function loadShowcaseCards(
+  admin: QueryClient,
+  profile: { id: string; username: string; city: string | null; country: string | null; whatsapp_number: string | null },
+  binders: { id: string; is_public: boolean }[]
+): Promise<ExploreCard[]> {
+  if (!binders || binders.length === 0) return []
+  const binderIds = binders.map((b: { id: string }) => b.id)
+
+  const { data: rows } = await admin
+    .from('binder_cards')
+    .select(
+      'id, binder_id, card_id, card_name, set_id, number, market_price, status, price_override, is_for_sale, is_for_trade, price, language, manual_price, currency, is_user_reported, updated_at'
+    )
+    .in('binder_id', binderIds)
+    .order('market_price', { ascending: false })
+    .limit(4)
+  if (!rows || rows.length === 0) return []
+
+  const meta = await getCardMetadataMap()
+  const sets = await getSets()
+  const setNameById = new Map(sets.map((s) => [s.id, s.name]))
+  const binderPublic = binders.some((b: { is_public: boolean }) => b.is_public)
+
+  return Promise.all(
+    rows.map(async (r: any) => ({
+      id: r.id,
+      binder_id: r.binder_id,
+      card_id: r.card_id,
+      card_name: r.card_name,
+      set_id: r.set_id,
+      set_name: setNameById.get(r.set_id) ?? r.set_id,
+      number: r.number,
+      rarity: meta.get(r.card_id)?.rarity ?? null,
+      language: r.language ?? null,
+      currency: r.currency ?? 'USD',
+      is_user_reported: r.is_user_reported ?? false,
+      status: r.is_for_sale ? 'for_sale' : 'for_trade',
+      price: effectivePrice(r.market_price, r.price_override, r.price),
+      image: await resolveCardImage(r.set_id, r.number),
+      username: profile.username,
+      city: profile.city,
+      country: profile.country,
+      whatsapp_number: profile.whatsapp_number,
+      ratingAvg: null,
+      reviewCount: 0,
+      isVerified: false,
+      binder_public: binderPublic,
+      updated_at: r.updated_at
+    }))
+  )
+}
+
+// Colección del usuario agrupada por set: para cada set que tiene cartas,
+// muestra cuántas tiene vs el total del set (para la pestaña Colección).
+interface SetCollection {
+  setId: string
+  setName: string
+  series: string
+  owned: number
+  total: number
+  percentage: number
+}
+
+async function loadCollectionBySet(
+  admin: QueryClient,
+  binderIds: string[]
+): Promise<SetCollection[]> {
+  if (binderIds.length === 0) return []
+  try {
+    const { data: rows } = await admin
+      .from('binder_cards')
+      .select('set_id')
+      .in('binder_id', binderIds)
+
+    if (!rows || rows.length === 0) return []
+
+    // Contar cartas únicas por set (un usuario puede tener duplicados en
+    // distintos binders, pero para el progreso contamos cartas únicas por
+    // número dentro de cada set)
+    const { data: uniqueRows } = await admin
+      .from('binder_cards')
+      .select('set_id, number')
+      .in('binder_id', binderIds)
+
+    const ownedBySet = new Map<string, Set<string>>()
+    for (const r of uniqueRows || []) {
+      if (!ownedBySet.has(r.set_id)) ownedBySet.set(r.set_id, new Set())
+      ownedBySet.get(r.set_id)!.add(r.number)
+    }
+
+    const sets = await getSets()
+    const setMeta = new Map(sets.map((s) => [s.id, s]))
+
+    const result: SetCollection[] = []
+    for (const [setId, numbers] of ownedBySet) {
+      const meta = setMeta.get(setId)
+      const total = meta?.total || meta?.printedTotal || numbers.size
+      const percentage = total > 0 ? Math.round((numbers.size / total) * 100) : 0
+      result.push({
+        setId,
+        setName: meta?.name ?? setId,
+        series: meta?.series ?? '',
+        owned: numbers.size,
+        total,
+        percentage
+      })
+    }
+
+    // Ordenar: mayor porcentaje primero, luego por cantidad de cartas
+    result.sort((a, b) => b.percentage - a.percentage || b.owned - a.owned)
+    return result
+  } catch {
+    return []
+  }
+}
+
 async function loadReviews(
   admin: QueryClient,
   profileId: string
@@ -278,12 +396,14 @@ export default async function UserProfilePage({
     .eq('user_id', profile.id)
   const binderIds = (binders || []).map((b: { id: string }) => b.id)
 
-  const [rep, saleCards, wantlist, reviews, pokedex] = await Promise.all([
+  const [rep, saleCards, wantlist, reviews, pokedex, collectionBySet, showcaseCards] = await Promise.all([
     loadReputation(admin, profile.id),
     loadSaleCards(admin, profile, binders || []),
     loadWantlist(admin, profile.id),
     loadReviews(admin, profile.id),
-    loadPokedex(admin, binderIds)
+    loadPokedex(admin, binderIds),
+    loadCollectionBySet(admin, binderIds),
+    loadShowcaseCards(admin, profile, binders || [])
   ])
 
   const enrichedSaleCards: ExploreCard[] = saleCards.map((c) => ({
@@ -334,6 +454,8 @@ export default async function UserProfilePage({
       isOwnProfile={user?.id === profile.id}
       pokedex={pokedex}
       trainerScore={trainerScore}
+      collectionBySet={collectionBySet}
+      showcaseCards={showcaseCards}
     />
   )
 }
