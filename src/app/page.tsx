@@ -5,6 +5,7 @@ import FeaturesStatsBar from '@/components/FeaturesStatsBar'
 import HeroBinderDemo from '@/components/HeroBinderDemo'
 import CommunityStatsBar from '@/components/CommunityStatsBar'
 import LiveMarketFeed from '@/components/LiveMarketFeed'
+import LiveWantlistFeed from '@/components/LiveWantlistFeed'
 import LiveActivityTicker from '@/components/LiveActivityTicker'
 import TradeFairnessWidget from '@/components/TradeFairnessWidget'
 import ClaimSimulator from '@/components/ClaimSimulator'
@@ -229,6 +230,41 @@ export default async function LandingPage() {
 
         <div className="mt-10">
           <LiveMarketFeed />
+        </div>
+      </section>
+
+      {/* Wantlist de la comunidad en vivo */}
+      <section className="border-t border-slate-800/60 bg-slate-900/40 py-20">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-fuchsia-400">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-fuchsia-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-fuchsia-400" />
+                </span>
+                Cartas Buscadas en vivo
+              </p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">
+                Lo último que la comunidad está buscando
+              </h2>
+              <p className="mt-3 text-slate-400">
+                Cada coleccionista agrega a su Wantlist las cartas que le faltan. Si tenés alguna,
+                ofrecé un Swap directo por WhatsApp en un clic.
+              </p>
+            </div>
+            <Link
+              href="/explore"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:border-fuchsia-500 hover:text-white"
+            >
+              Buscar en el mercado
+              <ArrowRightIcon width={15} height={15} />
+            </Link>
+          </div>
+
+          <div className="mt-10">
+            <LiveWantlistFeed />
+          </div>
         </div>
       </section>
 
