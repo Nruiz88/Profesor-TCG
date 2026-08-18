@@ -1,13 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
 import { SearchIcon, SwapIcon, TagIcon, XIcon } from './icons'
 import { ENERGY_TYPES, TypeIcon } from './TypeIcon'
-import LanguagePills from './LanguagePills'
-import SearchResultCard from './SearchResultCard'
-import { fetchJson, SessionExpiredError } from '@/lib/utils'
-import type { SearchResult } from '@/types'
-import type { CardLanguage } from '@/lib/cardLanguage'
 
 interface BinderToolbarProps {
   saleOnly: boolean
@@ -18,13 +12,13 @@ interface BinderToolbarProps {
   onTypeChange: (type: string | null) => void
   shownCount: number
   totalCount: number
-  /** Agrega una carta del catálogo al binder (en el bolsillo vacío más próximo) */
-  onAddCard: (card: SearchResult, language: CardLanguage) => Promise<void>
+  /** Abre el buscador Pokédex (cmdk) para agregar cartas al binder. */
+  onOpenSearch: () => void
 }
 
-// Barra de herramientas del binder: buscador del catálogo completo (nombre o
-// número) que agrega directo al bolsillo vacío más próximo y filtros del visor
-// (tipo de energía + disponibilidad). La paginación vive en SheetPagination.
+// Barra de herramientas del binder: el buscador abre el modal Pokédex (cmdk)
+// para agregar cartas al catálogo y los filtros del visor (tipo de energía +
+// disponibilidad). La paginación vive en SheetPagination.
 export default function BinderToolbar({
   saleOnly,
   onToggleSale,
@@ -34,156 +28,28 @@ export default function BinderToolbar({
   onTypeChange,
   shownCount,
   totalCount,
-  onAddCard
+  onOpenSearch
 }: BinderToolbarProps) {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<SearchResult[]>([])
-  const [loading, setLoading] = useState(false)
-  const [open, setOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [language, setLanguage] = useState<CardLanguage>('ES')
-  const [saving, setSaving] = useState<string | null>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
   const hasFilters = saleOnly || tradeOnly || typeFilter !== null
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-
-    const q = query.trim()
-    if (q.length < 2) {
-      setResults([])
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    timerRef.current = setTimeout(async () => {
-      try {
-        const data = await fetchJson<{ results: SearchResult[] }>(
-          `/api/search?q=${encodeURIComponent(q)}`
-        )
-        setResults(data.results || [])
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error al buscar')
-        setResults([])
-      } finally {
-        setLoading(false)
-      }
-    }, 300)
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [query])
-
-  async function handleAdd(card: SearchResult) {
-    if (saving !== null) return
-    setSaving(card.id)
-    setError(null)
-    try {
-      await onAddCard(card, language)
-      setQuery('')
-      setResults([])
-      setOpen(false)
-    } catch (err) {
-      if (err instanceof SessionExpiredError) {
-        // Sesión vencida: volvé a login para renovarla y seguí en el binder
-        window.location.assign('/login?next=/binder')
-        return
-      }
-      setError(err instanceof Error ? err.message : 'Error al agregar la carta')
-    } finally {
-      setSaving(null)
-    }
-  }
 
   return (
     <div className="mb-6 rounded-3xl border border-slate-800/90 bg-slate-900/40 p-4 backdrop-blur-xl">
-      {/* Buscador del catálogo */}
+      {/* Buscador del catálogo: abre el modal Pokédex (cmdk) */}
       <div className="relative">
-        <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-rose-500" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value)
-              setOpen(true)
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && results[0] && saving === null) {
-                e.preventDefault()
-                handleAdd(results[0])
-              }
-              if (e.key === 'Escape') setOpen(false)
-            }}
-            placeholder="Buscá la carta que querés agregar (nombre o número)…"
-            aria-label="Buscar carta en el catálogo para agregar al binder"
-            className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-10 pr-10 text-sm text-white placeholder-slate-600 focus:border-rose-500/50 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-          />
-          {query && (
-            <button
-              onClick={() => {
-                setQuery('')
-                setResults([])
-                setOpen(false)
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 transition-colors hover:text-white"
-              aria-label="Limpiar búsqueda"
-            >
-              <XIcon width={15} height={15} />
-            </button>
-          )}
-
-          {/* Dropdown de resultados del catálogo */}
-          {open && query.trim().length >= 2 && (
-            <>
-              <div
-                className="fixed inset-0 z-20"
-                onClick={() => setOpen(false)}
-                aria-hidden="true"
-              />
-              <div className="absolute left-0 right-0 top-full z-30 mt-2 w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
-                {loading ? (
-                  <p className="px-4 py-4 text-sm text-slate-400">Buscando…</p>
-                ) : error ? (
-                  <p className="px-4 py-4 text-sm text-red-400">{error}</p>
-                ) : results.length === 0 ? (
-                  <p className="px-4 py-4 text-sm text-slate-500">
-                    Sin resultados para «{query.trim()}»
-                  </p>
-                ) : (
-                  <>
-                    <div className="max-h-[55vh] overflow-y-auto p-3">
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {results.map((card) => (
-                          <SearchResultCard
-                            key={card.id}
-                            card={card}
-                            busy={saving === card.id}
-                            disabled={saving !== null}
-                            actionLabel="Agregar"
-                            busyLabel="Agregando…"
-                            onSelect={handleAdd}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="border-t border-slate-800 p-3">
-                      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                        Idioma de tu copia
-                      </p>
-                      <LanguagePills value={language} onChange={setLanguage} compact />
-                    </div>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className="group flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-4 pr-3 text-left transition-colors hover:border-rose-500/50"
+        >
+          <SearchIcon className="h-4 w-4 shrink-0 text-rose-500" />
+          <span className="flex-1 truncate text-sm text-slate-500">
+            Buscá la carta que querés agregar (nombre, número o set)…
+          </span>
+          <span className="hidden shrink-0 items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] font-mono text-slate-400 sm:flex">
+            Ctrl K
+          </span>
+        </button>
+      </div>
 
       {/* Fila de tipos de energía (Pokédex style) */}
       <div className="mt-4">

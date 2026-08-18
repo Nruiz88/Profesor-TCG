@@ -6,7 +6,7 @@ import SiteNav from '@/components/SiteNav'
 import BinderSidebar from '@/components/BinderSidebar'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
-import SlotSearchModal from '@/components/SlotSearchModal'
+import PokedexSearchModal from '@/components/PokedexSearchModal'
 import type { SearchResult } from '@/types'
 import type { CardLanguage } from '@/lib/cardLanguage'
 import ProfileRequiredModal from '@/components/ProfileRequiredModal'
@@ -73,6 +73,7 @@ export default function BinderPage() {
   const [wantlist, setWantlist] = useState<WantlistCard[]>([])
   const [wantlistLoading, setWantlistLoading] = useState(false)
   const [showWantlistSearch, setShowWantlistSearch] = useState(false)
+  const [showPokedex, setShowPokedex] = useState(false)
 
   const loadBinder = useCallback(async (binderId?: string) => {
     try {
@@ -490,6 +491,17 @@ export default function BinderPage() {
     setMessage(`"${card.name}" agregada a tu binder en el bolsillo #${slotNumber}.`)
   }
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setShowPokedex(true)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
       <SiteNav active="binder" />
@@ -701,7 +713,7 @@ export default function BinderPage() {
             onTypeChange={setTypeFilter}
             shownCount={filteredCards.length}
             totalCount={totalCards}
-            onAddCard={addCardToNearestSlot}
+            onOpenSearch={() => setShowPokedex(true)}
           />
 
           {filteredCards.length === 0 && hasActiveFilters ? (
@@ -743,8 +755,8 @@ export default function BinderPage() {
       )}
 
       {slotTarget && (
-        <SlotSearchModal
-          slotLabel={`Hoja ${slotTarget.sheetIndex + 1} · bolsillo ${slotTarget.slotIndex + 1}`}
+        <PokedexSearchModal
+          title="Agregar al bolsillo elegido"
           onClose={() => setSlotTarget(null)}
           onSelect={async (card, language, condition) => {
             await addCardToSlot(card, language, condition)
@@ -754,8 +766,8 @@ export default function BinderPage() {
       )}
 
       {showWantlistSearch && (
-        <SlotSearchModal
-          slotLabel="a buscar"
+        <PokedexSearchModal
+          title="Pokédex · Agregar a buscadas"
           showCondition={false}
           onClose={() => setShowWantlistSearch(false)}
           onSelect={async (card) => {
@@ -763,8 +775,19 @@ export default function BinderPage() {
               await addToWantlist(card)
             } catch (err) {
               setMessage(err instanceof Error ? err.message : 'Error al agregar a buscadas')
+              throw err
             }
             setShowWantlistSearch(false)
+          }}
+        />
+      )}
+
+      {showPokedex && (
+        <PokedexSearchModal
+          onClose={() => setShowPokedex(false)}
+          onSelect={async (card, language, condition) => {
+            await addCardToNearestSlot(card, language, condition)
+            setShowPokedex(false)
           }}
         />
       )}
