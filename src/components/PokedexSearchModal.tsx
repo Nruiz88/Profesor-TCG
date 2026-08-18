@@ -166,35 +166,40 @@ export default function PokedexSearchModal({
               </p>
             )}
 
-            {results.map((card) => (
-              <Command.Item
-                key={card.id}
-                value={card.id}
-                onSelect={() => handleSelect(card)}
-                disabled={saving !== null}
-                className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none data-[selected=true]:bg-rose-500/15 data-[selected=true]:text-white"
-              >
-                <img
-                  src={card.image}
-                  alt=""
-                  className="h-20 w-14 shrink-0 rounded-lg object-cover ring-1 ring-white/10"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold">{card.name}</span>
-                  <span className="block truncate text-xs text-slate-500">
-                    {card.set_name} · #{card.number}
-                  </span>
-                </span>
-                {card.rarity && (
-                  <span className="shrink-0 rounded-full border border-slate-700 bg-slate-950/70 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
-                    {card.rarity}
-                  </span>
-                )}
-                {saving === card.id && (
-                  <span className="shrink-0 text-xs text-slate-400">Guardando…</span>
-                )}
-              </Command.Item>
-            ))}
+            <div className="grid grid-cols-3 gap-3 p-2 sm:grid-cols-4 md:grid-cols-5">
+              {results.map((card) => (
+                <Command.Item
+                  key={card.id}
+                  value={card.id}
+                  onSelect={() => handleSelect(card)}
+                  disabled={saving !== null}
+                  className="group cursor-pointer rounded-xl outline-none transition-all data-[selected=true]:scale-105 data-[selected=true]:ring-2 data-[selected=true]:ring-rose-500"
+                >
+                  <div className="relative overflow-hidden rounded-xl">
+                    <img
+                      src={card.image}
+                      alt=""
+                      className="aspect-[63/88] w-full rounded-xl object-cover shadow-lg ring-1 ring-white/10 transition-transform group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2 pt-6">
+                      <p className="truncate text-xs font-semibold text-white">{card.name}</p>
+                      <p className="truncate text-[10px] text-slate-300">{card.set_name} · #{card.number}</p>
+                    </div>
+                    {card.rarity && (
+                      <span className="absolute right-1.5 top-1.5 rounded-full border border-slate-700 bg-slate-950/70 px-1.5 py-0.5 text-[9px] font-semibold text-slate-300">
+                        {card.rarity}
+                      </span>
+                    )}
+                    {saving === card.id && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                        <span className="text-xs font-medium text-white">Guardando…</span>
+                      </div>
+                    )}
+                  </div>
+                </Command.Item>
+              ))}
+            </div>
           </Command.List>
 
           {/* Pie: atajos de teclado */}
