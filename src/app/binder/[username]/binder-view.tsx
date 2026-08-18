@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import SiteNav from '@/components/SiteNav'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
 import SellerReputationCard from '@/components/SellerReputationCard'
+import { PokeballIcon } from '@/components/icons'
 import {
   computeTotalValue,
   groupIntoSheets,
@@ -86,27 +88,58 @@ export default function PublicBinderByUsernamePage({ username }: { username: str
     <div className="min-h-screen text-slate-200">
       <SiteNav />
       <div className="mx-auto max-w-5xl px-4 py-8">
-      <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Profesor TCG</h1>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
-            <span className="font-medium text-slate-400">{binder?.title ?? 'Cargando…'}</span>
-            <span className="text-slate-700">•</span>
-            <span>
-              {cards.length} cartas en {sheets.length} hoja{sheets.length !== 1 ? 's' : ''}
-            </span>
-            <span className="text-slate-700">•</span>
-            <span className="text-slate-500">vista pública</span>
-          </p>
-        </div>
+      <header className="relative mb-8 overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl">
+        {/* Acentos neón superior e inferior */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-rose-500/80 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-yellow-500/50 to-transparent" />
+        {/* Glows decorativos de fondo */}
+        <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-rose-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-yellow-400/10 blur-3xl" />
+        {/* Watermark de pokébola */}
+        <PokeballIcon className="pointer-events-none absolute -right-6 -top-6 h-44 w-44 text-white/[0.03]" />
 
-        <div className="flex flex-col items-end gap-3">
-          <div className="w-full rounded-xl border border-yellow-400/20 bg-slate-900 px-4 py-2 text-right sm:w-64">
-            <p className="text-[10px] uppercase tracking-widest text-yellow-400/50">Valor total</p>
-            <p className="text-lg font-bold text-yellow-400">
-              ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
-              <span className="text-xs font-semibold text-yellow-400/50">USD</span>
+        <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <span className="inline-flex items-center gap-2 rounded-full border border-rose-400/40 bg-rose-500/10 px-3 py-1 text-xs font-bold text-rose-300">
+              <PokeballIcon width={13} height={13} />
+              Binder de coleccionista
+            </span>
+            <h1 className="mt-3 truncate bg-gradient-to-r from-white via-rose-100 to-amber-100 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
+              {binder?.title ?? 'Cargando…'}
+            </h1>
+            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-slate-400">
+              {seller?.username ? (
+                <Link
+                  href={`/profile/${encodeURIComponent(seller.username)}`}
+                  className="font-medium text-rose-300 underline-offset-4 transition-colors hover:text-rose-200 hover:underline"
+                >
+                  @{seller.username}
+                </Link>
+              ) : (
+                <span className="font-medium text-slate-300">@{binder ? 'usuario' : '…'}</span>
+              )}
+              <span className="text-slate-700">•</span>
+              <span>
+                {cards.length} carta{cards.length !== 1 ? 's' : ''} en {sheets.length} hoja
+                {sheets.length !== 1 ? 's' : ''}
+              </span>
+              <span className="text-slate-700">•</span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                Vista pública
+              </span>
             </p>
+          </div>
+
+          <div className="shrink-0">
+            <div className="rounded-2xl border border-yellow-400/25 bg-gradient-to-br from-yellow-400/10 to-amber-500/5 px-5 py-3 text-right shadow-[0_0_30px_rgba(250,204,21,0.08)]">
+              <p className="text-[10px] uppercase tracking-widest text-yellow-400/60">
+                Valor total estimado
+              </p>
+              <p className="mt-0.5 text-2xl font-black text-yellow-400">
+                ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+                <span className="text-xs font-semibold text-yellow-400/60">USD</span>
+              </p>
+            </div>
           </div>
         </div>
       </header>
@@ -120,6 +153,15 @@ export default function PublicBinderByUsernamePage({ username }: { username: str
         <p className="py-20 text-center text-slate-500">Cargando binder…</p>
       ) : (
         <>
+          {/* Divisor temático del álbum */}
+          <div className="mb-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+            <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500">
+              🗂️ Álbum de cartas
+            </span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+          </div>
+
           <div className="grid gap-6 md:grid-cols-2">
             {[0, 1].map((offset) => {
               const sheetIndex = currentSheet * 2 + offset
@@ -141,6 +183,14 @@ export default function PublicBinderByUsernamePage({ username }: { username: str
             sheetCount={sheets.length}
             onChange={setCurrentSheet}
           />
+
+          <p className="mt-10 text-center text-xs text-slate-600">
+            Álbum creado con{' '}
+            <Link href="/" className="font-semibold text-rose-400/80 transition-colors hover:text-rose-300">
+              Profesor TCG
+            </Link>{' '}
+            · Vende y cambia tus cartas por WhatsApp
+          </p>
         </>
       )}
       </div>
