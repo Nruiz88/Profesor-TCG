@@ -180,7 +180,7 @@ export default function PokedexSearchModal({
               <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Idioma
               </p>
-              <LanguagePills value={language} onChange={setLanguage} compact />
+              <LanguagePills value={language} onChange={setLanguage} />
             </div>
             {showCondition && (
               <div className="min-w-0">
