@@ -365,6 +365,35 @@ export default function BinderPage() {
     await copyLink(`${base}?tab=wantlist`, 'Link de buscadas copiado. El binder ahora es público.')
   }
 
+  // Compartir binder por WhatsApp: abre WhatsApp con mensaje prellenado
+  async function shareBinderWhatsApp() {
+    const url = await ensurePublicBinder()
+    if (!url) return
+    const phone = profile?.whatsapp_number
+    if (!phone) {
+      setMessage('No tenés número de WhatsApp configurado en tu perfil.')
+      return
+    }
+    const text = encodeURIComponent(
+      `¡Mira mi colección de Pokémon! 🃏\n\n` +
+      `${binder?.title ?? 'Mi Binder'} — ${totalCards} cartas\n` +
+      `${url}`
+    )
+    window.open(`https://wa.me/?text=${text}`, '_blank')
+  }
+
+  // Compartir wantlist por WhatsApp
+  async function shareWantlistWhatsApp() {
+    const base = await ensurePublicBinder()
+    if (!base) return
+    const text = encodeURIComponent(
+      `¡Estoy buscando estas cartas de Pokémon! ✨\n\n` +
+      `Busco ${wantlist.length} carta${wantlist.length !== 1 ? 's' : ''}\n` +
+      `${base}?tab=wantlist`
+    )
+    window.open(`https://wa.me/?text=${text}`, '_blank')
+  }
+
   // Estadísticas del perfil (sobre todas las cartas, sin filtros)
   const totalCards = cards.length
   const saleCount = cards.filter((c) => c.is_for_sale).length
@@ -605,8 +634,6 @@ export default function BinderPage() {
               onRefreshPrices={updatePrices}
               onShowClaims={() => setShowClaims(true)}
               onShowProfile={async () => {
-                // El perfil completo (con su pestaña Configuración y cambio de
-                // clave) vive en la página /profile/[username]. Acá solo navegamos.
                 const p = profile ?? (await loadProfile())
                 if (p?.username) {
                   router.push(`/profile/${encodeURIComponent(p.username)}?tab=settings`)
@@ -614,6 +641,8 @@ export default function BinderPage() {
                   setMessage('No se pudo abrir tu perfil. Intentalo de nuevo.')
                 }
               }}
+              onShareWhatsApp={shareBinderWhatsApp}
+              onShareWantlist={shareWantlistWhatsApp}
             />
           </div>
 
