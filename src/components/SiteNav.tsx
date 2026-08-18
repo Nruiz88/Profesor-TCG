@@ -4,7 +4,16 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LogoutIcon, MenuIcon, XIcon } from '@/components/icons'
+import {
+  CardsIcon,
+  CompassIcon,
+  HomeIcon,
+  LogoutIcon,
+  MenuIcon,
+  PokeballIcon,
+  SwapIcon,
+  XIcon
+} from '@/components/icons'
 import NotificationsBell from './NotificationsBell'
 
 export interface NavUser {
@@ -101,12 +110,12 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
   }
 
   const linkClass = (isCurrent: boolean) =>
-    `rounded-lg px-3 py-2 font-medium transition-colors ${
+    `flex items-center gap-1.5 rounded-lg px-3 py-2 font-medium transition-colors ${
       isCurrent ? 'bg-white/5 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
     }`
 
   const mobileLinkClass = (isCurrent: boolean) =>
-    `block rounded-xl px-3 py-2.5 font-medium transition-colors ${
+    `flex items-center gap-2.5 rounded-xl px-3 py-2.5 font-medium transition-colors ${
       isCurrent ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'
     }`
 
@@ -130,20 +139,25 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
         {/* Links de escritorio */}
         <div className="hidden items-center gap-1 text-sm md:flex">
           <Link href="/" className={linkClass(active === 'home')}>
+            <HomeIcon className="h-4 w-4" />
             Inicio
           </Link>
           <Link href="/explore" className={linkClass(active === 'explore')}>
+            <CompassIcon className="h-4 w-4" />
             Explorar
           </Link>
           <Link href="/buscados" className={linkClass(active === 'buscados')}>
+            <PokeballIcon className="h-4 w-4" />
             Buscados
           </Link>
           {user && (
             <>
               <Link href="/binder" className={linkClass(active === 'binder')}>
+                <CardsIcon className="h-4 w-4" />
                 Mi Binder
               </Link>
               <Link href="/offers" className={linkClass(active === 'offers')}>
+                <SwapIcon className="h-4 w-4" />
                 Ofertas
                 {pendingOffers > 0 && (
                   <span
@@ -221,20 +235,25 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
 
               <div className="flex flex-col gap-0.5 text-sm">
                 <Link href="/" className={mobileLinkClass(active === 'home')}>
+                  <HomeIcon className="h-4 w-4" />
                   Inicio
                 </Link>
                 <Link href="/explore" className={mobileLinkClass(active === 'explore')}>
+                  <CompassIcon className="h-4 w-4" />
                   Explorar
                 </Link>
                 <Link href="/buscados" className={mobileLinkClass(active === 'buscados')}>
+                  <PokeballIcon className="h-4 w-4" />
                   Buscados
                 </Link>
                 {user && (
                   <>
                     <Link href="/binder" className={mobileLinkClass(active === 'binder')}>
+                      <CardsIcon className="h-4 w-4" />
                       Mi Binder
                     </Link>
                     <Link href="/offers" className={mobileLinkClass(active === 'offers')}>
+                      <SwapIcon className="h-4 w-4" />
                       Ofertas
                       {pendingOffers > 0 && (
                         <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
