@@ -7,8 +7,6 @@
  * El manifest se genera con: node scripts/precompute-images.mjs
  */
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import type { CardLanguage } from '@/lib/cardLanguage'
 import { pokemontcgUrl } from './pokemontcg'
 import { scrydexUrl, unpadNumber } from './scrydex'
@@ -23,21 +21,9 @@ export { pokemontcgUrl } from './pokemontcg'
 
 type ImageSource = 'pokemontcg' | 'scrydex' | 'scrydex-unpadded' | 'tcgdex' | 'none'
 
-let manifest: Record<string, ImageSource> | null = null
-
-function loadManifest(): Record<string, ImageSource> {
-  if (manifest !== null) return manifest
-  try {
-    const raw = readFileSync(join(process.cwd(), 'src', 'content', 'image-manifest.json'), 'utf8')
-    const parsed: Record<string, ImageSource> = JSON.parse(raw)
-    manifest = parsed
-    return parsed
-  } catch {
-    // Manifest no disponible (dev, test, etc.) — fallback a HEAD requests
-    manifest = {}
-    return manifest
-  }
-}
+// @ts-ignore — Next.js resuelve JSON imports en build time
+import manifestData from '../../content/image-manifest.json'
+const manifest: Record<string, ImageSource> = manifestData as Record<string, ImageSource>
 
 // ── Resolución ───────────────────────────────────────────────────────
 
@@ -55,8 +41,7 @@ export async function resolveCardImage(
   language: CardLanguage = 'EN'
 ): Promise<string> {
   // ── 0. Manifest pre-computado (cero HTTP) ──
-  const m = loadManifest()
-  const source = m[setId]
+  const source = manifest[setId]
   if (source) {
     return resolveFromSource(setId, number, language, source)
   }
