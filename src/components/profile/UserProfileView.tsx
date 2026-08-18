@@ -149,7 +149,9 @@ export default function UserProfileView({
   const [tab, setTab] = useState<ProfileTab>(() => {
     if (typeof window === 'undefined') return 'sale'
     const t = new URLSearchParams(window.location.search).get('tab')
-    return t === 'settings' && isOwnProfile ? 'settings' : 'sale'
+    if (t === 'settings' && isOwnProfile) return 'settings'
+    if (t === 'wantlist') return 'wantlist'
+    return 'sale'
   })
   const [copied, setCopied] = useState(false)
   const [viewer, setViewer] = useState<{
@@ -217,6 +219,20 @@ export default function UserProfileView({
       await navigator.clipboard.writeText(url)
     } catch {
       window.prompt('Copiá el link del perfil:', url)
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  // Compartir el binder de buscadas del perfil: link que aterriza en la
+  // pestaña wantlist (su preview OG ya muestra cuántas cartas busca).
+  async function handleShareWantlist() {
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const url = `${origin}/profile/${encodeURIComponent(profile.username)}?tab=wantlist`
+    try {
+      await navigator.clipboard.writeText(url)
+    } catch {
+      window.prompt('Copiá el link de buscadas:', url)
     }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -478,10 +494,26 @@ export default function UserProfileView({
               description={`@${profile.username} todavía no agregó cartas a su lista de buscadas.`}
             />
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-              {wantlist.map((w) => (
-                <WantlistSlot key={w.id} entry={w} offerUrl={buildOfferUrl(w) ?? undefined} />
-              ))}
+            <div>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/5 px-4 py-3">
+                <p className="text-sm font-semibold text-fuchsia-200">
+                  @{profile.username} busca {wantlist.length} carta
+                  {wantlist.length !== 1 ? 's' : ''}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleShareWantlist}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold text-fuchsia-200 transition-colors hover:bg-fuchsia-500/20"
+                >
+                  <ShareIcon className="h-4 w-4" />
+                  Compartir buscadas
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+                {wantlist.map((w) => (
+                  <WantlistSlot key={w.id} entry={w} offerUrl={buildOfferUrl(w) ?? undefined} />
+                ))}
+              </div>
             </div>
           ))}
 

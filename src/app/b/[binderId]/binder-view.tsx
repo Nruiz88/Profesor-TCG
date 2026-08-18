@@ -8,7 +8,7 @@ import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
 import SellerReputationCard from '@/components/SellerReputationCard'
 import BinderTabs, { type BinderTab } from '@/components/binder/BinderTabs'
 import WantlistSlot from '@/components/binder/WantlistSlot'
-import { SparklesIcon } from '@/components/icons'
+import { ShareIcon, SparklesIcon } from '@/components/icons'
 import { buildSwapOfferUrl } from '@/lib/matchmaking'
 import { createClient } from '@/lib/supabase/client'
 import type { WantlistCard } from '@/types/wantlist'
@@ -32,7 +32,12 @@ export default function PublicBinderPage({ binderId }: { binderId: string }) {
   const [error, setError] = useState<string | null>(null)
   const [currentSheet, setCurrentSheet] = useState(0)
   const [seller, setSeller] = useState<SellerInfo | null>(null)
-  const [tab, setTab] = useState<BinderTab>('collection')
+  const [tab, setTab] = useState<BinderTab>(() => {
+    if (typeof window === 'undefined') return 'collection'
+    return new URLSearchParams(window.location.search).get('tab') === 'wantlist'
+      ? 'wantlist'
+      : 'collection'
+  })
   const [wantlist, setWantlist] = useState<WantlistCard[]>([])
   const [viewer, setViewer] = useState<{ username?: string; slotByCardId: Record<string, string> } | null>(null)
   const [matchCount, setMatchCount] = useState(0)
@@ -129,6 +134,18 @@ export default function PublicBinderPage({ binderId }: { binderId: string }) {
     })
   }
 
+  // Compartir el binder de buscadas: el link aterriza en la pestaña wantlist
+  // (su preview OG ya muestra cuántas cartas busca el dueño).
+  async function handleShareWantlist() {
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const url = `${origin}/b/${binderId}?tab=wantlist`
+    try {
+      await navigator.clipboard.writeText(url)
+    } catch {
+      window.prompt('Copiá el link de buscadas:', url)
+    }
+  }
+
   const totalValue = computeTotalValue(cards)
   const sheets = groupIntoSheets(cards)
   if (sheets.length === 0) sheets.push([])
@@ -208,10 +225,26 @@ export default function PublicBinderPage({ binderId }: { binderId: string }) {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-            {wantlist.map((w) => (
-              <WantlistSlot key={w.id} entry={w} offerUrl={buildOfferUrl(w) ?? undefined} />
-            ))}
+          <div>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/5 px-4 py-3">
+              <p className="text-sm font-semibold text-fuchsia-200">
+                @{seller?.username ?? 'Este coleccionista'} busca {wantlist.length} carta
+                {wantlist.length !== 1 ? 's' : ''}
+              </p>
+              <button
+                type="button"
+                onClick={handleShareWantlist}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold text-fuchsia-200 transition-colors hover:bg-fuchsia-500/20"
+              >
+                <ShareIcon className="h-4 w-4" />
+                Compartir buscadas
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+              {wantlist.map((w) => (
+                <WantlistSlot key={w.id} entry={w} offerUrl={buildOfferUrl(w) ?? undefined} />
+              ))}
+            </div>
           </div>
         )
       ) : (

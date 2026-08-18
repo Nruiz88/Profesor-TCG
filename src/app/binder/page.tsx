@@ -19,7 +19,7 @@ import ProfileHeaderStats from '@/components/ProfileHeaderStats'
 import ClaimsPanel from '@/components/ClaimsPanel'
 import ReservedClaimsBanner from '@/components/ReservedClaimsBanner'
 import SellerReputationCard from '@/components/SellerReputationCard'
-import { GlobeIcon, LockIcon, PlusIcon, SparklesIcon } from '@/components/icons'
+import { GlobeIcon, LockIcon, PlusIcon, ShareIcon, SparklesIcon } from '@/components/icons'
 import type { WantlistCard } from '@/types/wantlist'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
@@ -291,8 +291,9 @@ export default function BinderPage() {
     }
   }
 
-  async function copyShareLink() {
-    if (!binder) return
+  // Asegura que el binder sea público y devuelve su link base /b/[id].
+  async function ensurePublicBinder(): Promise<string | null> {
+    if (!binder) return null
     // Si está privado, lo hacemos público automáticamente al compartir
     if (!binder.is_public) {
       const res = await fetch('/api/binder', {
@@ -305,13 +306,30 @@ export default function BinderPage() {
       setBinder(data.binder)
       setBinders((prev) => prev.map((b) => (b.id === data.binder.id ? data.binder : b)))
     }
-    const url = `${window.location.origin}/b/${binder.id}`
+    return `${window.location.origin}/b/${binder.id}`
+  }
+
+  async function copyLink(url: string, message: string) {
     try {
       await navigator.clipboard.writeText(url)
-      setMessage('Link copiado al portapapeles. El binder ahora es público.')
+      setMessage(message)
     } catch {
       window.prompt('Copiá el link:', url)
     }
+  }
+
+  async function copyShareLink() {
+    const url = await ensurePublicBinder()
+    if (!url) return
+    await copyLink(url, 'Link copiado al portapapeles. El binder ahora es público.')
+  }
+
+  // Compartir el binder de buscados: link que aterriza en la pestaña
+  // wantlist (su preview OG ya muestra cuántas cartas busca el dueño).
+  async function copyWantlistLink() {
+    const base = await ensurePublicBinder()
+    if (!base) return
+    await copyLink(`${base}?tab=wantlist`, 'Link de buscadas copiado. El binder ahora es público.')
   }
 
   // Estadísticas del perfil (sobre todas las cartas, sin filtros)
@@ -583,13 +601,22 @@ export default function BinderPage() {
                 Quien tenga estas cartas puede ofrecerte un Swap directo por WhatsApp.
               </p>
             </div>
-            <button
-              onClick={() => setShowWantlistSearch(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-fuchsia-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-fuchsia-600"
-            >
-              <PlusIcon width={15} height={15} />
-              Agregar carta buscada
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={copyWantlistLink}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/10 px-4 py-2 text-sm font-semibold text-fuchsia-200 transition-colors hover:bg-fuchsia-500/20"
+              >
+                <ShareIcon className="h-4 w-4" />
+                Compartir buscadas
+              </button>
+              <button
+                onClick={() => setShowWantlistSearch(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-fuchsia-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-fuchsia-600"
+              >
+                <PlusIcon width={15} height={15} />
+                Agregar carta buscada
+              </button>
+            </div>
           </div>
 
           {wantlistLoading ? (
