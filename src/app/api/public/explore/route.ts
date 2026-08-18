@@ -9,6 +9,7 @@ import { speciesFromCardName } from '@/lib/pokedex'
 import { computeTrainerScore } from '@/lib/trainer'
 import { validate, extractParams } from '@/lib/validate'
 import { exploreSchema } from '@/lib/schemas'
+import { heavyReadLimit } from '@/lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -145,6 +146,9 @@ interface PublicBinderRow {
 }
 
 export async function GET(req: Request) {
+  const rl = heavyReadLimit(req)
+  if (rl.limited) return rl.response!
+
   const params = validate(exploreSchema, extractParams(req))
   if (params.error) return params.error
   const { view, mode, q: rawQ, set: setFilter, rarity: rarityFilter, city: cityFilter, type: typeFilter, language: languageFilter, sort, limit: rawLimit } = params.data

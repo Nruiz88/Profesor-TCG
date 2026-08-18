@@ -4,10 +4,14 @@ import { getCardMetadataMap, getSets } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
 import { validate, extractParams } from '@/lib/validate'
 import { binderSchema } from '@/lib/schemas'
+import { apiLimit } from '@/lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
+  const rl = apiLimit(req)
+  if (rl.limited) return rl.response!
+
   const supabase = await createClient()
 
   const {

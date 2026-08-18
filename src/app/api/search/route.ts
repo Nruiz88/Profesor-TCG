@@ -3,10 +3,14 @@ import { searchCards, getSets, getSetById } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
 import { validate, extractParams } from '@/lib/validate'
 import { searchSchema } from '@/lib/schemas'
+import { searchLimit } from '@/lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
+  const rl = searchLimit(req)
+  if (rl.limited) return rl.response!
+
   const params = validate(searchSchema, extractParams(req))
   if (params.error) return params.error
   const { q } = params.data
