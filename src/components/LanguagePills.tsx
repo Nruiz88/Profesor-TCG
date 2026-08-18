@@ -23,14 +23,16 @@ export default function LanguagePills({ value, onChange, compact = false }: Lang
             role="radio"
             aria-checked={active}
             onClick={() => onChange(lang)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`rounded-full border py-1.5 text-xs font-semibold transition-colors ${
+              compact ? 'px-2' : 'px-3'
+            } ${
               active
                 ? 'border-binder-accent/60 bg-binder-accent/10 text-binder-accent'
                 : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-white'
             }`}
           >
-            <span aria-hidden="true">{meta.flag}</span>{' '}
-            {compact ? lang : meta.label}
+            <span aria-hidden="true">{meta.flag}</span>
+            {!compact && <>{' '}{meta.label}</>}
           </button>
         )
       })}
