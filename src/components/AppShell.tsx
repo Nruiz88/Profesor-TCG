@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import ResponsiveNav from '@/components/ResponsiveNav'
+import MarketNav from '@/components/MarketNav'
 import SiteFooter from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/client'
 import { getUserBinders } from '@/lib/binders'
@@ -31,7 +32,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isHome = pathname === '/'
   const isLogin = pathname === '/login'
   const isOwnBinder = pathname === '/binder'
-  const showSidebar = !isHome && !isLogin && !isOwnBinder
+  const isMarket = pathname === '/explore' || pathname === '/buscados'
+  const showSidebar = !isHome && !isLogin && !isOwnBinder && !isMarket
 
   // Cargar sesión y perfil/binders del usuario.
   useEffect(() => {
@@ -86,17 +88,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // ─── Mercado y Buscados: layout de ancho completo con nav superior ───
+  if (isMarket) {
+    return (
+      <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-200">
+        <MarketNav user={user} profile={profile} />
+        <main className="flex-1">{children}</main>
+        <SiteFooter />
+      </div>
+    )
+  }
+
   if (!showSidebar) {
     return (
-      <>
-        {children}
+      <div className="flex min-h-screen flex-col">
+        <main className="flex-1">{children}</main>
         <SiteFooter />
-      </>
+      </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-200">
+    <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-200">
       <ResponsiveNav
         profile={profile}
         user={user}
@@ -127,10 +140,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         }}
         onShowClaims={() => router.push('/binder')}
       />
-      <div className="pb-20 lg:pb-0 lg:pl-64">
+      <main className="flex-1 pb-20 lg:pb-0 lg:ml-64">
         {children}
-        <SiteFooter />
-      </div>
+      </main>
+      <SiteFooter />
     </div>
   )
 }

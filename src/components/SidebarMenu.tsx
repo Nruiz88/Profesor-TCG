@@ -142,7 +142,7 @@ export default function SidebarMenu(props: SidebarMenuProps) {
       )}
 
       {/* ─── Navegación ─── */}
-      <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-5">
+      <nav className="scrollbar-hide flex-1 space-y-4 overflow-y-auto px-3 py-5">
         {/* INICIO / PERFIL */}
         <div className="flex flex-col gap-0.5">
           <Link

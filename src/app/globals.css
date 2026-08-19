@@ -104,6 +104,18 @@ body {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Scrollbar Hide Utility
+   Hides the visual scrollbar while keeping scroll functionality.
+   ═══════════════════════════════════════════════════════════════════ */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Rainbow border animation */
 @keyframes holo-border {
   0% {
