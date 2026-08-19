@@ -337,14 +337,11 @@ async function loadCollectionBySet(
     const sets = await getSets()
     const setMeta = new Map(sets.map((s) => [s.id, s]))
 
-    // Excluir sets de Pokémon TCG Pocket (solo TCG físico)
-    const POCKET_SERIES = 'Pokémon TCG Pocket'
-
     const result: SetCollection[] = []
     for (const [setId, numbers] of ownedBySet) {
       const meta = setMeta.get(setId)
-      if (meta?.series === POCKET_SERIES) continue
-      const total = meta?.total || meta?.printedTotal || numbers.size
+      if (!meta) continue
+      const total = meta.total || meta.printedTotal || numbers.size
       const percentage = total > 0 ? Math.round((numbers.size / total) * 100) : 0
       result.push({
         setId,

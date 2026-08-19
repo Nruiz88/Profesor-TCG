@@ -88,10 +88,16 @@ export async function readLocalSetFile(file: string): Promise<string | null> {
   return readLocal(file)
 }
 
+const POCKET_SERIES = 'Pokémon TCG Pocket'
+
 export async function getSets(): Promise<SetData[]> {
   const local = await readLocal('sets.json')
-  if (local) return JSON.parse(local)
+  const all = local ? JSON.parse(local) : await fetchSetsFromGithub()
+  // Excluir Pokémon TCG Pocket: solo TCG físico
+  return all.filter((s: SetData) => s.series !== POCKET_SERIES)
+}
 
+async function fetchSetsFromGithub(): Promise<SetData[]> {
   const res = await fetch(`${GITHUB_BASE}/sets/en.json`, { cache: 'force-cache' })
   if (!res.ok) throw new Error('No se pudo obtener el catálogo de sets')
   return res.json()
