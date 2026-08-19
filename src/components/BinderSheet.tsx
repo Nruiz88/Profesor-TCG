@@ -86,7 +86,7 @@ export default function BinderSheet({
                 {(card.quantity ?? 1) > 1 && (
                   <div
                     title={`${card.quantity} copias de ${card.card_name}`}
-                    className="pointer-events-none absolute left-1/2 top-1.5 z-10 -translate-x-1/2 rounded-full bg-fuchsia-600/95 px-2.5 py-0.5 text-[11px] font-black text-white shadow-lg ring-1 ring-white/20"
+                    className="pointer-events-none absolute bottom-9 left-1/2 z-10 -translate-x-1/2 rounded-full bg-fuchsia-600/95 px-2.5 py-0.5 text-[11px] font-black text-white shadow-lg ring-1 ring-white/20"
                   >
                     x{card.quantity}
                   </div>
