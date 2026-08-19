@@ -157,12 +157,17 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
           <p className="truncate text-[11px] font-medium text-slate-500">
             {card.set_name}
             {card.rarity ? ` · ${card.rarity}` : ''}
-            {card.language
-              ? (() => {
-                  const meta = CARD_LANGUAGE_META[normalizeLanguage(card.language)]
-                  return ` · ${meta.flag} ${meta.label}`
-                })()
-              : ''}
+            {' '}
+            {(() => {
+              const meta = CARD_LANGUAGE_META[normalizeLanguage(card.language)]
+              return (
+                <span className="inline-flex items-center gap-0.5">
+                  <span aria-hidden="true">{meta.flag}</span>
+                  <span className="hidden sm:inline">{meta.label}</span>
+                  <span className="sm:hidden">{normalizeLanguage(card.language)}</span>
+                </span>
+              )
+            })()}
           </p>
         </div>
 
