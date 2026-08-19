@@ -238,7 +238,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select(
-        'id, card_id, card_name, set_id, number, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, reserved_until, is_featured'
+        'id, card_id, card_name, set_id, number, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, variant, reserved_until, is_featured'
       )
       .single()
     if (error) throw error

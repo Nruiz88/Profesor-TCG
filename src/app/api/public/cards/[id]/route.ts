@@ -27,7 +27,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const { data: card, error } = await admin
       .from('binder_cards')
       .select(
-        `id, binder_id, card_id, card_name, set_id, number, slot_number, market_price,\n         status, price_override, is_for_sale, is_for_trade, price, trade_notes,\n         condition, language, manual_price, currency, is_user_reported, reserved_until,\n         binders!binder_cards_binder_id_fkey!inner(id, title, is_public, user_id)`
+        `id, binder_id, card_id, card_name, set_id, number, slot_number, market_price,\n         status, price_override, is_for_sale, is_for_trade, price, trade_notes,\n         condition, language, manual_price, currency, is_user_reported, variant, reserved_until,\n         binders!binder_cards_binder_id_fkey!inner(id, title, is_public, user_id)`
       )
       .eq('id', id)
       .maybeSingle()
@@ -66,6 +66,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         set_name,
         number: card.number,
         rarity: m?.rarity ?? null,
+        variant: card.variant ?? 'normal',
         supertype: m?.supertype ?? null,
         subtypes: m?.subtypes ?? null,
         types: m?.types ?? null,

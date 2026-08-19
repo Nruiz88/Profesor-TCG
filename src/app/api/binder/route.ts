@@ -42,7 +42,7 @@ export async function GET(req: Request) {
       const { data: cards, error } = await supabase
         .from('binder_cards')
         .select(
-          'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, is_featured'
+          'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, variant, is_featured'
         )
         .in('binder_id', ids)
         .order('slot_number', { ascending: true })
@@ -108,7 +108,7 @@ export async function GET(req: Request) {
     const { data: cards, error } = await supabase
       .from('binder_cards')
       .select(
-        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, is_featured'
+        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, variant, is_featured'
       )
       .eq('binder_id', binder.id)
       .order('slot_number', { ascending: true })

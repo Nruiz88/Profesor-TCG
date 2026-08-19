@@ -20,6 +20,7 @@ interface PublicCard {
   set_name: string
   number: string
   rarity: string | null
+  variant: string | null
   supertype: string | null
   subtypes: string[] | null
   types: string[] | null
@@ -132,6 +133,7 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
     is_user_reported: card.is_user_reported,
     reserved_until: card.reserved_until,
     rarity: card.rarity,
+    variant: card.variant ?? 'normal',
     supertype: card.supertype,
     subtypes: card.subtypes,
     types: card.types,
