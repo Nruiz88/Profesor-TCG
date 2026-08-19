@@ -219,7 +219,7 @@ export async function getCardOgData(cardId: string): Promise<OgCardData | null> 
     setId: card.set_id,
     set_name,
     number: card.number,
-    price: effectivePrice(card.market_price, card.price_override, card.price),
+    price: effectivePrice(card.market_price, card.price_override, card.price, card.manual_price),
     currency: card.currency ?? 'USD',
     image: await resolveCardImage(card.set_id, card.number, normalizeLanguage(card.language)),
     username: owner?.username ?? null,

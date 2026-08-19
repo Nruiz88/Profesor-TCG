@@ -29,6 +29,7 @@ interface ActivityRow {
   price: number | null
   price_override: number | null
   market_price: number | null
+  manual_price: number | null
   is_for_sale: boolean | null
   is_for_trade: boolean | null
   status: string | null
@@ -50,7 +51,7 @@ export async function GET(req: Request) {
     const { data, error } = await supabase
       .from('binder_cards')
       .select(
-        `id, card_name, set_id, number, price, price_override, market_price,
+        `id, card_name, set_id, number, price, price_override, market_price, manual_price,
          is_for_sale, is_for_trade, status, updated_at,
          binders!binder_cards_binder_id_fkey!inner ( user_id )`
       )
@@ -94,7 +95,7 @@ export async function GET(req: Request) {
         card_name: r.card_name,
         set_id: r.set_id,
         number: r.number,
-        price: effectivePrice(r.market_price, r.price_override, r.price),
+        price: effectivePrice(r.market_price, r.price_override, r.price, r.manual_price),
         status,
         username: profile?.username ?? 'coleccionista',
         city: profile?.city ?? null,

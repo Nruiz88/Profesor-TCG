@@ -13,6 +13,7 @@ import {
   normalizeCurrency,
   type Currency
 } from '@/lib/priceGuide'
+import { effectivePrice } from '@/lib/cardStatus'
 import LanguagePills from './LanguagePills'
 
 interface PriceInputWithGuideProps {
@@ -34,7 +35,7 @@ export default function PriceInputWithGuide({
 }: PriceInputWithGuideProps) {
   const [language, setLanguage] = useState<CardLanguage>(() => normalizeLanguage(card.language))
   const [priceInput, setPriceInput] = useState<string>(() => {
-    const p = card.manual_price ?? card.price ?? card.price_override
+    const p = effectivePrice(card.market_price, card.price_override, card.price, card.manual_price)
     return p != null ? String(p) : ''
   })
   const [currency, setCurrency] = useState<Currency>(() => normalizeCurrency(card.currency))

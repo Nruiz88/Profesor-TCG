@@ -114,7 +114,7 @@ export default function SortableSlot({
           />
 
           {(() => {
-            const price = effectivePrice(slot.market_price, slot.price_override, slot.price)
+            const price = effectivePrice(slot.market_price, slot.price_override, slot.price, slot.manual_price)
             if (price == null) return null
             return (
               <div
@@ -137,9 +137,9 @@ export default function SortableSlot({
             priceOverride={slot.price_override}
             isForSale={slot.is_for_sale}
             isForTrade={slot.is_for_trade}
-            price={slot.price}
-            reservedUntil={slot.reserved_until}
-            className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap"
+            price={slot.price}                  manualPrice={slot.manual_price}
+                  reservedUntil={slot.reserved_until}
+                  className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap"
           />
 
           {/* Estrella de destacar (visible en hover o si ya está destacada) */}

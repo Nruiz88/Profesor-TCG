@@ -47,7 +47,7 @@ export default function CardDetailModal({ card, canEdit = false, onSaved, onClos
 
   const name = detail?.name ?? card.card_name
   const setLabel = detail ? `${detail.set_name} · ${detail.number}` : `${card.set_id} · ${card.number}`
-  const price = effectivePrice(card.market_price, card.price_override, card.price)
+  const price = effectivePrice(card.market_price, card.price_override, card.price, card.manual_price)
 
   return (
     <div className="modal-overlay z-50" onClick={onClose} role="dialog" aria-modal="true">

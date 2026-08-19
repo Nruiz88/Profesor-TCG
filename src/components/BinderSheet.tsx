@@ -96,7 +96,7 @@ export default function BinderSheet({
 
                 {/* Precio efectivo (manual del usuario o mercado) */}
                 {(() => {
-                  const price = effectivePrice(card.market_price, card.price_override, card.price)
+                  const price = effectivePrice(card.market_price, card.price_override, card.price, card.manual_price)
                   if (price == null) return null
                   return (
                     <div
@@ -121,6 +121,7 @@ export default function BinderSheet({
                   isForSale={card.is_for_sale}
                   isForTrade={card.is_for_trade}
                   price={card.price}
+                  manualPrice={card.manual_price}
                   reservedUntil={card.reserved_until}
                   className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap"
                 />

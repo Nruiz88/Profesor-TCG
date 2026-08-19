@@ -52,7 +52,7 @@ export async function GET() {
       admin
         .from('binder_cards')
         .select(
-          'price, price_override, market_price, binders!binder_cards_binder_id_fkey!inner(user_id)'
+          'price, price_override, market_price, manual_price, binders!binder_cards_binder_id_fkey!inner(user_id)'
         )
         .or('is_for_sale.eq.true,is_for_trade.eq.true')
         .eq('binders.is_public', true)
@@ -67,6 +67,7 @@ export async function GET() {
       price: number | null
       price_override: number | null
       market_price: number | null
+      manual_price: number | null
       binders: { user_id: string } | { user_id: string }[] | null
     }>
 
@@ -130,7 +131,7 @@ export async function GET() {
     // Valor del mercado (listados públicos activos)
     let marketValue = 0
     for (const r of marketRows) {
-      const p = effectivePrice(r.market_price, r.price_override, r.price)
+      const p = effectivePrice(r.market_price, r.price_override, r.price, r.manual_price)
       if (p != null) marketValue += p
     }
 
@@ -163,7 +164,7 @@ export async function GET() {
     const { data: recentCards } = await admin
       .from('binder_cards')
       .select(
-        'card_name, set_id, number, status, is_for_sale, is_for_trade, price, price_override, market_price, updated_at, binder_id'
+        'card_name, set_id, number, status, is_for_sale, is_for_trade, price, price_override, market_price, manual_price, updated_at, binder_id'
       )
       .order('updated_at', { ascending: false })
       .limit(15)
@@ -176,7 +177,7 @@ export async function GET() {
       status: c.status,
       is_for_sale: c.is_for_sale,
       is_for_trade: c.is_for_trade,
-      price: effectivePrice(c.market_price, c.price_override, c.price),
+      price: effectivePrice(c.market_price, c.price_override, c.price, c.manual_price),
       updated_at: c.updated_at,
       username: userName.get(binderOwner.get(c.binder_id) || '') || '—'
     }))

@@ -77,7 +77,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         is_for_trade: card.is_for_trade,
         trade_notes: card.trade_notes ?? null,
         reserved_until: card.reserved_until ?? null,
-        price: effectivePrice(card.market_price, card.price_override, card.price),
+        price: effectivePrice(card.market_price, card.price_override, card.price, card.manual_price),
         manual_price: card.manual_price ?? null,
         currency: card.currency ?? 'USD',
         is_user_reported: card.is_user_reported ?? false,

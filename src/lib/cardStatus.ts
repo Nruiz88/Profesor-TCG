@@ -131,12 +131,14 @@ export function normalizeStatus(value: unknown): CardStatus {
   return isCardStatus(value) ? value : 'collection'
 }
 
-// Precio efectivo: el precio del usuario prima, luego el override legacy, luego la API
+// Precio efectivo: prioridad → manual_price (usuario) > price (legacy) > override > market (API)
 export function effectivePrice(
   market: number | null,
   override: number | null | undefined,
-  price: number | null | undefined = undefined
+  price: number | null | undefined = undefined,
+  manualPrice?: number | null | undefined
 ): number | null {
+  if (manualPrice != null && manualPrice > 0) return manualPrice
   if (price != null && price > 0) return price
   if (override != null && override > 0) return override
   return market != null && market > 0 ? market : null

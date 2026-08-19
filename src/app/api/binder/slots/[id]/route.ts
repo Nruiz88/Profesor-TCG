@@ -258,7 +258,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           cardName: data.card_name,
           setId: data.set_id,
           number: data.number,
-          price: effectivePrice(data.market_price, data.price_override, data.price),
+          price: effectivePrice(data.market_price, data.price_override, data.price, data.manual_price),
           sellerId: user.id,
           sellerUsername: sellerProfile?.username ?? 'coleccionista'
         })

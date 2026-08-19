@@ -6,6 +6,7 @@ import {
   AVAILABILITIES,
   AVAILABILITY_META,
   availabilityFromFlags,
+  effectivePrice,
   type Availability
 } from '@/lib/cardStatus'
 import { isProfileComplete, type Profile } from '@/lib/profile'
@@ -52,7 +53,7 @@ export default function EditCardModal({
     availabilityFromFlags(card.is_for_sale, card.is_for_trade)
   )
   const [priceInput, setPriceInput] = useState<string>(() => {
-    const p = card.manual_price ?? card.price ?? card.price_override
+    const p = effectivePrice(card.market_price, card.price_override, card.price, card.manual_price)
     return p != null ? String(p) : ''
   })
   const [currency, setCurrency] = useState<Currency>(() => normalizeCurrency(card.currency))

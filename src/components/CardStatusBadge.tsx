@@ -19,6 +19,7 @@ interface CardStatusBadgeProps {
   isForSale?: boolean | null
   isForTrade?: boolean | null
   price?: number | null
+  manualPrice?: number | null
   /** Vencimiento de la reserva (soft lock). Muestra el tiempo restante en vivo. */
   reservedUntil?: string | null
   className?: string
@@ -36,6 +37,7 @@ export default function CardStatusBadge({
   isForSale,
   isForTrade,
   price,
+  manualPrice,
   reservedUntil,
   className = ''
 }: CardStatusBadgeProps) {
@@ -71,7 +73,7 @@ export default function CardStatusBadge({
   const avail: Availability = availabilityFromFlags(isForSale, isForTrade)
   if (avail === 'solo_coleccion') return null
 
-  const effective = effectivePrice(marketPrice ?? null, priceOverride, price)
+  const effective = effectivePrice(marketPrice ?? null, priceOverride, price, manualPrice)
 
   const style: Record<Availability, string> = {
     solo_coleccion: '',

@@ -69,8 +69,9 @@ export function claimPrice(card: {
   market_price: number | null
   price_override?: number | null
   price?: number | null
+  manual_price?: number | null
 }): number | null {
-  return effectivePrice(card.market_price, card.price_override, card.price)
+  return effectivePrice(card.market_price, card.price_override, card.price, card.manual_price)
 }
 
 // URL pública de la carta (página /card/[id]/[slug] con su og:image propia).

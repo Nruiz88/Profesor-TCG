@@ -222,7 +222,7 @@ export default function BinderShareModal({
       const items = limited.map((c, i) => ({
         image: images[i],
         name: c.card_name,
-        price: effectivePrice(c.market_price, c.price_override, c.price),
+        price: effectivePrice(c.market_price, c.price_override, c.price, c.manual_price),
         currency: c.currency ?? 'USD'
       }))
 

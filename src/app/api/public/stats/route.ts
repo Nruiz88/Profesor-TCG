@@ -20,7 +20,7 @@ export async function GET() {
       supabase
         .from('binder_cards')
         .select(
-          'price, price_override, market_price, binders!binder_cards_binder_id_fkey!inner(user_id)'
+          'price, price_override, market_price, manual_price, binders!binder_cards_binder_id_fkey!inner(user_id)'
         )
         .or('is_for_sale.eq.true,is_for_trade.eq.true')
         .eq('binders.is_public', true)
@@ -45,13 +45,14 @@ export async function GET() {
       price: number | null
       price_override: number | null
       market_price: number | null
+      manual_price: number | null
       binders: { user_id: string } | { user_id: string }[] | null
     }>
 
     let marketValue = 0
     const sellers = new Set<string>()
     for (const r of rows) {
-      const p = effectivePrice(r.market_price, r.price_override, r.price)
+      const p = effectivePrice(r.market_price, r.price_override, r.price, r.manual_price)
       if (p != null) marketValue += p
       const b = Array.isArray(r.binders) ? r.binders[0] : r.binders
       if (b?.user_id) sellers.add(b.user_id)

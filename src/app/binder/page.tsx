@@ -412,7 +412,7 @@ export default function BinderPage() {
   const saleCount = cards.filter((c) => c.is_for_sale).length
   const tradeCount = cards.filter((c) => c.is_for_trade).length
   const totalValue = cards.reduce(
-    (sum, c) => sum + (effectivePrice(c.market_price, c.price_override, c.price) ?? 0),
+    (sum, c) => sum + (effectivePrice(c.market_price, c.price_override, c.price, c.manual_price) ?? 0),
     0
   )
   const fmtValue = (n: number) =>

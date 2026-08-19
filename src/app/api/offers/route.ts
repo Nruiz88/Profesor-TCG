@@ -17,7 +17,7 @@ import { offersSchema } from '@/lib/schemas'
 
 export const dynamic = 'force-dynamic'
 
-const CARD_FIELDS = 'id, card_name, set_id, number, market_price, price, price_override, language'
+const CARD_FIELDS = 'id, card_name, set_id, number, market_price, price, price_override, manual_price, language'
 const PROFILE_FIELDS = 'username, whatsapp_number, city, country'
 
 function userView(s: UserSnapshot | null): OfferUserView {
@@ -36,7 +36,7 @@ function cardView(s: CardSnapshot, image: string): OfferCardView {
     set_id: s.set_id,
     number: s.number,
     image,
-    price: effectivePrice(s.market_price, s.price_override, s.price)
+    price: effectivePrice(s.market_price, s.price_override, s.price, s.manual_price)
   }
 }
 

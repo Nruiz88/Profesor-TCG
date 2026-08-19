@@ -26,7 +26,7 @@ export default function MakeTradeOfferModal({ card, seller, onClose }: MakeTrade
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const requestedPrice = effectivePrice(card.market_price, card.price_override, card.price)
+  const requestedPrice = effectivePrice(card.market_price, card.price_override, card.price, card.manual_price)
 
   useEffect(() => {
     let active = true
@@ -60,7 +60,7 @@ export default function MakeTradeOfferModal({ card, seller, onClose }: MakeTrade
   const totalOffered =
     [...selected].reduce((sum, id) => {
       const c = offerable.find((x) => x.id === id)
-      return sum + (effectivePrice(c?.market_price ?? null, c?.price_override, c?.price) ?? 0)
+      return sum + (effectivePrice(c?.market_price ?? null, c?.price_override, c?.price, c?.manual_price) ?? 0)
     }, 0) + (Number.isFinite(cash) ? cash : 0)
 
   function toggle(id: string) {
@@ -185,8 +185,7 @@ export default function MakeTradeOfferModal({ card, seller, onClose }: MakeTrade
                   </p>
                 ) : (
                   <div className="mt-2 max-h-48 space-y-1.5 overflow-y-auto pr-1">
-                    {offerable.map((c) => {
-                      const price = effectivePrice(c.market_price, c.price_override, c.price)
+                    {offerable.map((c) => {                       const price = effectivePrice(c.market_price, c.price_override, c.price, c.manual_price)
                       const checked = selected.has(c.id)
                       return (
                         <label

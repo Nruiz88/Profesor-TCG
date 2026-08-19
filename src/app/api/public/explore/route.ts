@@ -389,7 +389,7 @@ async function getCards(
     const m = meta.get(r.card_id)
     const seller = r.binders?.user_id ? profiles.get(r.binders.user_id) ?? null : null
     const status = r.is_for_sale ? 'for_sale' : 'for_trade'
-    const price = effectivePrice(r.market_price, r.price_override, r.price)
+    const price = effectivePrice(r.market_price, r.price_override, r.price, r.manual_price)
     const rarity = m?.rarity ?? null
 
     // Filtros que dependen de la metadata (rareza, tipo) o del perfil (ciudad)
