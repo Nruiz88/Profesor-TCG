@@ -175,7 +175,7 @@ export default function ExplorePage() {
   const activeMode = MODES.find((m) => m.id === mode) ?? MODES[0]
 
   return (
-    <div className="relative min-h-screen bg-[#090d16] text-slate-200">
+    <div className="relative">
       <GhostPokemon />
 
       <main className="mx-auto max-w-7xl px-4 py-10">
@@ -513,10 +513,6 @@ export default function ExplorePage() {
           </section>
         </div>
       </main>
-
-      <footer className="border-t border-slate-800/60 py-6 text-center text-xs text-slate-600">
-        © {new Date().getFullYear()} Profesor TCG · Hecho con ❤️ para coleccionistas
-      </footer>
     </div>
   )
 }

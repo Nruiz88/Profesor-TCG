@@ -128,8 +128,7 @@ export default function BuscadosPage() {
   const hasActiveFilters = !!(q || typeFilter || cityFilter)
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-200">
-      <main className="mx-auto max-w-7xl px-4 py-10">
+    <main className="mx-auto max-w-7xl px-4 py-10">
         {/* Hero simplificado */}
         <section className="relative overflow-hidden">
           <div
@@ -319,11 +318,6 @@ export default function BuscadosPage() {
             Crear mi wantlist
           </a>
         </section>
-      </main>
-
-      <footer className="border-t border-slate-800/60 py-6 text-center text-xs text-slate-600">
-        © {new Date().getFullYear()} Profesor TCG · Hecho con ❤️ para coleccionistas
-      </footer>
-    </div>
+    </main>
   )
 }
