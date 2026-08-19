@@ -13,8 +13,6 @@
  *   detectar que falta: hay que comparar el contenido descargado.
  */
 
-import { createHash } from 'node:crypto'
-
 export function scrydexUrl(setId: string, number: string): string {
   return `https://images.scrydex.com/pokemon/${setId}-${number}/large`
 }
@@ -32,18 +30,30 @@ const SCRYDEX_BACK_SHA =
   'fd7c3800f9b8ebadf4b31a735f569a180e66201741b00fafa17879967884ad2c'
 
 /**
+ * SHA-256 en hex usando Web Crypto (funciona en Node y en el browser; evita
+ * importar node:crypto, que rompe el bundle del cliente).
+ */
+async function sha256Hex(data: ArrayBuffer): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+/**
  * Verifica que una URL de Scrydex devuelva una imagen REAL de carta y no el
  * reverso genérico. Descarga el body y compara el hash (HEAD no alcanza:
  * Scrydex responde 200 también para cartas que no tiene).
  */
 export async function scrydexUrlExists(url: string): Promise<boolean> {
   try {
+    if (!crypto?.subtle) return false
     const res = await fetch(url, {
       signal: AbortSignal.timeout(8000)
     })
     if (!res.ok) return false
-    const buf = Buffer.from(await res.arrayBuffer())
-    return createHash('sha256').update(buf).digest('hex') !== SCRYDEX_BACK_SHA
+    const buf = await res.arrayBuffer()
+    return (await sha256Hex(buf)) !== SCRYDEX_BACK_SHA
   } catch {
     return false
   }
