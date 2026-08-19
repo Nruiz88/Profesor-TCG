@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ResponsiveNav from '@/components/ResponsiveNav'
 import SheetPagination from '@/components/SheetPagination'
@@ -20,7 +20,6 @@ import ReservedClaimsBanner from '@/components/ReservedClaimsBanner'
 import SellerReputationCard from '@/components/SellerReputationCard'
 import {
   ChatIcon,
-  ChevronDownIcon,
   GearIcon,
   GlobeIcon,
   LockIcon,
@@ -98,27 +97,7 @@ export default function BinderPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [pendingOrder, setPendingOrder] = useState<(SlotCard | null)[] | null>(null)
-  const [shareOpen, setShareOpen] = useState(false)
   const [showShareImage, setShowShareImage] = useState(false)
-  const shareMenuRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    if (!shareOpen) return
-    function onDocClick(e: MouseEvent) {
-      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
-        setShareOpen(false)
-      }
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setShareOpen(false)
-    }
-    document.addEventListener('mousedown', onDocClick)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDocClick)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [shareOpen])
 
   const loadBinder = useCallback(async (binderId?: string) => {
     try {
@@ -752,57 +731,88 @@ export default function BinderPage() {
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
-                  {/* Compartir dropdown */}
-                  <div className="relative" ref={shareMenuRef}>
+                  {/* Acciones de compartir: iconos directos con tooltip */}
+                  {/* Copiar link del binder */}
+                  <div className="group relative">
                     <button
-                      onClick={() => setShareOpen((v) => !v)}
-                      aria-expanded={shareOpen}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500"
+                      onClick={copyShareLink}
+                      disabled={!binder}
+                      title="Copiar link del binder"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-600 text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500 disabled:opacity-40"
                     >
                       <ShareIcon className="h-4 w-4" />
-                      Compartir
-                      <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${shareOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    {shareOpen && (
-                      <div className="absolute right-0 top-10 z-30 w-56 rounded-xl border border-slate-800 bg-slate-950/95 p-1 shadow-2xl shadow-black/60 backdrop-blur-xl">
-                        <button
-                          onClick={() => { setShareOpen(false); copyShareLink() }}
-                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
-                        >
-                          <ShareIcon className="h-3.5 w-3.5 text-slate-500" /> Copiar link
-                        </button>
-                        {profile?.whatsapp_number && (
-                          <button
-                            onClick={() => { setShareOpen(false); shareBinderWhatsApp() }}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
-                          >
-                            <ChatIcon className="h-3.5 w-3.5 text-emerald-400" /> WhatsApp binder
-                          </button>
-                        )}
-                        <div className="my-0.5 h-px bg-slate-800" />
-                        <button
-                          onClick={() => { setShareOpen(false); copyWantlistLink() }}
-                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
-                        >
-                          <ShareIcon className="h-3.5 w-3.5 text-fuchsia-400" /> Copiar buscadas
-                        </button>
-                        {profile?.whatsapp_number && (
-                          <button
-                            onClick={() => { setShareOpen(false); shareWantlistWhatsApp() }}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
-                          >
-                            <ChatIcon className="h-3.5 w-3.5 text-emerald-400" /> WhatsApp buscadas
-                          </button>
-                        )}
-                        <div className="my-0.5 h-px bg-slate-800" />
-                        <button
-                          onClick={() => { setShareOpen(false); setShowShareImage(true) }}
-                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
-                        >
-                          🖼️ Imagen del binder
-                        </button>
-                      </div>
-                    )}
+                    <span className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden whitespace-nowrap rounded-lg bg-slate-950 px-2 py-1 text-[11px] font-medium text-slate-200 shadow-xl ring-1 ring-slate-800 group-hover:block">
+                      Copiar link
+                    </span>
+                  </div>
+
+                  {/* WhatsApp binder */}
+                  {profile?.whatsapp_number && (
+                    <div className="group relative">
+                      <button
+                        onClick={shareBinderWhatsApp}
+                        disabled={!binder}
+                        title="Compartir binder por WhatsApp"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 transition-colors hover:bg-emerald-500 disabled:opacity-40"
+                      >
+                        <ChatIcon className="h-4 w-4" />
+                      </button>
+                      <span className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden whitespace-nowrap rounded-lg bg-slate-950 px-2 py-1 text-[11px] font-medium text-slate-200 shadow-xl ring-1 ring-slate-800 group-hover:block">
+                        WhatsApp binder
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Copiar buscadas */}
+                  <div className="group relative">
+                    <button
+                      onClick={copyWantlistLink}
+                      disabled={!binder}
+                      title="Copiar link de buscadas"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-fuchsia-600 text-white shadow-lg shadow-fuchsia-900/40 transition-colors hover:bg-fuchsia-500 disabled:opacity-40"
+                    >
+                      <SparklesIcon className="h-4 w-4" />
+                    </button>
+                    <span className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden whitespace-nowrap rounded-lg bg-slate-950 px-2 py-1 text-[11px] font-medium text-slate-200 shadow-xl ring-1 ring-slate-800 group-hover:block">
+                      Copiar buscadas
+                    </span>
+                  </div>
+
+                  {/* WhatsApp buscadas */}
+                  {profile?.whatsapp_number && (
+                    <div className="group relative">
+                      <button
+                        onClick={shareWantlistWhatsApp}
+                        disabled={!binder}
+                        title="Compartir buscadas por WhatsApp"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-fuchsia-600 text-white shadow-lg shadow-fuchsia-900/40 transition-colors hover:bg-fuchsia-500 disabled:opacity-40"
+                      >
+                        <ChatIcon className="h-4 w-4" />
+                      </button>
+                      <span className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden whitespace-nowrap rounded-lg bg-slate-950 px-2 py-1 text-[11px] font-medium text-slate-200 shadow-xl ring-1 ring-slate-800 group-hover:block">
+                        WhatsApp buscadas
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Imagen del binder */}
+                  <div className="group relative">
+                    <button
+                      onClick={() => setShowShareImage(true)}
+                      disabled={!binder}
+                      title="Imagen del binder"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-slate-950 text-slate-300 transition-colors hover:border-slate-500 hover:text-white disabled:opacity-40"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                        <rect x="3" y="5" width="18" height="14" rx="2" />
+                        <circle cx="8.5" cy="10" r="1.5" />
+                        <path d="M21 15l-5-5-8 8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    <span className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden whitespace-nowrap rounded-lg bg-slate-950 px-2 py-1 text-[11px] font-medium text-slate-200 shadow-xl ring-1 ring-slate-800 group-hover:block">
+                      Imagen del binder
+                    </span>
                   </div>
                   <button
                     onClick={togglePublic}
