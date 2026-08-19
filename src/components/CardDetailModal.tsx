@@ -52,7 +52,7 @@ export default function CardDetailModal({ card, canEdit = false, onSaved, onClos
   return (
     <div className="modal-overlay z-50" onClick={onClose} role="dialog" aria-modal="true">
       <div
-        className="modal-card modal-card--panel flex max-h-[90vh] w-full max-w-sm"
+        className="modal-card modal-card--panel flex max-h-[90vh] w-full max-w-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header minimal */}
@@ -68,72 +68,87 @@ export default function CardDetailModal({ card, canEdit = false, onSaved, onClos
           </div>
         </div>
 
-        {/* Cuerpo scrolleable */}
+        {/* Cuerpo scrolleable: carta a la izquierda, info a la derecha */}
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {/* Carta centrada + precio inline */}
-          <div className="flex flex-col items-center gap-3 px-4 py-4">
-            <div className="w-52">
-              <PokemonCard card={card} />
-            </div>
-
-            {price != null && (
-              <p className="text-center text-lg font-bold text-yellow-400">
-                {formatPrice(price, card.currency)}
-                {card.is_user_reported ? <span className="ml-1 text-xs text-yellow-400/60">★</span> : null}
-              </p>
-            )}
-          </div>
-
-          {/* Edit section */}
-          {canEdit && (
-            <div className="border-t border-slate-800 px-4 py-3">
-              {/* Cantidad de copias */}
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-400">Copias</span>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={async () => {
-                      const qty = card.quantity ?? 1
-                      if (qty <= 1) {
-                        if (!window.confirm(`¿Quitar "${card.card_name}" de tu binder?`)) return
-                        await fetch(`/api/binder/slots/${card.id}`, { method: 'DELETE' })
-                      } else {
-                        await fetch(`/api/binder/slots/${card.id}`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ quantity: qty - 1 })
-                        })
-                      }
-                      onSaved?.()
-                    }}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 text-base font-bold text-slate-300 transition-colors hover:border-rose-500/50 hover:text-rose-400"
-                    aria-label="Quitar una copia"
-                  >
-                    −
-                  </button>
-                  <span className="min-w-9 text-center text-base font-bold text-white">
-                    {card.quantity ?? 1}
-                  </span>
-                  <button
-                    onClick={async () => {
-                      const qty = card.quantity ?? 1
-                      await fetch(`/api/binder/slots/${card.id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ quantity: qty + 1 })
-                      })
-                      onSaved?.()
-                    }}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 text-base font-bold text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-400"
-                    aria-label="Agregar una copia"
-                  >
-                    +
-                  </button>
-                </div>
+          <div className="flex flex-col gap-5 p-4 sm:flex-row sm:items-start">
+            {/* Carta a la izquierda */}
+            <div className="mx-auto shrink-0 sm:mx-0 sm:w-48">
+              <div className="w-40 sm:w-full">
+                <PokemonCard card={card} />
               </div>
-              <PriceInputWithGuide card={card} onSaved={onSaved} />
             </div>
-          )}
+
+            {/* Info + controles a la derecha */}
+            <div className="flex min-w-0 flex-1 flex-col">
+              {/* Precio */}
+              {price != null && (
+                <p className="text-lg font-bold text-yellow-400">
+                  {formatPrice(price, card.currency)}
+                  {card.is_user_reported ? <span className="ml-1 text-xs text-yellow-400/60">★</span> : null}
+                </p>
+              )}
+
+              {canEdit ? (
+                <div className="mt-3 space-y-4">
+                  {/* Cantidad de copias */}
+                  <div>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                      Copias
+                    </p>
+                    <div className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-950 p-1.5">
+                      <button
+                        onClick={async () => {
+                          const qty = card.quantity ?? 1
+                          if (qty <= 1) {
+                            if (!window.confirm(`¿Quitar "${card.card_name}" de tu binder?`)) return
+                            await fetch(`/api/binder/slots/${card.id}`, { method: 'DELETE' })
+                          } else {
+                            await fetch(`/api/binder/slots/${card.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ quantity: qty - 1 })
+                            })
+                          }
+                          onSaved?.()
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 text-lg font-bold text-slate-300 transition-colors hover:border-rose-500/50 hover:text-rose-400"
+                        aria-label="Quitar una copia"
+                      >
+                        −
+                      </button>
+                      <span className="min-w-11 text-center text-xl font-bold text-white">
+                        {card.quantity ?? 1}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          const qty = card.quantity ?? 1
+                          await fetch(`/api/binder/slots/${card.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ quantity: qty + 1 })
+                          })
+                          onSaved?.()
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 text-lg font-bold text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-400"
+                        aria-label="Agregar una copia"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Precio editable */}
+                  <div className="border-t border-slate-800 pt-4">
+                    <PriceInputWithGuide card={card} onSaved={onSaved} />
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-slate-400">
+                  Esta carta está en la colección de alguien más. Contactalo para coordinar un intercambio.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -51,7 +51,6 @@ export default function PokedexSearchModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState<string | null>(null)
-  const [selected, setSelected] = useState<SearchResult | null>(null)
   const [language, setLanguage] = useState<CardLanguage>('ES')
   const [condition, setCondition] = useState<CardCondition | '' >('')
   const [variant, setVariant] = useState<string>('normal')
@@ -88,7 +87,7 @@ export default function PokedexSearchModal({
     }
   }, [query])
 
-  async function handleConfirm(card: SearchResult) {
+  async function handleSelect(card: SearchResult) {
     if (saving !== null) return
     setSaving(card.id)
     setError(null)
@@ -187,178 +186,60 @@ export default function PokedexSearchModal({
             </div>
           </div>
 
-          {/* Lista de resultados o panel de detalle de la carta elegida */}
-          {selected ? (
-            <div className="flex min-h-0 flex-1 flex-col">
-              {/* Encabezado del panel */}
-              <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
-                <button
-                  type="button"
-                  onClick={() => setSelected(null)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+          {/* Lista de resultados (navegación con ↑↓ y ↵) */}
+          <Command.List className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+            {!loading && !error && query.trim().length < 2 && (
+              <p className="px-3 py-6 text-center text-sm text-slate-500">
+                Escribí al menos 2 caracteres para buscar en el catálogo.
+              </p>
+            )}
+            {loading && (
+              <p className="px-3 py-4 text-sm text-slate-400">Buscando…</p>
+            )}
+            {error && !loading && (
+              <p className="px-3 py-4 text-sm text-red-400">{error}</p>
+            )}
+            {!loading && !error && query.trim().length >= 2 && results.length === 0 && (
+              <p className="px-3 py-6 text-center text-sm text-slate-500">
+                Sin resultados para «{query.trim()}»
+              </p>
+            )}
+
+            <div className="grid grid-cols-3 gap-3 p-2 sm:grid-cols-4 md:grid-cols-5">
+              {results.map((card) => (
+                <Command.Item
+                  key={card.id}
+                  value={card.id}
+                  onSelect={() => handleSelect(card)}
+                  disabled={saving !== null}
+                  className="group cursor-pointer rounded-xl outline-none transition-all data-[selected=true]:scale-105 data-[selected=true]:ring-2 data-[selected=true]:ring-rose-500"
                 >
-                  ← Volver a resultados
-                </button>
-                <span className="text-[11px] text-slate-500">Revisá los datos y confirmá</span>
-              </div>
-
-              <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5 sm:flex-row">
-                {/* Carta a la izquierda */}
-                <div className="mx-auto flex shrink-0 items-start sm:mx-0 sm:w-56">
-                  <div className="relative w-44 sm:w-full">
+                  <div className="relative overflow-hidden rounded-xl">
                     <img
-                      src={selected.image}
-                      alt={selected.name}
-                      className="aspect-[63/88] w-full rounded-xl object-cover shadow-2xl ring-1 ring-white/10"
+                      src={card.image}
+                      alt=""
+                      className="aspect-[63/88] w-full rounded-xl object-cover shadow-lg ring-1 ring-white/10 transition-transform group-hover:scale-105"
+                      loading="lazy"
                     />
-                    {selected.rarity && (
-                      <span className="absolute right-2 top-2 rounded-full border border-slate-700 bg-slate-950/70 px-2 py-0.5 text-[10px] font-semibold text-slate-200">
-                        {selected.rarity}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2 pt-6">
+                      <p className="truncate text-xs font-semibold text-white">{card.name}</p>
+                      <p className="truncate text-[10px] text-slate-300">{card.set_name} · #{card.number}</p>
+                    </div>
+                    {card.rarity && (
+                      <span className="absolute right-1.5 top-1.5 rounded-full border border-slate-700 bg-slate-950/70 px-1.5 py-0.5 text-[9px] font-semibold text-slate-300">
+                        {card.rarity}
                       </span>
                     )}
-                  </div>
-                </div>
-
-                {/* Info + controles a la derecha */}
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <div>
-                    <h3 className="text-xl font-bold text-white">{selected.name}</h3>
-                    <p className="mt-1 text-sm text-slate-400">
-                      {selected.set_name} · #{selected.number}
-                    </p>
-                    {selected.rarity && (
-                      <span className="mt-2 inline-block rounded-full border border-rose-400/30 bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-rose-300">
-                        {selected.rarity}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Controles: idioma / estado / variante */}
-                  <div className="mt-5 space-y-4">
-                    <div>
-                      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                        Idioma
-                      </p>
-                      <LanguagePills value={language} onChange={setLanguage} />
-                    </div>
-
-                    {showCondition && (
-                      <div>
-                        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                          Estado
-                        </p>
-                        <select
-                          value={condition}
-                          onChange={(e) => setCondition(e.target.value as CardCondition | '')}
-                          className="field mt-0.5 w-full"
-                        >
-                          <option value="">Sin especificar</option>
-                          {CARD_CONDITIONS.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {formatCondition(c.id) ?? c.id}
-                            </option>
-                          ))}
-                        </select>
+                    {saving === card.id && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                        <span className="text-xs font-medium text-white">Guardando…</span>
                       </div>
                     )}
-
-                    <div>
-                      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                        Variante
-                      </p>
-                      <div className="mt-0.5 flex flex-wrap gap-1.5">
-                        {VARIANT_OPTIONS.map((v) => (
-                          <button
-                            key={v.id}
-                            type="button"
-                            onClick={() => setVariant(v.id)}
-                            className={`rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
-                              variant === v.id
-                                ? 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/40'
-                                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                            }`}
-                          >
-                            {v.icon} {v.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </div>
-
-                  {error && (
-                    <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-                      {error}
-                    </p>
-                  )}
-
-                  <div className="mt-auto pt-5">
-                    <button
-                      type="button"
-                      onClick={() => handleConfirm(selected)}
-                      disabled={saving !== null}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500 disabled:opacity-60"
-                    >
-                      {saving === selected.id ? 'Guardando…' : '➕ Agregar al binder'}
-                    </button>
-                  </div>
-                </div>
-              </div>
+                </Command.Item>
+              ))}
             </div>
-          ) : (
-            <Command.List className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-              {!loading && !error && query.trim().length < 2 && (
-                <p className="px-3 py-6 text-center text-sm text-slate-500">
-                  Escribí al menos 2 caracteres para buscar en el catálogo.
-                </p>
-              )}
-              {loading && (
-                <p className="px-3 py-4 text-sm text-slate-400">Buscando…</p>
-              )}
-              {error && !loading && (
-                <p className="px-3 py-4 text-sm text-red-400">{error}</p>
-              )}
-              {!loading && !error && query.trim().length >= 2 && results.length === 0 && (
-                <p className="px-3 py-6 text-center text-sm text-slate-500">
-                  Sin resultados para «{query.trim()}»
-                </p>
-              )}
-
-              <div className="grid grid-cols-3 gap-3 p-2 sm:grid-cols-4 md:grid-cols-5">
-                {results.map((card) => (
-                  <Command.Item
-                    key={card.id}
-                    value={card.id}
-                    onSelect={() => setSelected(card)}
-                    disabled={saving !== null}
-                    className="group cursor-pointer rounded-xl outline-none transition-all data-[selected=true]:scale-105 data-[selected=true]:ring-2 data-[selected=true]:ring-rose-500"
-                  >
-                    <div className="relative overflow-hidden rounded-xl">
-                      <img
-                        src={card.image}
-                        alt=""
-                        className="aspect-[63/88] w-full rounded-xl object-cover shadow-lg ring-1 ring-white/10 transition-transform group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2 pt-6">
-                        <p className="truncate text-xs font-semibold text-white">{card.name}</p>
-                        <p className="truncate text-[10px] text-slate-300">{card.set_name} · #{card.number}</p>
-                      </div>
-                      {card.rarity && (
-                        <span className="absolute right-1.5 top-1.5 rounded-full border border-slate-700 bg-slate-950/70 px-1.5 py-0.5 text-[9px] font-semibold text-slate-300">
-                          {card.rarity}
-                        </span>
-                      )}
-                      {saving === card.id && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                          <span className="text-xs font-medium text-white">Guardando…</span>
-                        </div>
-                      )}
-                    </div>
-                  </Command.Item>
-                ))}
-              </div>
-            </Command.List>
-          )}
+          </Command.List>
 
           {/* Pie: atajos de teclado */}
           <div className="flex items-center gap-4 border-t border-slate-800 px-5 py-2.5 text-[11px] text-slate-500">
