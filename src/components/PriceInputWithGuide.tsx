@@ -108,22 +108,25 @@ export default function PriceInputWithGuide({
       {/* Idioma */}
       <LanguagePills value={language} onChange={handleLanguage} />
 
-      {/* Links de referencia — inline, compactos */}
+      {/* Links de referencia — con logos */}
       <div className="grid grid-cols-2 gap-1.5">
         <a href={guideUrls.tcg} target="_blank" rel="noopener noreferrer"
-          className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-sky-500/40 hover:text-sky-300">
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-sky-500/40 hover:text-sky-300">
+          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="currentColor"><path d="M10 2L3 6v8l7 4 7-4V6l-7-4zm0 2.2L15 7v6l-5 2.8L5 13V7l5-2.8z"/><path d="M10 6.5l-3 1.7v3.6l3 1.7 3-1.7V8.2l-3-1.7z"/></svg>
           TCGPlayer
         </a>
         <a href={guideUrls.pc} target="_blank" rel="noopener noreferrer"
-          className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-sky-500/40 hover:text-sky-300">
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-sky-500/40 hover:text-sky-300">
+          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="currentColor"><path d="M2 16h2V8H2v8zm4 0h2V4H6v12zm4 0h2V10h-2v6zm4 0h2V6h-2v10z"/></svg>
           PriceCharting
         </a>
         <a href={guideUrls.eb} target="_blank" rel="noopener noreferrer"
-          className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-emerald-500/40 hover:text-emerald-300">
-          eBay
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-emerald-500/40 hover:text-emerald-300">
+          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5"><text x="1" y="15" fontSize="14" fontWeight="bold" fill="#e53238">e</text><text x="7" y="15" fontSize="14" fontWeight="bold" fill="#0064d2">b</text><text x="13" y="15" fontSize="14" fontWeight="bold" fill="#f5af02">a</text><text x="18" y="15" fontSize="14" fontWeight="bold" fill="#86b817">y</text></svg>
         </a>
         <a href={guideUrls.cm} target="_blank" rel="noopener noreferrer"
-          className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-amber-500/40 hover:text-amber-300">
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-amber-500/40 hover:text-amber-300">
+          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="currentColor"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"/></svg>
           Cardmarket
         </a>
       </div>
