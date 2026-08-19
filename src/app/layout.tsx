@@ -3,6 +3,7 @@ import './globals.css'
 import './vendor/pokemon-cards/pokemon-cards.css'
 import '../components/modals.css'
 import SiteFooter from '@/components/SiteFooter'
+import BottomNav from '@/components/BottomNav'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
@@ -22,9 +23,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen antialiased pb-20 lg:pb-0">
         {children}
         <SiteFooter />
+        <BottomNav />
       </body>
     </html>
   )

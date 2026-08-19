@@ -137,7 +137,7 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
         </Link>
 
         {/* Links de escritorio */}
-        <div className="hidden items-center gap-1 text-sm md:flex">
+        <div className="hidden items-center gap-1 text-sm lg:flex">
           <Link href="/" className={linkClass(active === 'home')}>
             <HomeIcon className="h-4 w-4" />
             Inicio
@@ -173,7 +173,7 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
         </div>
 
         {/* Acciones de sesión (escritorio) */}
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           {user ? (
             <>
               <NotificationsBell />
@@ -211,7 +211,7 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
         </div>
 
         {/* Campanita + menú hamburguesa (mobile) */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-2 lg:hidden">
           {user && <NotificationsBell />}
           <div className="relative" ref={menuRef}>
           <button
