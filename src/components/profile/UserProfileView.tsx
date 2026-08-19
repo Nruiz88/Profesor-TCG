@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ChatIcon, CheckIcon, ShareIcon } from '@/components/icons'
 import type { ExploreCard } from '@/app/api/public/explore/route'
 import type { WantlistCard } from '@/types/wantlist'
+import SetCollectionCard from './SetCollectionCard'
 
 export interface ProfileReview {
   id: string
@@ -535,6 +536,13 @@ export default function UserProfileView({
                       }
                       const sortedSeries = [...grouped.entries()].sort((a, b) => b[1].length - a[1].length)
 
+                      // Precalcular wantlist agrupada por set_id para acceso rápido
+                      const wantedBySet = new Map<string, typeof wantlist>()
+                      for (const w of wantlist) {
+                        if (!wantedBySet.has(w.set_id)) wantedBySet.set(w.set_id, [])
+                        wantedBySet.get(w.set_id)!.push(w)
+                      }
+
                       return sortedSeries.map(([seriesName, sets]) => {
                         const seriesOwned = sets.reduce((s, c) => s + c.owned, 0)
                         const seriesTotal = sets.reduce((s, c) => s + c.total, 0)
@@ -549,52 +557,17 @@ export default function UserProfileView({
                             </div>
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                               {sets.map((sc) => (
-                                <div
+                                <SetCollectionCard
                                   key={sc.setId}
-                                  className="group rounded-2xl border border-slate-800/80 bg-slate-900/40 p-4 backdrop-blur-xl transition-colors hover:border-cyan-400/30"
-                                >
-                                  <div className="flex items-start gap-3">
-                                    <SetLogo setId={sc.setId} name={sc.setName} />
-                                    <div className="min-w-0 flex-1">
-                                      <div className="flex items-start justify-between gap-2">
-                                        <p className="min-w-0 truncate text-sm font-bold text-white">{sc.setName}</p>
-                                        <span
-                                          className={`shrink-0 rounded-lg px-2 py-1 text-xs font-bold ${
-                                            sc.percentage >= 100
-                                              ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30'
-                                              : sc.percentage >= 50
-                                                ? 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30'
-                                                : sc.percentage >= 20
-                                                  ? 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30'
-                                                  : 'bg-slate-700/50 text-slate-400 ring-1 ring-slate-600/30'
-                                          }`}
-                                        >
-                                          {sc.percentage}%
-                                        </span>
-                                      </div>
-                                      <div className="mt-2">
-                                        <div className="flex items-center justify-between text-[11px] text-slate-500">
-                                          <span>{sc.owned} de {sc.total}</span>
-                                          <span>{sc.percentage}%</span>
-                                        </div>
-                                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                                          <div
-                                            className={`h-full rounded-full transition-all duration-500 ${
-                                              sc.percentage >= 100
-                                                ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
-                                                : sc.percentage >= 50
-                                                  ? 'bg-gradient-to-r from-sky-500 to-cyan-400'
-                                                  : sc.percentage >= 20
-                                                    ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
-                                                    : 'bg-gradient-to-r from-slate-600 to-slate-500'
-                                            }`}
-                                            style={{ width: `${sc.percentage}%` }}
-                                          />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
+                                  setId={sc.setId}
+                                  setName={sc.setName}
+                                  series={sc.series}
+                                  owned={sc.owned}
+                                  total={sc.total}
+                                  percentage={sc.percentage}
+                                  logoUrl={setLogos[sc.setId] ?? null}
+                                  wanted={wantedBySet.get(sc.setId) ?? []}
+                                />
                               ))}
                             </div>
                           </div>
