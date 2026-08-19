@@ -11,75 +11,6 @@ import PokemonCard from './PokemonCard'
 import PriceInputWithGuide from './PriceInputWithGuide'
 import ExpansionHeader from './ExpansionHeader'
 
-import { TypeIcon } from './TypeIcon'
-
-// Nombres en español para mostrar; los datos internos quedan en inglés (íconos, estilos)
-const TYPE_ES: Record<string, string> = {
-  Grass: 'Planta',
-  Fire: 'Fuego',
-  Water: 'Agua',
-  Lightning: 'Rayo',
-  Psychic: 'Psíquico',
-  Fighting: 'Lucha',
-  Darkness: 'Oscuridad',
-  Metal: 'Metálica',
-  Fairy: 'Hada',
-  Dragon: 'Dragón',
-  Colorless: 'Incolora'
-}
-
-const SUBTYPE_ES: Record<string, string> = {
-  Basic: 'Básico',
-  'Stage 1': 'Fase 1',
-  'Stage 2': 'Fase 2',
-  'TAG TEAM': 'Tag Team',
-  Radiant: 'Radiante',
-  Shiny: 'Brillante',
-  'Trainer Gallery': 'Galería de Entrenadores'
-}
-
-const LEGAL_ES: Record<string, string> = {
-  standard: 'Estándar',
-  expanded: 'Expandida',
-  unlimited: 'Ilimitada'
-}
-
-function StatBox({
-  label,
-  values,
-  empty
-}: {
-  label: string
-  values?: { type: string; value: string }[]
-  empty?: string
-}) {
-  return (
-    <div className="panel-slate p-3">
-      <p className="text-[10px] uppercase tracking-widest text-slate-500">{label}</p>
-      {values && values.length > 0 ? (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
-          {values.map((v, i) => (
-            <span key={i} className="flex items-center gap-1 text-xs font-medium text-slate-300">
-              <TypeIcon type={v.type} small />
-              {v.value}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-1.5 text-xs text-slate-600">{empty ?? '—'}</p>
-      )}
-    </div>
-  )
-}
-
-function Chip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full border border-slate-700 bg-slate-800/60 px-2.5 py-0.5 text-xs font-medium text-slate-300">
-      {children}
-    </span>
-  )
-}
-
 interface CardDetailModalProps {
   card: SlotCard
   /** Binder propio: habilita idioma + precio manual con guía externa */
@@ -180,149 +111,24 @@ export default function CardDetailModal({
           ) : !detail ? (
             <p className="p-10 text-center text-sm text-slate-400">Cargando detalle…</p>
           ) : (
-            <div className="grid gap-6 p-5 md:grid-cols-[220px_1fr]">
-              {/* Imagen + precio */}
-              <div className="mx-auto w-48 md:w-full">
-                <div className="relative">
-                  <PokemonCard card={card} />
-                </div>
-                {price != null && (
-                  <div className="mt-3 rounded-xl border border-yellow-400/20 bg-slate-950 px-3 py-2 text-center">
-                    <p className="text-[10px] uppercase tracking-widest text-yellow-400/50">
-                      {card.is_user_reported ? 'Precio reportado por el usuario' : 'Precio de mercado'}
-                    </p>
-                    <p className="text-lg font-bold text-yellow-400">
-                      {formatPrice(price, card.currency)}
-                      {card.is_user_reported ? ' ★' : ''}
-                    </p>
-                  </div>
-                )}
+            <div className="flex flex-col items-center gap-4 p-5">
+              {/* Imagen */}
+              <div className="w-48">
+                <PokemonCard card={card} />
               </div>
 
-              {/* Info */}
-              <div className="min-w-0 space-y-5">
-                {/* Chips */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {detail.supertype && <Chip>{detail.supertype}</Chip>}
-                  {detail.subtypes?.map((s) => <Chip key={s}>{SUBTYPE_ES[s] ?? s}</Chip>)}
-                  {detail.types?.map((t) => (
-                    <Chip key={t}>
-                      <span className="inline-flex items-center gap-1.5">
-                        <TypeIcon type={t} small />
-                        {TYPE_ES[t] ?? t}
-                      </span>
-                    </Chip>
-                  ))}
-                  {detail.hp && <Chip>HP {detail.hp}</Chip>}
-                  {detail.level && <Chip>Nivel {detail.level}</Chip>}
-                </div>
-
-                {detail.evolvesFrom && (
-                  <p className="text-sm text-slate-400">
-                    Evoluciona de <span className="font-medium text-slate-200">{detail.evolvesFrom}</span>
+              {/* Precio */}
+              {price != null && (
+                <div className="w-full max-w-xs rounded-xl border border-yellow-400/20 bg-slate-950 px-3 py-2 text-center">
+                  <p className="text-[10px] uppercase tracking-widest text-yellow-400/50">
+                    {card.is_user_reported ? 'Precio reportado por el usuario' : 'Precio de mercado'}
                   </p>
-                )}
-                {detail.evolvesTo && detail.evolvesTo.length > 0 && (
-                  <p className="text-sm text-slate-400">
-                    Evoluciona a{' '}
-                    <span className="font-medium text-slate-200">{detail.evolvesTo.join(', ')}</span>
+                  <p className="text-lg font-bold text-yellow-400">
+                    {formatPrice(price, card.currency)}
+                    {card.is_user_reported ? ' ★' : ''}
                   </p>
-                )}
-
-                {detail.flavorText && (
-                  <p className="border-l-2 border-slate-700 pl-3 text-sm italic leading-relaxed text-slate-400">
-                    {detail.flavorText}
-                  </p>
-                )}
-
-                {/* Habilidades */}
-                {detail.abilities && detail.abilities.length > 0 && (
-                  <section>
-                    <h3 className="section-label mb-2">
-                      Habilidades
-                    </h3>
-                    <div className="space-y-2">
-                      {detail.abilities.map((a, i) => (
-                        <div key={i} className="panel-slate p-3">
-                          <p className="text-sm font-semibold text-slate-200">
-                            {a.name}
-                            {a.type && (
-                              <span className="ml-1.5 text-xs font-normal text-slate-500">{a.type}</span>
-                            )}
-                          </p>
-                          <p className="mt-1 text-sm leading-relaxed text-slate-400">{a.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {/* Ataques */}
-                {detail.attacks && detail.attacks.length > 0 && (
-                  <section>
-                    <h3 className="section-label mb-2">
-                      Ataques
-                    </h3>
-                    <div className="space-y-2">
-                      {detail.attacks.map((atk, i) => (
-                        <div key={i} className="panel-slate p-3">
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                            <div className="flex items-center gap-1">
-                              {atk.cost && atk.cost.length > 0 ? (
-                                atk.cost.map((c, j) => <TypeIcon key={j} type={c} />)
-                              ) : (
-                                <span className="text-xs text-slate-600">Sin costo</span>
-                              )}
-                            </div>
-                            <p className="min-w-0 flex-1 text-sm font-semibold text-slate-200">{atk.name}</p>
-                            {atk.damage && (
-                              <span className="text-sm font-bold text-white">{atk.damage}</span>
-                            )}
-                          </div>
-                          {atk.text && (
-                            <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{atk.text}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {/* Debilidad / Resistencia / Retirada */}
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  <StatBox label="Debilidad" values={detail.weaknesses} empty="Ninguna" />
-                  <StatBox label="Resistencia" values={detail.resistances} empty="Ninguna" />
-                  <div className="panel-slate p-3">
-                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Retirada</p>
-                    {detail.retreatCost && detail.retreatCost.length > 0 ? (
-                      <div className="mt-1.5 flex gap-1">
-                        {detail.retreatCost.map((c, i) => (
-                          <TypeIcon key={i} type={c} small />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-1.5 text-xs text-slate-600">Gratis</p>
-                    )}
-                  </div>
                 </div>
-
-                {/* Pie: datos varios */}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                  {detail.artist && <span>Ilustrador: {detail.artist}</span>}
-                  {detail.nationalPokedexNumbers && detail.nationalPokedexNumbers.length > 0 && (
-                    <span>Pokédex: n.º {detail.nationalPokedexNumbers.join(', ')}</span>
-                  )}
-                  {detail.legalities && (
-                    <span>
-                      Legal:{' '}
-                      {Object.entries(detail.legalities)
-                        .filter(([, v]) => v === 'Legal')
-                        .map(([k]) => LEGAL_ES[k] ?? k)
-                        .join(', ') || '—'}
-                    </span>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
           )}
 
