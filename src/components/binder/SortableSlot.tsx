@@ -23,6 +23,8 @@ interface SortableSlotProps {
   onCardClick?: (card: SlotCard) => void
   highlightCardId?: string | null
   onToggleFeatured?: (cardId: string, isFeatured: boolean) => void
+  onFetchPrice?: (card: SlotCard) => void
+  fetchingPrice?: boolean
 }
 
 export default function SortableSlot({
@@ -35,7 +37,9 @@ export default function SortableSlot({
   onMarkSold,
   onCardClick,
   highlightCardId,
-  onToggleFeatured
+  onToggleFeatured,
+  onFetchPrice,
+  fetchingPrice
 }: SortableSlotProps) {
   const {
     attributes,
@@ -188,6 +192,30 @@ export default function SortableSlot({
               aria-label={`Editar ${slot.card_name}`}
             >
               Editar
+            </button>
+          )}
+
+          {onFetchPrice && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onFetchPrice(slot)
+              }}
+              disabled={fetchingPrice}
+              className="absolute bottom-1.5 right-1.5 z-20 flex items-center gap-1 rounded-full bg-sky-600/90 px-2 py-0.5 text-[10px] font-bold text-white opacity-0 shadow-md transition-opacity hover:bg-sky-500 group-hover:opacity-100 disabled:opacity-70"
+              aria-label={`Consultar precio de ${slot.card_name}`}
+            >
+              {fetchingPrice ? (
+                <>
+                  <svg className="h-2.5 w-2.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  Buscando
+                </>
+              ) : (
+                <>Precio</>
+              )}
             </button>
           )}
 

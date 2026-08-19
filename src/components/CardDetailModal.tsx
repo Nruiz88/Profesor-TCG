@@ -52,11 +52,11 @@ export default function CardDetailModal({ card, canEdit = false, onSaved, onClos
   return (
     <div className="modal-overlay z-50" onClick={onClose} role="dialog" aria-modal="true">
       <div
-        className="modal-card modal-card--md max-h-[90vh] w-full max-w-sm overflow-hidden"
+        className="modal-card modal-card--panel flex max-h-[90vh] w-full max-w-sm"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header minimal */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-4 py-3">
           <div className="min-w-0">
             <h2 className="truncate text-base font-bold text-white">{name}</h2>
             <p className="truncate text-[11px] text-slate-500">{setLabel}</p>
@@ -68,26 +68,29 @@ export default function CardDetailModal({ card, canEdit = false, onSaved, onClos
           </div>
         </div>
 
-        {/* Carta centrada + precio inline */}
-        <div className="flex flex-col items-center gap-3 px-4 pb-4">
-          <div className="w-52">
-            <PokemonCard card={card} />
+        {/* Cuerpo scrolleable */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* Carta centrada + precio inline */}
+          <div className="flex flex-col items-center gap-3 px-4 py-4">
+            <div className="w-52">
+              <PokemonCard card={card} />
+            </div>
+
+            {price != null && (
+              <p className="text-center text-lg font-bold text-yellow-400">
+                {formatPrice(price, card.currency)}
+                {card.is_user_reported ? <span className="ml-1 text-xs text-yellow-400/60">★</span> : null}
+              </p>
+            )}
           </div>
 
-          {price != null && (
-            <p className="text-center text-lg font-bold text-yellow-400">
-              {formatPrice(price, card.currency)}
-              {card.is_user_reported ? <span className="ml-1 text-xs text-yellow-400/60">★</span> : null}
-            </p>
+          {/* Edit section */}
+          {canEdit && (
+            <div className="border-t border-slate-800 px-4 py-3">
+              <PriceInputWithGuide card={card} onSaved={onSaved} />
+            </div>
           )}
         </div>
-
-        {/* Edit section */}
-        {canEdit && (
-          <div className="border-t border-slate-800 px-4 py-3">
-            <PriceInputWithGuide card={card} onSaved={onSaved} />
-          </div>
-        )}
       </div>
     </div>
   )

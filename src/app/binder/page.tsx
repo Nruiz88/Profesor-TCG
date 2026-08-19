@@ -77,6 +77,7 @@ export default function BinderPage() {
   const [cards, setCards] = useState<SlotCard[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const [fetchingPriceId, setFetchingPriceId] = useState<string | null>(null)
   const [slotTarget, setSlotTarget] = useState<{ sheetIndex: number; slotIndex: number } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [currentSheet, setCurrentSheet] = useState(0)
@@ -465,6 +466,33 @@ export default function BinderPage() {
       setMessage(err instanceof Error ? err.message : 'Error al actualizar precios')
     } finally {
       setUpdating(false)
+    }
+  }
+
+  async function fetchCardPrice(card: SlotCard) {
+    if (!binder) return
+    setFetchingPriceId(card.id)
+    setMessage(null)
+    try {
+      const res = await fetch('/api/binder/update-prices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ binderId: binder.id, cardIds: [card.card_id] })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error')
+      if (data.cards === 0) {
+        setMessage(`"${card.card_name}" ya tenía el precio al día.`)
+      } else if (data.withPrice > 0) {
+        setMessage(`Precio de "${card.card_name}" actualizado.`)
+      } else {
+        setMessage(`No se encontró precio para "${card.card_name}".`)
+      }
+      await loadBinder()
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Error al consultar el precio')
+    } finally {
+      setFetchingPriceId(null)
     }
   }
 
@@ -953,6 +981,8 @@ export default function BinderPage() {
                       onCardUpdated={() => loadBinder()}
                       onReorder={(newSlots) => handleReorder(sheetIndex, newSlots)}
                       onToggleFeatured={handleToggleFeatured}
+                      onFetchPrice={fetchCardPrice}
+                      fetchingPriceId={fetchingPriceId}
                     />
                   )
                 })}

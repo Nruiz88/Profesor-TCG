@@ -37,6 +37,8 @@ interface EditableBinderGridProps {
   seller?: SellerInfo | null
   highlightCardId?: string | null
   onToggleFeatured?: (cardId: string, isFeatured: boolean) => void
+  onFetchPrice?: (card: SlotCard) => void
+  fetchingPriceId?: string | null
 }
 
 export default function EditableBinderGrid({
@@ -51,7 +53,9 @@ export default function EditableBinderGrid({
   onReorder,
   seller,
   highlightCardId,
-  onToggleFeatured
+  onToggleFeatured,
+  onFetchPrice,
+  fetchingPriceId
 }: EditableBinderGridProps) {
   const [selected, setSelected] = useState<SlotCard | null>(null)
   const [claimCard, setClaimCard] = useState<SlotCard | null>(null)
@@ -152,6 +156,8 @@ export default function EditableBinderGrid({
                 onCardClick={handleCardClick}
                 highlightCardId={highlightCardId}
                 onToggleFeatured={onToggleFeatured}
+                onFetchPrice={onFetchPrice}
+                fetchingPrice={fetchingPriceId === card?.id}
               />
             ))}
           </div>
