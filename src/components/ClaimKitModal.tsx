@@ -242,13 +242,14 @@ export default function ClaimKitModal({
       const canvas = canvasRef.current
       if (!canvas) return
 
-      // Cargar la imagen de la carta (con CORS para poder exportar el canvas)
+      // Cargar la imagen de la carta via proxy CORS para poder exportar el canvas
       let image: CanvasImageSource | null = null
       if (!card.image.startsWith('data:')) {
+        const proxyUrl = `/api/public/card-image?src=${encodeURIComponent(card.image)}`
         try {
           const img = new Image()
           img.crossOrigin = 'anonymous'
-          img.src = card.image
+          img.src = proxyUrl
           await new Promise<void>((resolve, reject) => {
             img.onload = () => resolve()
             img.onerror = () => reject(new Error('no carga'))
@@ -309,6 +310,34 @@ export default function ClaimKitModal({
     document.body.appendChild(a)
     a.click()
     a.remove()
+  }
+
+  async function shareImage() {
+    if (!imageUrl) return
+    const safe = `${card.card_name}-${card.set_id}-${card.number}`
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-')
+    // Convertir dataURL a Blob
+    const res = await fetch(imageUrl)
+    const blob = await res.blob()
+    const file = new File([blob], `${safe}-kit.png`, { type: 'image/png' })
+
+    // Web Share API: comparte imagen + texto nativamente
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: `${card.card_name} — ${card.set_id.toUpperCase()} #${card.number}`,
+          text: kitText,
+          files: [file]
+        })
+        return
+      } catch {
+        // usuario canceló o no soporta share con archivos
+      }
+    }
+    // Fallback: copiar link al portapapeles + abrir WhatsApp
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(kitText)}`
+    window.open(waUrl, '_blank')
   }
 
   return (
@@ -372,14 +401,25 @@ export default function ClaimKitModal({
               rows={12}
               className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm leading-relaxed text-slate-200 focus:border-binder-accent focus:outline-none"
             />
-            <button
-              onClick={copyText}
-              className={`btn-claim mt-3 w-full ${
-                copied ? 'btn-claim--emerald' : 'btn-claim--accent'
-              }`}
-            >
-              {copied ? '✓ ¡Copiado! Pegalo en tu grupo de WhatsApp' : 'Copiar texto estructurado'}
-            </button>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={copyText}
+                className={`btn-claim flex-1 ${
+                  copied ? 'btn-claim--emerald' : 'btn-claim--accent'
+                }`}
+              >
+                {copied ? '✓ Copiado' : '📋 Copiar'}
+              </button>
+              <button
+                onClick={() => {
+                  const waUrl = `https://wa.me/?text=${encodeURIComponent(kitText)}`
+                  window.open(waUrl, '_blank')
+                }}
+                className="btn-claim btn-claim--emerald flex-1"
+              >
+                📤 Compartir WhatsApp
+              </button>
+            </div>
             <p className="note mt-2">
               Listo para pegar en chats y grupos: nombre, set, precio y el link a tu Binder 3D.
             </p>
@@ -398,12 +438,20 @@ export default function ClaimKitModal({
                   alt={`Kit de claim de ${card.card_name}`}
                   className="w-full rounded-xl border border-slate-800"
                 />
-                <button
-                  onClick={download}
-                  className="btn-claim btn-claim--accent mt-3 w-full"
-                >
-                  ⬇️ Descargar PNG 1080×1080
-                </button>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={shareImage}
+                    className="btn-claim btn-claim--emerald flex-1"
+                  >
+                    📤 Compartir imagen
+                  </button>
+                  <button
+                    onClick={download}
+                    className="btn-claim btn-claim--accent flex-1"
+                  >
+                    ⬇️ Descargar
+                  </button>
+                </div>
               </>
             )}
             {imageState === 'error' && (
