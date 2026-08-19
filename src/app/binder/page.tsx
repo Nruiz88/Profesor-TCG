@@ -1,10 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import SiteNav from '@/components/SiteNav'
-import BinderSidebar from '@/components/BinderSidebar'
-import BinderSheet from '@/components/BinderSheet'
+import AppSidebar from '@/components/AppSidebar'
 import SheetPagination from '@/components/SheetPagination'
 import PokedexSearchModal from '@/components/PokedexSearchModal'
 import type { SearchResult } from '@/types'
@@ -19,14 +17,23 @@ import dynamic from 'next/dynamic'
 import ClaimsPanel from '@/components/ClaimsPanel'
 import ReservedClaimsBanner from '@/components/ReservedClaimsBanner'
 import SellerReputationCard from '@/components/SellerReputationCard'
-import { GearIcon, GlobeIcon, LockIcon, PlusIcon, ShareIcon, SparklesIcon } from '@/components/icons'
+import {
+  ChatIcon,
+  ChevronDownIcon,
+  GearIcon,
+  GlobeIcon,
+  LockIcon,
+  PlusIcon,
+  ShareIcon,
+  SparklesIcon,
+  TrashIcon
+} from '@/components/icons'
 import type { WantlistCard } from '@/types/wantlist'
 import { createClient } from '@/lib/supabase/client'
 import { createBinder, deleteBinder, getUserBinders } from '@/lib/binders'
 import { completeSaleAction } from '@/app/actions/claims'
 import { fetchJson } from '@/lib/utils'
 import type { Profile } from '@/lib/profile'
-import type { TrainerScore } from '@/lib/trainer'
 import { effectivePrice, type Availability } from '@/lib/cardStatus'
 import type { Currency } from '@/lib/priceGuide'
 import type { CardCondition } from '@/lib/cardCondition'
@@ -81,8 +88,6 @@ export default function BinderPage() {
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [settingsModal, setSettingsModal] = useState<'create' | 'edit' | null>(null)
   const [showClaims, setShowClaims] = useState(false)
-  const [pokedex, setPokedex] = useState<{ captured: number; total: number } | null>(null)
-  const [trainer, setTrainer] = useState<TrainerScore | null>(null)
   const [tab, setTab] = useState<BinderTab>('collection')
   const [wantlist, setWantlist] = useState<WantlistCard[]>([])
   const [wantlistLoading, setWantlistLoading] = useState(false)
@@ -91,6 +96,26 @@ export default function BinderPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [pendingOrder, setPendingOrder] = useState<(SlotCard | null)[] | null>(null)
+  const [shareOpen, setShareOpen] = useState(false)
+  const shareMenuRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!shareOpen) return
+    function onDocClick(e: MouseEvent) {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+        setShareOpen(false)
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShareOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [shareOpen])
 
   const loadBinder = useCallback(async (binderId?: string) => {
     try {
@@ -130,19 +155,6 @@ export default function BinderPage() {
       // perfil no disponible
     }
     return null
-  }, [])
-
-  const loadPokedex = useCallback(async () => {
-    try {
-      const res = await fetch('/api/pokedex')
-      const data = await res.json()
-      if (res.ok && typeof data.captured === 'number') {
-        setPokedex({ captured: data.captured, total: data.total ?? 0 })
-        if (data.trainer) setTrainer(data.trainer)
-      }
-    } catch {
-      // la Pokédex es decorativa: si falla, el sidebar simplemente no la muestra
-    }
   }, [])
 
   const loadWantlist = useCallback(async () => {
@@ -227,9 +239,8 @@ export default function BinderPage() {
     })
     loadBinder()
     loadProfile()
-    loadPokedex()
     loadWantlist()
-  }, [loadBinder, loadBinders, loadProfile, loadPokedex, loadWantlist])
+  }, [loadBinder, loadBinders, loadProfile, loadWantlist])
 
   async function selectBinder(binderId: string) {
     setLoading(true)
@@ -606,48 +617,28 @@ export default function BinderPage() {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
-      <SiteNav active="binder" />
+      <AppSidebar
+        profile={profile}
+        user={user}
+        binders={binders}
+        activeBinderId={activeBinderId}
+        onSelectBinder={selectBinder}
+        onCreateBinder={() => setSettingsModal('create')}
+        onRefreshPrices={updatePrices}
+        updating={updating}
+        onShowProfile={async () => {
+          const p = profile ?? (await loadProfile())
+          if (p?.username) {
+            router.push(`/profile/${encodeURIComponent(p.username)}?tab=settings`)
+          } else {
+            setMessage('No se pudo abrir tu perfil. Intentalo de nuevo.')
+          }
+        }}
+        onShowClaims={() => setShowClaims(true)}
+      />
 
-      <div className="mx-auto w-full max-w-7xl px-4 py-4 lg:py-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-          {/* Panel lateral: perfil, colecciones, acciones y herramientas */}
-          <div className="w-full lg:w-[17rem] lg:shrink-0">
-            <BinderSidebar
-              profile={profile}
-              user={user}
-              binders={binders}
-              activeBinderId={activeBinderId}
-              binder={binder}
-              totalCards={totalCards}
-              totalValue={totalValue}
-              saleCount={saleCount}
-              tradeCount={tradeCount}
-              updating={updating}
-              pokedex={pokedex}
-              trainer={trainer}
-              onSelectBinder={selectBinder}
-              onCreateBinder={() => setSettingsModal('create')}
-              onEditBinder={() => setSettingsModal('edit')}
-              onTogglePublic={togglePublic}
-              onCopyShareLink={copyShareLink}
-              onDeleteBinder={handleDeleteBinder}
-              onRefreshPrices={updatePrices}
-              onShowClaims={() => setShowClaims(true)}
-              onShowProfile={async () => {
-                const p = profile ?? (await loadProfile())
-                if (p?.username) {
-                  router.push(`/profile/${encodeURIComponent(p.username)}?tab=settings`)
-                } else {
-                  setMessage('No se pudo abrir tu perfil. Intentalo de nuevo.')
-                }
-              }}
-              onShareWhatsApp={shareBinderWhatsApp}
-              onShareWantlist={shareWantlistWhatsApp}
-            />
-          </div>
-
-          {/* Contenido principal */}
-          <main className="min-w-0 flex-1">
+      <div className="lg:pl-60">
+        <main className="mx-auto w-full max-w-7xl px-4 py-4 lg:py-8">
             <div className="mb-5 overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
               <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
@@ -682,22 +673,120 @@ export default function BinderPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {/* Compartir: acciones secundarias en dropdown (sin botones gigantes) */}
+                  <div className="relative" ref={shareMenuRef}>
+                    <button
+                      onClick={() => setShareOpen((v) => !v)}
+                      aria-expanded={shareOpen}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500"
+                    >
+                      <ShareIcon className="h-4 w-4" />
+                      Compartir
+                      <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${shareOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {shareOpen && (
+                      <div className="absolute right-0 top-11 z-30 w-64 rounded-xl border border-slate-800 bg-slate-950/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
+                        <button
+                          onClick={() => {
+                            setShareOpen(false)
+                            copyShareLink()
+                          }}
+                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+                        >
+                          <ShareIcon className="h-4 w-4 text-slate-500" />
+                          Copiar link del binder
+                        </button>
+                        {profile?.whatsapp_number && (
+                          <button
+                            onClick={() => {
+                              setShareOpen(false)
+                              shareBinderWhatsApp()
+                            }}
+                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+                          >
+                            <ChatIcon className="h-4 w-4 text-emerald-400" />
+                            Compartir binder por WhatsApp
+                          </button>
+                        )}
+                        <div className="my-1 h-px bg-slate-800" />
+                        <button
+                          onClick={() => {
+                            setShareOpen(false)
+                            copyWantlistLink()
+                          }}
+                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+                        >
+                          <ShareIcon className="h-4 w-4 text-fuchsia-400" />
+                          Copiar link de buscadas
+                        </button>
+                        {profile?.whatsapp_number && (
+                          <button
+                            onClick={() => {
+                              setShareOpen(false)
+                              shareWantlistWhatsApp()
+                            }}
+                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+                          >
+                            <ChatIcon className="h-4 w-4 text-emerald-400" />
+                            Compartir buscadas por WhatsApp
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <button
-                    onClick={copyShareLink}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500"
+                    onClick={togglePublic}
+                    disabled={!binder}
+                    title={binder?.is_public ? 'Hacer privado el binder' : 'Hacer público el binder'}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm font-semibold text-slate-300 transition-colors hover:border-slate-600 hover:text-white disabled:opacity-40"
                   >
-                    <ShareIcon className="h-4 w-4" />
-                    Compartir link
+                    {binder?.is_public ? (
+                      <GlobeIcon className="h-4 w-4 text-emerald-400" />
+                    ) : (
+                      <LockIcon className="h-4 w-4 text-slate-500" />
+                    )}
+                    {binder?.is_public ? 'Público' : 'Privado'}
                   </button>
                   <button
                     onClick={() => setSettingsModal('edit')}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm font-semibold text-slate-300 transition-colors hover:border-slate-600 hover:text-white"
+                    disabled={!binder}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm font-semibold text-slate-300 transition-colors hover:border-slate-600 hover:text-white disabled:opacity-40"
                   >
                     <GearIcon className="h-4 w-4" />
                     Configurar
                   </button>
+                  {binder && (
+                    <button
+                      onClick={handleDeleteBinder}
+                      title="Eliminar carpeta"
+                      aria-label="Eliminar carpeta"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-400 transition-colors hover:border-red-500/40 hover:text-red-300"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
+            </div>
+
+            {/* Resumen compacto de estadísticas (antes en el sidebar) */}
+            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { label: 'Cartas', value: String(totalCards), tone: 'text-slate-300' },
+                { label: 'Valor', value: `$${fmtValue(totalValue)}`, tone: 'text-yellow-400' },
+                { label: 'En venta', value: String(saleCount), tone: 'text-emerald-400' },
+                { label: 'Cambio', value: String(tradeCount), tone: 'text-sky-400' }
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className="rounded-xl border border-slate-800/80 bg-slate-900/60 px-4 py-3 backdrop-blur-xl"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                    {s.label}
+                  </p>
+                  <p className={`mt-1 truncate text-base font-bold ${s.tone}`}>{s.value}</p>
+                </div>
+              ))}
             </div>
 
             <div className="mb-6">
@@ -981,7 +1070,6 @@ export default function BinderPage() {
       {showClaims && <ClaimsPanel onClose={() => setShowClaims(false)} />}
           </main>
         </div>
-      </div>
     </div>
   )
 }
