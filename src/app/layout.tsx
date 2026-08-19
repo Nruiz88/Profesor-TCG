@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import './vendor/pokemon-cards/pokemon-cards.css'
 import '../components/modals.css'
@@ -32,6 +34,8 @@ export default function RootLayout({
       <body className="min-h-screen antialiased">
         <AppShell>{children}</AppShell>
         <SiteFooter />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
