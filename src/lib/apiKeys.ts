@@ -101,43 +101,59 @@ export function maskApiKey(value: string): string {
 // Mapeo de API key → contador en `integration_usage` (consultas de valor de
 // carta por ventana de tiempo). El contador lo escriben las libs de cada
 // integración (pokeWallet/pokeTrace/tcgApi) con el service role.
+// Cada integración puede tener 1 o 2 ventanas (hora y/o día) según su plan:
+//   - PokeWallet: 100/hora y 1000/día
+//   - TCG API: 100/hora y 1000/día
+//   - PokéTrace: 250/día
 const USAGE_CONFIG: Record<
   ApiKeyName,
-  { integration: string; period: 'hour' | 'day'; periodLabel: string; limit: number }
+  {
+    integration: string
+    windows: Array<{ period: 'hour' | 'day'; label: string; limit: number }>
+  }
 > = {
   pokewallet_api_key: {
     integration: 'poke_wallet',
-    period: 'hour',
-    periodLabel: 'hora',
-    limit: 100
+    windows: [
+      { period: 'hour', label: 'hora', limit: 100 },
+      { period: 'day', label: 'día', limit: 1000 }
+    ]
   },
   tcgapi_key: {
     integration: 'tcg_api',
-    period: 'day',
-    periodLabel: 'día',
-    limit: 100
+    windows: [
+      { period: 'hour', label: 'hora', limit: 100 },
+      { period: 'day', label: 'día', limit: 1000 }
+    ]
   },
   poketrace_key: {
     integration: 'poke_trace',
-    period: 'day',
-    periodLabel: 'día',
-    limit: 250
+    windows: [{ period: 'day', label: 'día', limit: 250 }]
   }
 }
 
-export interface IntegrationUsage {
-  /** Consultas de valor de carta registradas en total (todas las ventanas) */
-  total: number
-  /** Consultas en la ventana actual (hora para PokeWallet, día para el resto) */
-  period: number
-  periodLabel: string
+export interface UsageWindow {
+  period: 'hour' | 'day'
+  label: string
+  used: number
   limit: number
   remaining: number
+}
+
+export interface IntegrationUsage {
+  /** Consultas de valor de carta en la ventana horaria actual */
+  hour: UsageWindow | null
+  /** Consultas de valor de carta en la ventana diaria actual */
+  day: UsageWindow | null
 }
 
 function currentBucket(period: 'hour' | 'day'): string {
   const now = new Date().toISOString()
   return period === 'hour' ? now.slice(0, 13) : now.slice(0, 10)
+}
+
+function bucketDate(period: 'hour' | 'day', bucket: string): string {
+  return period === 'hour' ? bucket.slice(0, 10) : bucket
 }
 
 // Lee el uso persistido de cada integración. Si la tabla no existe o la DB no
@@ -153,29 +169,41 @@ async function readUsage(): Promise<Partial<Record<string, IntegrationUsage>>> {
       .in('integration', integrations)
     if (error) throw error
 
-    const totals = new Map<string, number>()
-    const current = new Map<string, number>()
-    for (const row of data ?? []) {
-      totals.set(row.integration, (totals.get(row.integration) ?? 0) + row.count)
-      const config = Object.values(USAGE_CONFIG).find((c) => c.integration === row.integration)
-      if (config && row.bucket === currentBucket(config.period)) {
-        current.set(row.integration, (current.get(row.integration) ?? 0) + row.count)
-      }
-    }
-
     const usage: Partial<Record<string, IntegrationUsage>> = {}
     for (const [name, config] of Object.entries(USAGE_CONFIG) as [
       ApiKeyName,
       (typeof USAGE_CONFIG)[ApiKeyName]
     ][]) {
-      const period = current.get(config.integration) ?? 0
-      usage[config.integration] = {
-        total: totals.get(config.integration) ?? 0,
-        period,
-        periodLabel: config.periodLabel,
-        limit: config.limit,
-        remaining: Math.max(0, config.limit - period)
+      const hour: UsageWindow | null = config.windows.some((w) => w.period === 'hour')
+        ? { period: 'hour', label: 'hora', used: 0, limit: 0, remaining: 0 }
+        : null
+      const day: UsageWindow | null = config.windows.some((w) => w.period === 'day')
+        ? { period: 'day', label: 'día', used: 0, limit: 0, remaining: 0 }
+        : null
+      const hourWindow = config.windows.find((w) => w.period === 'hour')
+      const dayWindow = config.windows.find((w) => w.period === 'day')
+
+      // Suma por hora (solo la hora actual) y por día (suma de las horas de hoy)
+      for (const row of data ?? []) {
+        if (row.integration !== config.integration) continue
+        if (hour && hourWindow && row.bucket === currentBucket('hour')) {
+          hour.used += row.count
+        }
+        if (day && dayWindow && bucketDate('hour', row.bucket) === currentBucket('day')) {
+          day.used += row.count
+        }
       }
+
+      if (hour && hourWindow) {
+        hour.limit = hourWindow.limit
+        hour.remaining = Math.max(0, hourWindow.limit - hour.used)
+      }
+      if (day && dayWindow) {
+        day.limit = dayWindow.limit
+        day.remaining = Math.max(0, dayWindow.limit - day.used)
+      }
+
+      usage[config.integration] = { hour, day }
     }
     return usage
   } catch {

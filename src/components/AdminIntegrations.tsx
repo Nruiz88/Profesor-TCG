@@ -166,43 +166,42 @@ export default function AdminIntegrations() {
 
               {it.usage && (
                 <div className="mt-3 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="text-slate-500">Consultas de valor de carta</span>
-                    <span className="font-semibold text-slate-300">
-                      {it.usage.total.toLocaleString('es-AR')} total
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-slate-500">
-                      Este {it.usage.periodLabel}:{' '}
-                      <span className="font-semibold text-white">
-                        {it.usage.period}
-                      </span>
-                      {' / '}
-                      {it.usage.limit}
-                    </span>
-                    <span
-                      className={`text-[11px] font-semibold ${
-                        it.usage.remaining === 0 ? 'text-rose-400' : 'text-emerald-400'
-                      }`}
-                    >
-                      quedan {it.usage.remaining}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-800">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        it.usage.period >= it.usage.limit
-                          ? 'bg-rose-500'
-                          : it.usage.period / it.usage.limit > 0.8
-                            ? 'bg-amber-500'
-                            : 'bg-emerald-500'
-                      }`}
-                      style={{
-                        width: `${Math.min(100, (it.usage.period / it.usage.limit) * 100)}%`
-                      }}
-                    />
-                  </div>
+                  <p className="mb-1.5 text-[11px] text-slate-500">Consultas de valor de carta</p>
+                  {[it.usage.hour, it.usage.day]
+                    .filter((w): w is NonNullable<typeof it.usage.hour> => w != null)
+                    .map((w) => (
+                      <div key={w.period} className="mt-2 first:mt-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-slate-500">
+                            Este {w.label}:{' '}
+                            <span className="font-semibold text-white">{w.used}</span>
+                            {' / '}
+                            {w.limit}
+                          </span>
+                          <span
+                            className={`text-[11px] font-semibold ${
+                              w.remaining === 0 ? 'text-rose-400' : 'text-emerald-400'
+                            }`}
+                          >
+                            quedan {w.remaining}
+                          </span>
+                        </div>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-800">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              w.used >= w.limit
+                                ? 'bg-rose-500'
+                                : w.used / w.limit > 0.8
+                                  ? 'bg-amber-500'
+                                  : 'bg-emerald-500'
+                            }`}
+                            style={{
+                              width: `${Math.min(100, (w.used / w.limit) * 100)}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                 </div>
               )}
 
