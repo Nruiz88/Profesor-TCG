@@ -793,54 +793,27 @@ export default function UserProfileView({
   )
 }
 
-// Iniciales para el placeholder temático cuando el logo del set no carga
-function setInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-}
-
 // @ts-ignore — Next.js resuelve JSON imports en build time
-import manifestData from '../../content/image-manifest.json'
-const setManifest: Record<string, string> = manifestData as Record<string, string>
+import setLogosData from '../../content/set-logos.json'
+const setLogos: Record<string, string> = setLogosData as Record<string, string>
 
-// Candidatos de URL de logo según la fuente primaria del set (del manifest).
-// Mejora sobre usar solo pokemontcg.io: muchos sets (ej. me5 "Pitch Black",
-// sets JA) solo tienen logo en Scrydex.
-function logoCandidates(setId: string): string[] {
-  const source = setManifest[setId]
-  const pokemontcg = `https://images.pokemontcg.io/${setId}/logo.png`
-  const scrydex = `https://images.scrydex.com/pokemon/${setId}-logo/logo`
-  switch (source) {
-    case 'scrydex':
-    case 'scrydex-unpadded':
-      return [scrydex, pokemontcg]
-    case 'pokemontcg':
-      return [pokemontcg, scrydex]
-    case 'tcgdex':
-    case 'none':
-    default:
-      return [pokemontcg, scrydex]
-  }
-}
-
-// Logo del set con fallback encadenado: recorre los candidatos de URL según la
-// fuente del set y, si ninguno carga, muestra un placeholder temático con las
-// iniciales en vez de dejar un fondo vacío que parece el reverso de una carta.
+// Logo del set desde set-logos.json (generado por scripts/fetch-set-logos.mjs).
+// Si el set no tiene logo, muestra iniciales como placeholder.
 function SetLogo({ setId, name }: { setId: string; name: string }) {
-  const candidates = logoCandidates(setId)
-  const [index, setIndex] = useState(0)
-  const failedAll = index >= candidates.length
+  const logoUrl = setLogos[setId]
 
-  if (failedAll) {
+  if (!logoUrl) {
+    const initials = name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase()
     return (
       <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-800">
         <span className="px-1 text-[11px] font-bold tracking-tight text-slate-300">
-          {setInitials(name) || setId.toUpperCase()}
+          {initials || setId.toUpperCase()}
         </span>
       </div>
     )
@@ -849,11 +822,10 @@ function SetLogo({ setId, name }: { setId: string; name: string }) {
   return (
     <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-800">
       <img
-        src={candidates[index]}
+        src={logoUrl}
         alt={`Logo de ${name}`}
         className="h-full w-full object-contain p-0.5"
         loading="lazy"
-        onError={() => setIndex((i) => i + 1)}
       />
     </div>
   )
