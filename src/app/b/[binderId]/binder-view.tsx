@@ -137,7 +137,10 @@ export default function PublicBinderPage({ binderId }: { binderId: string }) {
   // (su preview OG ya muestra cuántas cartas busca el dueño).
   async function handleShareWantlist() {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const url = `${origin}/b/${binderId}?tab=wantlist`
+    const base = seller?.username
+      ? `${origin}/binder/${encodeURIComponent(seller.username)}`
+      : `${origin}/b/${binderId}`
+    const url = `${base}?tab=wantlist`
     try {
       await navigator.clipboard.writeText(url)
     } catch {

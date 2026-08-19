@@ -335,9 +335,9 @@ export default function BinderPage() {
     }
   }
 
-  // Asegura que el binder sea público y devuelve su link base /b/[id].
+  // Asegura que el binder sea público y devuelve su link base /binder/[username].
   async function ensurePublicBinder(): Promise<string | null> {
-    if (!binder) return null
+    if (!binder || !profile?.username) return null
     // Si está privado, lo hacemos público automáticamente al compartir
     if (!binder.is_public) {
       const res = await fetch('/api/binder', {
@@ -350,7 +350,7 @@ export default function BinderPage() {
       setBinder(data.binder)
       setBinders((prev) => prev.map((b) => (b.id === data.binder.id ? data.binder : b)))
     }
-    return `${window.location.origin}/b/${binder.id}`
+    return `${window.location.origin}/binder/${encodeURIComponent(profile.username)}`
   }
 
   async function copyLink(url: string, message: string) {
