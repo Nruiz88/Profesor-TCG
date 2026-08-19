@@ -1,17 +1,19 @@
 import type { Metadata } from 'next'
 import { getBinderOgData } from '@/lib/og'
-import PublicBinderView from './binder-view'
+import PublicBinderPage from './binder-view'
 
 const fmt = (n: number) =>
   `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
+// Metadata dinámica del binder público por clave corta (/b/<slug> o /b/<uuid>).
+// El preview de WhatsApp/redes lo alimenta junto con opengraph-image.tsx.
 export async function generateMetadata({
   params
 }: {
-  params: Promise<{ binderId: string }>
+  params: Promise<{ param: string }>
 }): Promise<Metadata> {
-  const { binderId } = await params
-  const data = await getBinderOgData({ binderId })
+  const { param } = await params
+  const data = await getBinderOgData({ binderKey: param })
   if (!data) {
     return { title: 'Binder no encontrado · Profesor TCG' }
   }
@@ -29,7 +31,7 @@ export async function generateMetadata({
   }
 }
 
-export default async function Page({ params }: { params: Promise<{ binderId: string }> }) {
-  const { binderId } = await params
-  return <PublicBinderView binderId={binderId} />
+export default async function Page({ params }: { params: Promise<{ param: string }> }) {
+  const { param } = await params
+  return <PublicBinderPage param={param} />
 }

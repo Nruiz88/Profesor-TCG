@@ -62,6 +62,7 @@ export type Database = {
           description: string | null
           is_public: boolean
           cover_card_id: string | null
+          slug: string | null
           created_at: string
         }
         Insert: {
@@ -71,6 +72,7 @@ export type Database = {
           description?: string | null
           is_public?: boolean
           cover_card_id?: string | null
+          slug?: string | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['binders']['Insert']>

@@ -92,9 +92,15 @@ async function pickCover(
   }
 }
 
-// Datos para el OG de un binder público (resuelto por username o por id).
+// Datos para el OG de un binder público (resuelto por username, id, slug o
+// binderKey). binderKey es la clave corta de /b/<param>: intenta por slug y,
+// si no existe, cae al binderId (compatibilidad con links /b/<uuid>).
 export async function getBinderOgData(
-  by: { username: string } | { binderId: string }
+  by:
+    | { username: string }
+    | { binderId: string }
+    | { slug: string }
+    | { binderKey: string }
 ): Promise<OgBinderData | null> {
   const supabase = await createClient()
 
@@ -102,7 +108,49 @@ export async function getBinderOgData(
   let ownerUsername: string | null = null
   let ownerUserId: string | null = null
 
-  if ('username' in by) {
+  if ('binderKey' in by) {
+    // 1) Por slug (URL corta)
+    let { data: binder } = await supabase
+      .from('binders')
+      .select('id, user_id')
+      .eq('slug', by.binderKey.toLowerCase())
+      .eq('is_public', true)
+      .maybeSingle()
+    // 2) Fallback por binderId (links antiguos /b/<uuid>)
+    if (!binder) {
+      ;({ data: binder } = await supabase
+        .from('binders')
+        .select('id, user_id')
+        .eq('id', by.binderKey)
+        .eq('is_public', true)
+        .maybeSingle())
+    }
+    if (!binder) return null
+    binderId = binder.id
+    ownerUserId = binder.user_id
+    const { data: owner } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', binder.user_id)
+      .maybeSingle()
+    ownerUsername = owner?.username ?? null
+  } else if ('slug' in by) {
+    const { data: binder } = await supabase
+      .from('binders')
+      .select('id, user_id')
+      .eq('slug', by.slug.toLowerCase())
+      .eq('is_public', true)
+      .maybeSingle()
+    if (!binder) return null
+    binderId = binder.id
+    ownerUserId = binder.user_id
+    const { data: owner } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', binder.user_id)
+      .maybeSingle()
+    ownerUsername = owner?.username ?? null
+  } else if ('username' in by) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('id, username')

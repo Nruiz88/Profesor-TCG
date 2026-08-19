@@ -107,12 +107,17 @@ create trigger on_auth_user_created
 create table if not exists public.binders (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade not null,
-  title text not null default 'Mi Colección',
+  title text not null default 'Mi Colecci�n',
   description text,
   is_public boolean not null default false,
   cover_card_id uuid references public.binder_cards(id) on delete set null,
+  slug text,
   created_at timestamptz not null default timezone('utc'::text, now())
 );
+
+create unique index if not exists idx_binders_slug_per_user
+  on public.binders (user_id, slug)
+  where slug is not null;
 
 -- 4) Cartas asignadas a slots (posición 1..9 por hoja)
 create table if not exists public.binder_cards (

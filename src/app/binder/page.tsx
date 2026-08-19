@@ -66,6 +66,7 @@ interface Binder {
   description?: string | null
   is_public?: boolean
   cover_card_id?: string | null
+  slug?: string | null
   created_at?: string
 }
 
@@ -337,9 +338,8 @@ export default function BinderPage() {
     }
   }
 
-  // Asegura que el binder sea público y devuelve su link directo
-  // /binder/[username]?binderId=<id>. El binderId es lo que hace que la ficha
-  // pública muestre ESTE binder y no el primero del usuario.
+  // Asegura que el binder sea público y devuelve su URL corta /b/<slug>.
+  // El slug lo genera el servidor (lib/binderSlug) al crear o leer el binder.
   async function ensurePublicBinder(): Promise<string | null> {
     if (!binder || !profile?.username) return null
     // Si está privado, lo hacemos público automáticamente al compartir
@@ -353,6 +353,21 @@ export default function BinderPage() {
       if (!res.ok) throw new Error(data.error || 'Error')
       setBinder(data.binder)
       setBinders((prev) => prev.map((b) => (b.id === data.binder.id ? data.binder : b)))
+    }
+    // El slug debería venir con el binder; si falta (binder antiguo aún sin
+    // backfill), lo pedimos al servidor que lo garantiza.
+    let slug = binder.slug ?? null
+    if (!slug) {
+      try {
+        const res = await fetch('/api/binder')
+        const data = await res.json()
+        if (res.ok && data.binder?.slug) slug = data.binder.slug
+      } catch {
+        // si falla, seguimos con el binderId en el link por username
+      }
+    }
+    if (slug) {
+      return `${window.location.origin}/b/${encodeURIComponent(slug)}`
     }
     return `${window.location.origin}/binder/${encodeURIComponent(profile.username)}?binderId=${encodeURIComponent(binder.id)}`
   }
@@ -1076,7 +1091,7 @@ export default function BinderPage() {
           binderTitle={binder?.title ?? 'Mi Binder'}
           cards={cards}
           username={profile.username}
-          binderUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/binder/${encodeURIComponent(profile.username)}?binderId=${encodeURIComponent(binder.id)}`}
+          binderUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}${binder.slug ? `/b/${encodeURIComponent(binder.slug)}` : `/binder/${encodeURIComponent(profile.username)}?binderId=${encodeURIComponent(binder.id)}`}`}
           onClose={() => setShowShareImage(false)}
         />
       )}

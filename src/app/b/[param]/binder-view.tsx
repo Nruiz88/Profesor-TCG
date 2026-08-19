@@ -22,9 +22,12 @@ import {
 interface Binder {
   id: string
   title: string
+  slug?: string | null
 }
 
-export default function PublicBinderPage({ binderId }: { binderId: string }) {
+// Ficha pública de un binder por su clave corta: /b/<slug> o /b/<uuid>.
+// Resuelve por slug y, si no existe, cae al binderId (compatibilidad).
+export default function PublicBinderPage({ param }: { param: string }) {
   const [binder, setBinder] = useState<Binder | null>(null)
   const [cards, setCards] = useState<SlotCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -43,10 +46,10 @@ export default function PublicBinderPage({ binderId }: { binderId: string }) {
   const [matchSellerUsername, setMatchSellerUsername] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!binderId) return
+    if (!param) return
     ;(async () => {
       try {
-        const res = await fetch(`/api/public/binder/${binderId}`)
+        const res = await fetch(`/api/public/binder-by-key/${encodeURIComponent(param)}`)
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Error')
         setBinder(data.binder)
@@ -59,7 +62,7 @@ export default function PublicBinderPage({ binderId }: { binderId: string }) {
         setLoading(false)
       }
     })()
-  }, [binderId])
+  }, [param])
 
   // Sesión del visitante: permite armar el deep link "¡Yo la tengo!" apuntando
   // a su propio binder, y matchear su wantlist contra las cartas del vendedor.
@@ -139,7 +142,7 @@ export default function PublicBinderPage({ binderId }: { binderId: string }) {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const base = seller?.username
       ? `${origin}/binder/${encodeURIComponent(seller.username)}`
-      : `${origin}/b/${binderId}`
+      : `${origin}/b/${binder?.slug ?? param}`
     const url = `${base}?tab=wantlist`
     try {
       await navigator.clipboard.writeText(url)
