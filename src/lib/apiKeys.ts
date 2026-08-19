@@ -98,6 +98,91 @@ export function maskApiKey(value: string): string {
   return `${value.slice(0, 6)}••••••••${value.slice(-4)}`
 }
 
+// Mapeo de API key → contador en `integration_usage` (consultas de valor de
+// carta por ventana de tiempo). El contador lo escriben las libs de cada
+// integración (pokeWallet/pokeTrace/tcgApi) con el service role.
+const USAGE_CONFIG: Record<
+  ApiKeyName,
+  { integration: string; period: 'hour' | 'day'; periodLabel: string; limit: number }
+> = {
+  pokewallet_api_key: {
+    integration: 'poke_wallet',
+    period: 'hour',
+    periodLabel: 'hora',
+    limit: 100
+  },
+  tcgapi_key: {
+    integration: 'tcg_api',
+    period: 'day',
+    periodLabel: 'día',
+    limit: 100
+  },
+  poketrace_key: {
+    integration: 'poke_trace',
+    period: 'day',
+    periodLabel: 'día',
+    limit: 250
+  }
+}
+
+export interface IntegrationUsage {
+  /** Consultas de valor de carta registradas en total (todas las ventanas) */
+  total: number
+  /** Consultas en la ventana actual (hora para PokeWallet, día para el resto) */
+  period: number
+  periodLabel: string
+  limit: number
+  remaining: number
+}
+
+function currentBucket(period: 'hour' | 'day'): string {
+  const now = new Date().toISOString()
+  return period === 'hour' ? now.slice(0, 13) : now.slice(0, 10)
+}
+
+// Lee el uso persistido de cada integración. Si la tabla no existe o la DB no
+// responde, devuelve un mapa vacío (el admin simplemente no muestra el bloque).
+async function readUsage(): Promise<Partial<Record<string, IntegrationUsage>>> {
+  const client = adminClient()
+  if (!client) return {}
+  try {
+    const integrations = Object.values(USAGE_CONFIG).map((c) => c.integration)
+    const { data, error } = await client
+      .from('integration_usage')
+      .select('integration, bucket, count')
+      .in('integration', integrations)
+    if (error) throw error
+
+    const totals = new Map<string, number>()
+    const current = new Map<string, number>()
+    for (const row of data ?? []) {
+      totals.set(row.integration, (totals.get(row.integration) ?? 0) + row.count)
+      const config = Object.values(USAGE_CONFIG).find((c) => c.integration === row.integration)
+      if (config && row.bucket === currentBucket(config.period)) {
+        current.set(row.integration, (current.get(row.integration) ?? 0) + row.count)
+      }
+    }
+
+    const usage: Partial<Record<string, IntegrationUsage>> = {}
+    for (const [name, config] of Object.entries(USAGE_CONFIG) as [
+      ApiKeyName,
+      (typeof USAGE_CONFIG)[ApiKeyName]
+    ][]) {
+      const period = current.get(config.integration) ?? 0
+      usage[config.integration] = {
+        total: totals.get(config.integration) ?? 0,
+        period,
+        periodLabel: config.periodLabel,
+        limit: config.limit,
+        remaining: Math.max(0, config.limit - period)
+      }
+    }
+    return usage
+  } catch {
+    return {}
+  }
+}
+
 export interface ApiKeyStatus {
   name: string
   label: string
@@ -107,6 +192,8 @@ export interface ApiKeyStatus {
   /** 'env' = definida por env var (no editable desde el admin) */
   source: 'env' | 'db' | null
   docsUrl?: string
+  /** Contador de consultas de valor de carta (null si la tabla no existe) */
+  usage: IntegrationUsage | null
 }
 
 // Lista de integraciones con su estado (sin exponer las claves).
@@ -125,7 +212,10 @@ export async function listApiKeys(): Promise<ApiKeyStatus[]> {
     }
   }
 
+  const usage = await readUsage()
+
   return KNOWN_API_KEYS.map((info) => {
+    const usageEntry = usage[USAGE_CONFIG[info.name].integration] ?? null
     const envValue = process.env[info.env]
     if (envValue && envValue.trim() !== '') {
       return {
@@ -135,7 +225,8 @@ export async function listApiKeys(): Promise<ApiKeyStatus[]> {
         hasValue: true,
         preview: maskApiKey(envValue),
         source: 'env',
-        docsUrl: info.docsUrl
+        docsUrl: info.docsUrl,
+        usage: usageEntry
       }
     }
     const dbValue = stored.get(info.name)
@@ -146,7 +237,8 @@ export async function listApiKeys(): Promise<ApiKeyStatus[]> {
       hasValue: !!dbValue,
       preview: dbValue ? maskApiKey(dbValue) : '',
       source: dbValue ? 'db' : null,
-      docsUrl: info.docsUrl
+      docsUrl: info.docsUrl,
+      usage: usageEntry
     }
   })
 }
