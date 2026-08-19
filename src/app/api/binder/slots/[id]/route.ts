@@ -26,7 +26,27 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   }
 
   try {
-    // RLS: solo permite borrar la fila si el binder pertenece al usuario
+    // RLS: solo permite borrar la fila si el binder pertenece al usuario.
+    // Si la carta tiene más de una copia (quantity > 1), quitamos una copia
+    // (decrementamos) en vez de borrar el bolsillo entero.
+    const { data: row } = await supabase
+      .from('binder_cards')
+      .select('id, quantity')
+      .eq('id', id)
+      .maybeSingle()
+    if (!row) {
+      return NextResponse.json({ error: 'Carta no encontrada' }, { status: 404 })
+    }
+
+    if ((row.quantity ?? 1) > 1) {
+      const { error } = await supabase
+        .from('binder_cards')
+        .update({ quantity: (row.quantity ?? 1) - 1, updated_at: new Date().toISOString() })
+        .eq('id', id)
+      if (error) throw error
+      return NextResponse.json({ success: true, decremented: true, quantity: (row.quantity ?? 1) - 1 })
+    }
+
     const { error } = await supabase.from('binder_cards').delete().eq('id', id)
     if (error) throw error
 
@@ -49,6 +69,7 @@ interface PatchBody {
   language?: unknown
   is_featured?: unknown
   variant?: unknown
+  quantity?: unknown
 }
 
 // Actualizar la modalidad de disponibilidad (availability), el precio manual y
@@ -207,6 +228,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     updates.is_featured = isFeatured
   }
 
+  // Cantidad de copias de la carta en el bolsillo (mínimo 1)
+  if (body.quantity !== undefined) {
+    const num = Number(body.quantity)
+    if (!Number.isInteger(num) || num < 1 || num > 999) {
+      return NextResponse.json({ error: 'Cantidad inválida' }, { status: 400 })
+    }
+    updates.quantity = num
+  }
+
   // Backwards-compat: el body viejo seguía enviando status / price_override
   if (body.status !== undefined) {
     if (!isCardStatus(body.status)) {
@@ -238,7 +268,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select(
-        'id, card_id, card_name, set_id, number, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, variant, reserved_until, is_featured'
+        'id, card_id, card_name, set_id, number, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, variant, reserved_until, is_featured, quantity'
       )
       .single()
     if (error) throw error

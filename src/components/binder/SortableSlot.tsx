@@ -102,6 +102,16 @@ export default function SortableSlot({
             <PokemonCard card={slot} />
           </div>
 
+          {/* Contador de copias: se muestra cuando hay más de una de la misma carta */}
+          {(slot.quantity ?? 1) > 1 && (
+            <div
+              title={`${slot.quantity} copias de ${slot.card_name}`}
+              className="pointer-events-none absolute left-1/2 top-1.5 z-10 -translate-x-1/2 rounded-full bg-fuchsia-600/95 px-2.5 py-0.5 text-[11px] font-black text-white shadow-lg ring-1 ring-white/20"
+            >
+              x{slot.quantity}
+            </div>
+          )}
+
           <LanguageBadge
             language={slot.language}
             className="absolute left-1.5 top-1.5"

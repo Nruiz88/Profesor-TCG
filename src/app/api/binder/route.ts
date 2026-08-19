@@ -5,6 +5,7 @@ import { resolveCardImage } from '@/lib/cardImage'
 import { validate, extractParams } from '@/lib/validate'
 import { binderSchema } from '@/lib/schemas'
 import { apiLimit } from '@/lib/rateLimit'
+import { ensureBinderSlug } from '@/lib/binderSlug'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +28,13 @@ export async function GET(req: Request) {
     if (params.error) return params.error
     const { binderId, all } = params.data
 
-    let binder: { id: string; title: string; is_public: boolean } | null = null
+    let binder: {
+      id: string
+      user_id: string
+      title: string
+      is_public: boolean
+      slug?: string | null
+    } | null = null
 
     if (all === '1') {
       // Todas las cartas del usuario a través de sus binders (para proponer cambios)
@@ -42,7 +49,7 @@ export async function GET(req: Request) {
       const { data: cards, error } = await supabase
         .from('binder_cards')
         .select(
-          'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, variant, is_featured'
+          'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, variant, is_featured, quantity'
         )
         .in('binder_id', ids)
         .order('slot_number', { ascending: true })
@@ -68,7 +75,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ cards: enriched })
     }
 
-    const BINDER_SELECT = 'id, title, description, is_public, cover_card_id, created_at'
+    const BINDER_SELECT = 'id, user_id, title, description, is_public, cover_card_id, slug, created_at'
 
     if (binderId) {
       const { data } = await supabase
@@ -105,10 +112,17 @@ export async function GET(req: Request) {
       binder = b
     }
 
+    if (!binder) {
+      return NextResponse.json({ error: 'Binder no encontrado' }, { status: 404 })
+    }
+
+    // Garantizamos el slug público (backfill de binders antiguos y recién creados).
+    binder = { ...binder, slug: await ensureBinderSlug(supabase, binder) }
+
     const { data: cards, error } = await supabase
       .from('binder_cards')
       .select(
-        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, variant, is_featured'
+        'id, binder_id, card_id, card_name, set_id, number, slot_number, market_price, status, price_override, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, variant, is_featured, quantity'
       )
       .eq('binder_id', binder.id)
       .order('slot_number', { ascending: true })
@@ -176,7 +190,7 @@ export async function PATCH(req: Request) {
   try {
     const { data: binder } = await supabase
       .from('binders')
-      .select('id, title, description, is_public, cover_card_id')
+      .select('id, user_id, title, description, is_public, cover_card_id, slug')
       .eq('id', body.binderId)
       .eq('user_id', user.id)
       .maybeSingle()
@@ -185,12 +199,14 @@ export async function PATCH(req: Request) {
     }
 
     const updates: Record<string, string | boolean | null> = {}
+    let titleChanged = false
 
     if (body.title !== undefined) {
       if (typeof body.title !== 'string' || body.title.trim() === '') {
         return NextResponse.json({ error: 'El título no puede estar vacío' }, { status: 400 })
       }
       updates.title = body.title.trim().slice(0, 60)
+      titleChanged = updates.title !== binder.title
     }
 
     if (body.description !== undefined) {
@@ -232,11 +248,19 @@ export async function PATCH(req: Request) {
       .from('binders')
       .update(updates)
       .eq('id', binder.id)
-      .select('id, title, description, is_public, cover_card_id, created_at')
+      .select('id, title, description, is_public, cover_card_id, slug, created_at')
       .single()
     if (error) throw error
 
-    return NextResponse.json({ binder: data })
+    // Slug público: se regenera si cambió el título, o se backfillea si el
+    // binder antiguo aún no tenía uno.
+    const slug = await ensureBinderSlug(
+      supabase,
+      { id: data.id, user_id: binder.user_id, title: data.title, slug: data.slug },
+      { forceRegenerate: titleChanged }
+    )
+
+    return NextResponse.json({ binder: { ...data, slug } })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
     return NextResponse.json({ error: message }, { status: 500 })

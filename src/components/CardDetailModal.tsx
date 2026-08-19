@@ -87,6 +87,50 @@ export default function CardDetailModal({ card, canEdit = false, onSaved, onClos
           {/* Edit section */}
           {canEdit && (
             <div className="border-t border-slate-800 px-4 py-3">
+              {/* Cantidad de copias */}
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-400">Copias</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={async () => {
+                      const qty = card.quantity ?? 1
+                      if (qty <= 1) {
+                        if (!window.confirm(`¿Quitar "${card.card_name}" de tu binder?`)) return
+                        await fetch(`/api/binder/slots/${card.id}`, { method: 'DELETE' })
+                      } else {
+                        await fetch(`/api/binder/slots/${card.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ quantity: qty - 1 })
+                        })
+                      }
+                      onSaved?.()
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 text-base font-bold text-slate-300 transition-colors hover:border-rose-500/50 hover:text-rose-400"
+                    aria-label="Quitar una copia"
+                  >
+                    −
+                  </button>
+                  <span className="min-w-9 text-center text-base font-bold text-white">
+                    {card.quantity ?? 1}
+                  </span>
+                  <button
+                    onClick={async () => {
+                      const qty = card.quantity ?? 1
+                      await fetch(`/api/binder/slots/${card.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ quantity: qty + 1 })
+                      })
+                      onSaved?.()
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 text-base font-bold text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-400"
+                    aria-label="Agregar una copia"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
               <PriceInputWithGuide card={card} onSaved={onSaved} />
             </div>
           )}

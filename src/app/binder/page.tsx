@@ -424,12 +424,17 @@ export default function BinderPage() {
     window.open(`https://wa.me/?text=${text}`, '_blank')
   }
 
-  // Estadísticas del perfil (sobre todas las cartas, sin filtros)
-  const totalCards = cards.length
+  // Estadísticas del perfil (sobre todas las cartas, sin filtros).
+  // Cada slot puede tener varias copias (quantity), por eso contamos copias
+  // y multiplicamos el valor por la cantidad.
+  const totalCards = cards.reduce((sum, c) => sum + (c.quantity ?? 1), 0)
   const saleCount = cards.filter((c) => c.is_for_sale).length
   const tradeCount = cards.filter((c) => c.is_for_trade).length
   const totalValue = cards.reduce(
-    (sum, c) => sum + (effectivePrice(c.market_price, c.price_override, c.price, c.manual_price) ?? 0),
+    (sum, c) =>
+      sum +
+      (effectivePrice(c.market_price, c.price_override, c.price, c.manual_price) ?? 0) *
+        (c.quantity ?? 1),
     0
   )
   const fmtValue = (n: number) =>
@@ -619,7 +624,9 @@ export default function BinderPage() {
     await loadBinder()
   }
 
-  // Agrega la carta al bolsillo vacío más próximo (primer slot libre).
+  // Agrega la carta al bolsillo vacío más próximo (primer slot libre) o, si ya
+  // tenés la misma carta (mismo card_id + idioma + condición + variante),
+  // incrementa su cantidad en ese bolsillo en vez de ocupar uno nuevo.
   // Es el flujo principal: el buscador del toolbar agrega sin tener que
   // elegir un bolsillo primero.
   async function addCardToNearestSlot(
@@ -630,8 +637,21 @@ export default function BinderPage() {
   ) {
     if (!binder) throw new Error('Sin binder')
 
-    const slotNumber = findNextEmptySlot(cards)
-    await fetchJson('/api/binder/slots', {
+    const lang = language ?? 'ES'
+    const cond = condition || null
+    const varnt = variant || 'normal'
+
+    // Buscar un bolsillo con la misma carta para incrementar su contador.
+    const existing = cards.find(
+      (c) =>
+        c.card_id === card.id &&
+        c.language === lang &&
+        (c.condition ?? null) === cond &&
+        (c.variant ?? 'normal') === varnt
+    )
+    const slotNumber = existing?.slot_number ?? findNextEmptySlot(cards)
+
+    const res = await fetchJson('/api/binder/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -641,13 +661,17 @@ export default function BinderPage() {
         card_name: card.name,
         set_id: card.set_id,
         number: card.number,
-        language,
-        condition: condition || null,
-        variant: variant || 'normal'
+        language: lang,
+        condition: cond,
+        variant: varnt
       })
     })
     await loadBinder()
-    setMessage(`"${card.name}" agregada a tu binder en el bolsillo #${slotNumber}.`)
+    if (existing) {
+      setMessage(`"${card.name}" x${(existing.quantity ?? 1) + 1} en tu binder.`)
+    } else {
+      setMessage(`"${card.name}" agregada a tu binder en el bolsillo #${slotNumber}.`)
+    }
   }
 
   useEffect(() => {

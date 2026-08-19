@@ -27,6 +27,7 @@ export interface RawCard {
   subtypes?: string[] | null
   types?: string[] | null
   variant?: string | null
+  quantity?: number
 }
 
 export interface SlotCard extends RawCard {
@@ -80,5 +81,5 @@ export function findNextEmptySlot(cards: Pick<SlotCard, 'slot_number'>[]): numbe
 }
 
 export function computeTotalValue(cards: SlotCard[]): number {
-  return cards.reduce((sum, c) => sum + (c.market_price ?? 0), 0)
+  return cards.reduce((sum, c) => sum + (c.market_price ?? 0) * (c.quantity ?? 1), 0)
 }

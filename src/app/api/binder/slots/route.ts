@@ -87,6 +87,29 @@ export async function POST(req: Request) {
       ? body.variant.trim().slice(0, 30)
       : 'normal'
 
+    // Si ya existe la MISMA carta (mismo card_id, idioma, condición y variante)
+    // en ese bolsillo, incrementamos su cantidad en vez de ocupar otro bolsillo
+    // ni reemplazar la copia existente.
+    const { data: existing } = await supabase
+      .from('binder_cards')
+      .select('id, quantity')
+      .eq('binder_id', body.binder_id)
+      .eq('slot_number', body.slot_number)
+      .eq('card_id', body.card_id)
+      .eq('language', language)
+      .eq('condition', condition ?? null)
+      .eq('variant', variant)
+      .maybeSingle()
+
+    if (existing) {
+      const { error } = await supabase
+        .from('binder_cards')
+        .update({ quantity: (existing.quantity ?? 1) + 1, updated_at: new Date().toISOString() })
+        .eq('id', existing.id)
+      if (error) throw error
+      return NextResponse.json({ success: true, incremented: true }, { status: 200 })
+    }
+
     const { error } = await supabase.from('binder_cards').upsert(
       {
         binder_id: body.binder_id,
@@ -98,6 +121,7 @@ export async function POST(req: Request) {
         language,
         condition,
         variant,
+        quantity: 1,
         market_price: marketPrice,
         updated_at: new Date().toISOString()
       },

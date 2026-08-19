@@ -100,6 +100,7 @@ export type Database = {
           currency: 'USD' | 'EUR' | 'ARS' | 'MXN' | 'CLP'
           is_user_reported: boolean
           reserved_until: string | null
+          quantity: number
           updated_at: string
         }
         Insert: {
@@ -123,6 +124,7 @@ export type Database = {
           currency?: 'USD' | 'EUR' | 'ARS' | 'MXN' | 'CLP'
           is_user_reported?: boolean
           reserved_until?: string | null
+          quantity?: number
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['binder_cards']['Insert']>
