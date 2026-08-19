@@ -116,12 +116,14 @@ export default function EditCardModal({
     }
 
     const price = parsePrice()
-    if (withSale && (price === null || Number.isNaN(price))) {
-      setError('Fijá un precio para poner la carta en venta.')
-      return
-    }
+    // Si el usuario puso un precio, validarlo
     if (!Number.isNaN(price) && (price === null || (price as number) < 0)) {
       setError('El precio no puede ser negativo.')
+      return
+    }
+    // Si está en venta y no puso precio manual, verificar que ya exista precio de mercado
+    if (withSale && price === null && (!card.market_price || card.market_price <= 0)) {
+      setError('Fijá un precio para poner la carta en venta.')
       return
     }
 
