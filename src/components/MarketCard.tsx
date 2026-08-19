@@ -157,6 +157,11 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
           <p className="truncate text-[11px] font-medium text-slate-500">
             {card.set_name}
             {card.rarity ? ` · ${card.rarity}` : ''}
+            {card.variant && card.variant !== 'normal' ? (
+              <span className="ml-1 text-amber-400">
+                {card.variant === 'holo' ? '✨ Holo' : card.variant === 'reverse_holo' ? '🔄 R.Holo' : card.variant}
+              </span>
+            ) : null}
             {' '}
             {(() => {
               const meta = CARD_LANGUAGE_META[normalizeLanguage(card.language)]

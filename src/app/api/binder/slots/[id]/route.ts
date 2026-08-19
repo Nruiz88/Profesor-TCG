@@ -48,6 +48,7 @@ interface PatchBody {
   condition?: unknown
   language?: unknown
   is_featured?: unknown
+  variant?: unknown
 }
 
 // Actualizar la modalidad de disponibilidad (availability), el precio manual y
@@ -158,6 +159,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Idioma inválido' }, { status: 400 })
     }
     updates.language = body.language
+  }
+
+  // Variante de la carta (normal, holo, reverse_holo, etc.)
+  if (body.variant !== undefined) {
+    const v = body.variant
+    if (v === null || v === '' || v === 'normal') {
+      updates.variant = 'normal'
+    } else if (typeof v === 'string') {
+      updates.variant = v.trim().slice(0, 30)
+    } else {
+      return NextResponse.json({ error: 'Variante inválida' }, { status: 400 })
+    }
   }
 
   // Carta destacada en el perfil (máximo 4 por usuario)

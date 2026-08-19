@@ -59,6 +59,7 @@ export default function EditCardModal({
   const [tradeNotes, setTradeNotes] = useState<string>(card.trade_notes ?? '')
   const [condition, setCondition] = useState<string>(card.condition ?? '')
   const [language, setLanguage] = useState<CardLanguage>(() => normalizeLanguage(card.language))
+  const [variant, setVariant] = useState<string>(card.variant ?? 'normal')
   const [showKit, setShowKit] = useState(false)
   const [showRefs, setShowRefs] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -131,6 +132,7 @@ export default function EditCardModal({
       body.manual_price = price
       body.trade_notes = tradeNotes.trim() === '' ? null : tradeNotes.trim()
       body.condition = condition.trim() === '' ? null : condition.trim()
+      body.variant = variant
 
       const res = await fetch(`/api/binder/slots/${card.id}`, {
         method: 'PATCH',
@@ -175,6 +177,41 @@ export default function EditCardModal({
         {/* Idioma — pills compactos */}
         <div className="mt-4">
           <LanguagePills value={language} onChange={setLanguage} />
+        </div>
+
+        {/* Variante de la carta */}
+        <div className="mt-3">
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            Variante
+          </p>
+          <div className="flex flex-wrap gap-1.5">              {[
+              { id: 'normal', label: 'Normal', icon: '🃏' },
+              { id: 'holo', label: 'Holo', icon: '✨' },
+              { id: 'reverse_holo', label: 'R.Holo', icon: '🔄' },
+              { id: 'v', label: 'Pokémon V', icon: '⚡' },
+              { id: 'v_full_art', label: 'V Full Art', icon: '🖼️' },
+              { id: 'v_alternate_art', label: 'V Alt Art', icon: '🎨' },
+              { id: 'vmax', label: 'VMAX', icon: '💥' },
+              { id: 'vmax_alternate', label: 'VMAX Alt', icon: '🌈' },
+              { id: 'vstar', label: 'VSTAR', icon: '⭐' },
+              { id: 'trainer_full_art', label: 'Trainer FA', icon: '🧑‍🏫' },
+              { id: 'rainbow_rare', label: 'Rainbow', icon: '🌈' },
+              { id: 'secret_rare_gold', label: 'Gold SR', icon: '🥇' }
+            ].map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => setVariant(v.id)}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                  variant === v.id
+                    ? 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/40'
+                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {v.icon} {v.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Precio + moneda — fila compacta */}

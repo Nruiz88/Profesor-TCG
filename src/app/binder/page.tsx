@@ -576,7 +576,8 @@ export default function BinderPage() {
   async function addCardToSlot(
     card: SearchResult,
     language: CardLanguage,
-    condition?: CardCondition | ''
+    condition?: CardCondition | '',
+    variant?: string
   ) {
     if (!binder || !slotTarget) throw new Error('Sin binder o slot objetivo')
 
@@ -593,7 +594,8 @@ export default function BinderPage() {
         set_id: card.set_id,
         number: card.number,
         language,
-        condition: condition || null
+        condition: condition || null,
+        variant: variant || 'normal'
       })
     })
     await loadBinder()
@@ -605,7 +607,8 @@ export default function BinderPage() {
   async function addCardToNearestSlot(
     card: SearchResult,
     language: CardLanguage,
-    condition?: CardCondition | ''
+    condition?: CardCondition | '',
+    variant?: string
   ) {
     if (!binder) throw new Error('Sin binder')
 
@@ -621,7 +624,8 @@ export default function BinderPage() {
         set_id: card.set_id,
         number: card.number,
         language,
-        condition: condition || null
+        condition: condition || null,
+        variant: variant || 'normal'
       })
     })
     await loadBinder()
@@ -959,8 +963,8 @@ export default function BinderPage() {
         <PokedexSearchModal
           title="Agregar al bolsillo elegido"
           onClose={() => setSlotTarget(null)}
-          onSelect={async (card, language, condition) => {
-            await addCardToSlot(card, language, condition)
+          onSelect={async (card, language, condition, variant) => {
+            await addCardToSlot(card, language, condition, variant)
             setSlotTarget(null)
           }}
         />
@@ -986,8 +990,8 @@ export default function BinderPage() {
       {showPokedex && (
         <PokedexSearchModal
           onClose={() => setShowPokedex(false)}
-          onSelect={async (card, language, condition) => {
-            await addCardToNearestSlot(card, language, condition)
+          onSelect={async (card, language, condition, variant) => {
+            await addCardToNearestSlot(card, language, condition, variant)
             setShowPokedex(false)
           }}
         />

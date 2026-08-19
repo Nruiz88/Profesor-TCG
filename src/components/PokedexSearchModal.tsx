@@ -20,9 +20,25 @@ interface PokedexSearchModalProps {
   onSelect: (
     card: SearchResult,
     language: CardLanguage,
-    condition: CardCondition | ''
+    condition: CardCondition | '',
+    variant?: string
   ) => Promise<void>
 }
+
+const VARIANT_OPTIONS = [
+  { id: 'normal', label: 'Normal', icon: '🃏' },
+  { id: 'holo', label: 'Holo', icon: '✨' },
+  { id: 'reverse_holo', label: 'Reverse Holo', icon: '🔄' },
+  { id: 'v', label: 'Pokémon V', icon: '⚡' },
+  { id: 'v_full_art', label: 'V Full Art', icon: '🖼️' },
+  { id: 'v_alternate_art', label: 'V Alternate Art', icon: '🎨' },
+  { id: 'vmax', label: 'VMAX', icon: '💥' },
+  { id: 'vmax_alternate', label: 'VMAX Alt/Rainbow', icon: '🌈' },
+  { id: 'vstar', label: 'VSTAR', icon: '⭐' },
+  { id: 'trainer_full_art', label: 'Trainer Full Art', icon: '🧑‍🏫' },
+  { id: 'rainbow_rare', label: 'Rainbow Rare', icon: '🌈' },
+  { id: 'secret_rare_gold', label: 'Secret Rare (Gold)', icon: '🥇' }
+]
 
 export default function PokedexSearchModal({
   title = 'Pokédex · Buscar carta',
@@ -37,6 +53,7 @@ export default function PokedexSearchModal({
   const [saving, setSaving] = useState<string | null>(null)
   const [language, setLanguage] = useState<CardLanguage>('ES')
   const [condition, setCondition] = useState<CardCondition | '' >('')
+  const [variant, setVariant] = useState<string>('normal')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -75,7 +92,7 @@ export default function PokedexSearchModal({
     setSaving(card.id)
     setError(null)
     try {
-      await onSelect(card, language, condition)
+      await onSelect(card, language, condition, variant)
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar')
@@ -144,6 +161,28 @@ export default function PokedexSearchModal({
                   </select>
                 </div>
               )}
+
+              <div>
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                  Variante
+                </p>
+                <div className="mt-0.5 flex flex-wrap gap-1">
+                  {VARIANT_OPTIONS.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setVariant(v.id)}
+                      className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                        variant === v.id
+                          ? 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/40'
+                          : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {v.icon} {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 

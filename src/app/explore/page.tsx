@@ -39,7 +39,7 @@ const SORTS = [
   { id: 'price_desc', label: 'Precio: mayor a menor' }
 ]
 
-const EMPTY_FACETS: ExploreFacets = { sets: [], rarities: [], cities: [] }
+const EMPTY_FACETS: ExploreFacets = { sets: [], rarities: [], variants: [], cities: [] }
 
 // Paginación incremental: la API devuelve hasMore y el cliente pide de a
 // PAGE_SIZE hasta MAX_RESULTS (mismo tope del server).
@@ -87,6 +87,7 @@ export default function ExplorePage() {
   const [q, setQ] = useState(initialQ)
   const [setFilter, setSetFilter] = useState('')
   const [rarityFilter, setRarityFilter] = useState('')
+  const [variantFilter, setVariantFilter] = useState('')
   const [cityFilter, setCityFilter] = useState('')
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
@@ -128,6 +129,7 @@ export default function ExplorePage() {
           if (debouncedQ) params.set('q', debouncedQ)
           if (setFilter) params.set('set', setFilter)
           if (rarityFilter) params.set('rarity', rarityFilter)
+          if (variantFilter) params.set('variant', variantFilter)
           if (cityFilter) params.set('city', cityFilter)
           if (typeFilter) params.set('type', typeFilter)
           if (languageFilter) params.set('language', languageFilter)
@@ -153,7 +155,7 @@ export default function ExplorePage() {
         setLoadingMore(false)
       }
     },
-    [view, mode, debouncedQ, setFilter, rarityFilter, cityFilter, typeFilter, languageFilter, minPrice, maxPrice, sort]
+    [view, mode, debouncedQ, setFilter, rarityFilter, variantFilter, cityFilter, typeFilter, languageFilter, minPrice, maxPrice, sort]
   )
 
   // Cualquier cambio de filtro/vista reinicia la paginación a la primera página
@@ -171,7 +173,7 @@ export default function ExplorePage() {
     void load(true)
   }
 
-  const hasActiveFilters = !!(q || setFilter || rarityFilter || cityFilter || typeFilter || languageFilter || minPrice || maxPrice)
+  const hasActiveFilters = !!(q || setFilter || rarityFilter || variantFilter || cityFilter || typeFilter || languageFilter || minPrice || maxPrice)
   const activeMode = MODES.find((m) => m.id === mode) ?? MODES[0]
 
   return (
@@ -291,6 +293,21 @@ export default function ExplorePage() {
                 </SelectField>
               </label>
 
+              {/* VERSIÓN (holo, reverse, etc.) */}
+              <label className="mb-4 block">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Versión
+                </span>
+                <SelectField value={variantFilter} onChange={setVariantFilter} label="Filtrar por versión">
+                  <option value="">Todas las versiones</option>
+                  {facets.variants.map((v) => (
+                    <option key={v} value={v}>
+                      {{ normal: '🃏 Normal', holo: '✨ Holo', reverse_holo: '🔄 Reverse Holo', v: '⚡ Pokémon V', v_full_art: '🖼️ V Full Art', v_alternate_art: '🎨 V Alt Art', vmax: '💥 VMAX', vmax_alternate: '🌈 VMAX Alt', vstar: '⭐ VSTAR', trainer_full_art: '🧑‍🏫 Trainer FA', rainbow_rare: '🌈 Rainbow Rare', secret_rare_gold: '🥇 Gold SR' }[v] ?? v}
+                    </option>
+                  ))}
+                </SelectField>
+              </label>
+
               {/* SET */}
               <label className="mb-4 block">
                 <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
@@ -401,6 +418,7 @@ export default function ExplorePage() {
                     setQ('')
                     setSetFilter('')
                     setRarityFilter('')
+                    setVariantFilter('')
                     setCityFilter('')
                     setTypeFilter('')
                     setLanguageFilter('')

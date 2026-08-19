@@ -45,6 +45,7 @@ interface ExploreCardRow {
   manual_price: number | null
   currency: string | null
   is_user_reported: boolean | null
+  variant: string | null
   updated_at: string
   binders: {
     id: string
@@ -111,6 +112,7 @@ export interface ExploreCard {
   set_name: string
   number: string
   rarity: string | null
+  variant: string | null
   language: string | null
   currency: string | null
   is_user_reported: boolean | null
@@ -135,6 +137,7 @@ export interface ExploreCard {
 export interface ExploreFacets {
   sets: { id: string; name: string }[]
   rarities: string[]
+  variants: string[]
   cities: string[]
 }
 
@@ -151,7 +154,7 @@ export async function GET(req: Request) {
 
   const params = validate(exploreSchema, extractParams(req))
   if (params.error) return params.error
-  const { view, mode, q: rawQ, set: setFilter, rarity: rarityFilter, city: cityFilter, type: typeFilter, language: languageFilter, sort, minPrice, maxPrice, limit: rawLimit } = params.data
+  const { view, mode, q: rawQ, set: setFilter, rarity: rarityFilter, variant: variantFilter, city: cityFilter, type: typeFilter, language: languageFilter, sort, minPrice, maxPrice, limit: rawLimit } = params.data
   const q = rawQ.trim()
   const limit = Math.min(rawLimit, MAX_LIMIT)
 
@@ -193,6 +196,7 @@ export async function GET(req: Request) {
       q,
       setFilter,
       rarityFilter,
+      variantFilter,
       cityFilter,
       typeFilter,
       languageFilter,
@@ -216,6 +220,7 @@ async function getCards(
     q: string
     setFilter: string
     rarityFilter: string
+    variantFilter: string
     cityFilter: string
     typeFilter: string
     languageFilter: string
@@ -237,7 +242,7 @@ async function getCards(
       `id, binder_id, card_id, card_name, set_id, number, slot_number,
        market_price, status, price_override, is_for_sale, is_for_trade,
        price, trade_notes, condition, language, manual_price, currency,
-       is_user_reported, updated_at,
+       is_user_reported, variant, updated_at,
        binders!binder_cards_binder_id_fkey!inner (
          id, title, user_id, is_public
        )`
@@ -389,6 +394,7 @@ async function getCards(
 
     // Filtros que dependen de la metadata (rareza, tipo) o del perfil (ciudad)
     if (opts.rarityFilter && rarity !== opts.rarityFilter) continue
+    if (opts.variantFilter && (r.variant ?? 'normal') !== opts.variantFilter) continue
     if (opts.cityFilter && seller?.city !== opts.cityFilter) continue
     if (opts.typeFilter && !(m?.types ?? []).includes(opts.typeFilter)) continue
     // Filtro de rango de precio (sobre el precio efectivo)
@@ -404,6 +410,7 @@ async function getCards(
       set_name: setNameById.get(r.set_id) ?? r.set_id,
       number: r.number,
       rarity,
+      variant: r.variant ?? 'normal',
       language: r.language ?? null,
       currency: r.currency ?? 'USD',
       is_user_reported: r.is_user_reported ?? false,
@@ -449,6 +456,7 @@ async function getCards(
   const setMap = new Map<string, string>()
   for (const c of enriched) setMap.set(c.set_id, c.set_name)
   const rarities = [...new Set(enriched.map((c) => c.rarity).filter(Boolean) as string[])].sort()
+  const variants = [...new Set(enriched.map((c) => c.variant).filter(Boolean) as string[])].sort()
   const cities = [...new Set(enriched.map((c) => c.city).filter(Boolean) as string[])].sort()
 
   const facets: ExploreFacets = {
@@ -456,6 +464,7 @@ async function getCards(
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name)),
     rarities,
+    variants,
     cities
   }
 

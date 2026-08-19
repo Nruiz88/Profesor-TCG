@@ -7,6 +7,7 @@ import PokemonCard from '@/components/PokemonCard'
 import CardStatusBadge from '@/components/CardStatusBadge'
 import LanguageBadge from '@/components/LanguageBadge'
 import ConditionBadge from '@/components/ConditionBadge'
+import VariantBadge from '@/components/VariantBadge'
 import { effectivePrice, normalizeStatus } from '@/lib/cardStatus'
 import { formatPrice } from '@/lib/priceGuide'
 import { GripVerticalIcon } from '@/components/icons'
@@ -102,9 +103,14 @@ export default function SortableSlot({
             className="absolute left-1.5 top-1.5"
           />
 
+          <VariantBadge
+            variant={slot.variant}
+            className="absolute left-1.5 top-9"
+          />
+
           <ConditionBadge
             condition={slot.condition}
-            className="absolute left-1.5 top-9"
+            className="absolute left-1.5 top-[58px]"
           />
 
           {(() => {

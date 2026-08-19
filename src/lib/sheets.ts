@@ -26,6 +26,7 @@ export interface RawCard {
   supertype?: string | null
   subtypes?: string[] | null
   types?: string[] | null
+  variant?: string | null
 }
 
 export interface SlotCard extends RawCard {

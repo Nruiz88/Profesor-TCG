@@ -14,6 +14,7 @@ interface SlotInput {
   number: string
   language?: string
   condition?: string | null
+  variant?: string
 }
 
 export async function POST(req: Request) {
@@ -81,6 +82,11 @@ export async function POST(req: Request) {
       .maybeSingle()
     const marketPrice = priceRow?.market_price ?? 0
 
+    // Variante de la carta (normal, holo, reverse_holo, etc.)
+    const variant = typeof body.variant === 'string' && body.variant.trim() !== ''
+      ? body.variant.trim().slice(0, 30)
+      : 'normal'
+
     const { error } = await supabase.from('binder_cards').upsert(
       {
         binder_id: body.binder_id,
@@ -91,6 +97,7 @@ export async function POST(req: Request) {
         number: body.number,
         language,
         condition,
+        variant,
         market_price: marketPrice,
         updated_at: new Date().toISOString()
       },

@@ -60,6 +60,7 @@ export const exploreSchema = z.object({
   q: safeQuery,
   set: safeQuery,
   rarity: safeQuery,
+  variant: safeQuery,
   city: safeQuery,
   type: safeQuery,
   language: z

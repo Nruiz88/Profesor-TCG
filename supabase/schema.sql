@@ -136,10 +136,16 @@ create table if not exists public.binder_cards (
   currency text not null default 'USD',         -- moneda del precio manual: USD | EUR | ARS | MXN | CLP
   is_user_reported boolean not null default false, -- true si el precio lo reportó el usuario
   reserved_until timestamptz,                   -- fin del soft lock 24h tras un CLAIM
+  variant text not null default 'normal',       -- variante: normal, holo, reverse_holo, v, vmax, vstar, etc.
   updated_at timestamptz not null default timezone('utc'::text, now()),
   unique (binder_id, slot_number),
   constraint binder_cards_status_check check (status in ('collection', 'for_sale', 'for_trade', 'reserved')),
-  constraint binder_cards_language_check check (language in ('ES', 'EN', 'JP', 'KO', 'ZH'))
+  constraint binder_cards_language_check check (language in ('ES', 'EN', 'JP', 'KO', 'ZH')),
+  constraint binder_cards_variant_check check (variant in (
+    'normal', 'holo', 'reverse_holo', 'v', 'v_full_art', 'v_alternate_art',
+    'vmax', 'vmax_alternate', 'vmax_rainbow', 'vstar', 'trainer_full_art',
+    'rainbow_rare', 'secret_rare_gold'
+  ))
 );
 
 create index if not exists idx_binder_cards_reserved_until on public.binder_cards(reserved_until)
