@@ -663,8 +663,9 @@ export default function BinderPage() {
 
       <div className="pb-20 lg:pb-0 lg:pl-64">
         <main className="mx-auto w-full max-w-7xl px-4 py-4 lg:py-8">
+            {/* Header compacto: título + stats inline + acciones */}
             <div className="mb-5 overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
-              <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-xl font-bold tracking-tight text-white">
@@ -687,72 +688,66 @@ export default function BinderPage() {
                       </span>
                     )}
                   </div>
-                  {binder?.description && (
-                    <p className="mt-0.5 truncate text-sm text-slate-500">{binder.description}</p>
-                  )}
-                  <p className="mt-1 text-xs text-slate-500">
-                    {totalCards} carta{totalCards !== 1 ? 's' : ''} · {sheets.length} hoja
-                    {sheets.length !== 1 ? 's' : ''} ·{' '}
+                  {/* Stats inline — sin cards separadas */}
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <span>{totalCards} carta{totalCards !== 1 ? 's' : ''}</span>
+                    <span className="text-slate-700">·</span>
                     <span className="font-semibold text-yellow-400/90">${fmtValue(totalValue)} USD</span>
-                  </p>
+                    {saleCount > 0 && (
+                      <>
+                        <span className="text-slate-700">·</span>
+                        <span className="text-emerald-400">{saleCount} en venta</span>
+                      </>
+                    )}
+                    {tradeCount > 0 && (
+                      <>
+                        <span className="text-slate-700">·</span>
+                        <span className="text-sky-400">{tradeCount} cambio</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  {/* Compartir: acciones secundarias en dropdown (sin botones gigantes) */}
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {/* Compartir dropdown */}
                   <div className="relative" ref={shareMenuRef}>
                     <button
                       onClick={() => setShareOpen((v) => !v)}
                       aria-expanded={shareOpen}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500"
                     >
                       <ShareIcon className="h-4 w-4" />
                       Compartir
                       <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${shareOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {shareOpen && (
-                      <div className="absolute right-0 top-11 z-30 w-64 rounded-xl border border-slate-800 bg-slate-950/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
+                      <div className="absolute right-0 top-10 z-30 w-56 rounded-xl border border-slate-800 bg-slate-950/95 p-1 shadow-2xl shadow-black/60 backdrop-blur-xl">
                         <button
-                          onClick={() => {
-                            setShareOpen(false)
-                            copyShareLink()
-                          }}
-                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+                          onClick={() => { setShareOpen(false); copyShareLink() }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
                         >
-                          <ShareIcon className="h-4 w-4 text-slate-500" />
-                          Copiar link del binder
+                          <ShareIcon className="h-3.5 w-3.5 text-slate-500" /> Copiar link
                         </button>
                         {profile?.whatsapp_number && (
                           <button
-                            onClick={() => {
-                              setShareOpen(false)
-                              shareBinderWhatsApp()
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+                            onClick={() => { setShareOpen(false); shareBinderWhatsApp() }}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
                           >
-                            <ChatIcon className="h-4 w-4 text-emerald-400" />
-                            Compartir binder por WhatsApp
+                            <ChatIcon className="h-3.5 w-3.5 text-emerald-400" /> WhatsApp binder
                           </button>
                         )}
-                        <div className="my-1 h-px bg-slate-800" />
+                        <div className="my-0.5 h-px bg-slate-800" />
                         <button
-                          onClick={() => {
-                            setShareOpen(false)
-                            copyWantlistLink()
-                          }}
-                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+                          onClick={() => { setShareOpen(false); copyWantlistLink() }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
                         >
-                          <ShareIcon className="h-4 w-4 text-fuchsia-400" />
-                          Copiar link de buscadas
+                          <ShareIcon className="h-3.5 w-3.5 text-fuchsia-400" /> Copiar buscadas
                         </button>
                         {profile?.whatsapp_number && (
                           <button
-                            onClick={() => {
-                              setShareOpen(false)
-                              shareWantlistWhatsApp()
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+                            onClick={() => { setShareOpen(false); shareWantlistWhatsApp() }}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
                           >
-                            <ChatIcon className="h-4 w-4 text-emerald-400" />
-                            Compartir buscadas por WhatsApp
+                            <ChatIcon className="h-3.5 w-3.5 text-emerald-400" /> WhatsApp buscadas
                           </button>
                         )}
                       </div>
@@ -761,88 +756,57 @@ export default function BinderPage() {
                   <button
                     onClick={togglePublic}
                     disabled={!binder}
-                    title={binder?.is_public ? 'Hacer privado el binder' : 'Hacer público el binder'}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm font-semibold text-slate-300 transition-colors hover:border-slate-600 hover:text-white disabled:opacity-40"
+                    title={binder?.is_public ? 'Hacer privado' : 'Hacer público'}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-2 text-xs font-semibold text-slate-400 transition-colors hover:border-slate-600 hover:text-white disabled:opacity-40"
                   >
                     {binder?.is_public ? (
-                      <GlobeIcon className="h-4 w-4 text-emerald-400" />
+                      <GlobeIcon className="h-3.5 w-3.5 text-emerald-400" />
                     ) : (
-                      <LockIcon className="h-4 w-4 text-slate-500" />
+                      <LockIcon className="h-3.5 w-3.5" />
                     )}
                     {binder?.is_public ? 'Público' : 'Privado'}
                   </button>
                   <button
                     onClick={() => setSettingsModal('edit')}
                     disabled={!binder}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm font-semibold text-slate-300 transition-colors hover:border-slate-600 hover:text-white disabled:opacity-40"
+                    title="Configurar binder"
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-2 text-xs font-semibold text-slate-400 transition-colors hover:border-slate-600 hover:text-white disabled:opacity-40"
                   >
-                    <GearIcon className="h-4 w-4" />
-                    Configurar
+                    <GearIcon className="h-3.5 w-3.5" />
                   </button>
                   {binder && (
                     <button
                       onClick={handleDeleteBinder}
-                      title="Eliminar carpeta"
-                      aria-label="Eliminar carpeta"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-400 transition-colors hover:border-red-500/40 hover:text-red-300"
+                      title="Eliminar binder"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-500 transition-colors hover:border-red-500/40 hover:text-red-400"
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      <TrashIcon className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Resumen compacto de estadísticas (antes en el sidebar) */}
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                { label: 'Cartas', value: String(totalCards), tone: 'text-slate-300' },
-                { label: 'Valor', value: `$${fmtValue(totalValue)}`, tone: 'text-yellow-400' },
-                { label: 'En venta', value: String(saleCount), tone: 'text-emerald-400' },
-                { label: 'Cambio', value: String(tradeCount), tone: 'text-sky-400' }
-              ].map((s) => (
-                <div
-                  key={s.label}
-                  className="rounded-xl border border-slate-800/80 bg-slate-900/60 px-4 py-3 backdrop-blur-xl"
-                >
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-                    {s.label}
-                  </p>
-                  <p className={`mt-1 truncate text-base font-bold ${s.tone}`}>{s.value}</p>
-                </div>
-              ))}
-            </div>
-
             <div className="mb-6">
         <BinderTabs active={tab} onChange={setTab} wantlistCount={wantlist.length} />
       </div>
 
-      {/* Reputación propia: rating, reseñas, claims y badge (misma ficha que ven los demás) */}
-      {profile?.username && <SellerReputationCard username={profile.username} className="mb-6" />}
+
 
       {/* Reservas activas: cartas del binder tomadas por claims (soft lock 24h) */}
       <ReservedClaimsBanner cards={cards} onShowClaims={() => setShowClaims(true)} />
 
-      {/* Aviso: cartas en venta/cambio con binder privado. Las cartas igual
-          aparecen en el marketplace como publicación individual; el binder
-          completo solo se ve si es público. */}
+      {/* Aviso sutil: binder privado con cartas publicadas */}
       {binder && !binder.is_public && cards.some((c) => c.is_for_sale || c.is_for_trade) && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <p className="text-sm leading-relaxed text-amber-200">
-            <strong>
-              {cards.filter((c) => c.is_for_sale || c.is_for_trade).length}{" "}
-              carta{cards.filter((c) => c.is_for_sale || c.is_for_trade).length !== 1 ? 's' : ''}{" "}
-              en venta/cambio
-            </strong>{' '}
-            aparecen en el marketplace como publicación individual, pero tu binder completo es
-            privado: solo quienes tengan el link pueden ver la colección.
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+          <p className="text-xs text-amber-300/80">
+            {cards.filter((c) => c.is_for_sale || c.is_for_trade).length} carta{cards.filter((c) => c.is_for_sale || c.is_for_trade).length !== 1 ? 's' : ''} en marketplace · binder privado
           </p>
           <button
             onClick={togglePublic}
-            className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-amber-400"
+            className="shrink-0 rounded-lg bg-amber-500/20 px-2.5 py-1 text-[11px] font-semibold text-amber-300 transition-colors hover:bg-amber-500/30"
           >
-            <GlobeIcon width={15} height={15} />
-            Hacer público el binder
+            Hacer público
           </button>
         </div>
       )}
