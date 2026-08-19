@@ -22,3 +22,21 @@ body {
     transform: translateX(-50%);
   }
 }
+
+/* Holographic card shimmer effect */
+@keyframes holo {
+  0%, 100% {
+    opacity: 0.4;
+    transform: rotate(0deg);
+  }
+  25% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.4;
+    transform: rotate(180deg);
+  }
+  75% {
+    opacity: 0.7;
+  }
+}
