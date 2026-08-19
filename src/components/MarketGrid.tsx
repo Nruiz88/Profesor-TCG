@@ -15,11 +15,9 @@ function claimHref(card: ExploreCard): string {
   return `${whatsAppLink(card.whatsapp_number ?? '')}?text=${text}`
 }
 
-// Deep link: binder completo si es público, si no la vista individual /card/[id]/[slug]
+// Deep link: siempre a la vista individual /card/[id]/[slug]
 function binderHref(card: ExploreCard): string {
-  return card.binder_public
-    ? `/binder/${encodeURIComponent(card.username)}?card=${card.id}`
-    : `/card/${card.id}/${slugify(card.card_name)}`
+  return `/card/${card.id}/${slugify(card.card_name)}`
 }
 
 const fmtUsd = (n: number) =>

@@ -143,14 +143,10 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
               </a>
             )}
             <Link
-              href={
-                card.binder_public
-                  ? `/binder/${encodeURIComponent(card.username)}?card=${card.id}`
-                  : `/card/${card.id}/${slugify(card.card_name)}`
-              }
+              href={`/card/${card.id}/${slugify(card.card_name)}`}
               className="flex items-center justify-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20"
             >
-              {card.binder_public ? 'Ver en Binder 3D' : 'Ver carta 3D'}
+              Ver carta 3D
               <ArrowRightIcon width={13} height={13} />
             </Link>
           </div>
