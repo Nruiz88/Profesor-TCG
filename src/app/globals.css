@@ -23,20 +23,93 @@ body {
   }
 }
 
-/* Holographic card shimmer effect */
-@keyframes holo {
+/* ═══════════════════════════════════════════════════════════════════
+   Holographic Card Effect (CSS puro)
+   Inspirado en: https://codepen.io/AlbertFeyn/pen/BaVqYgv
+   ═══════════════════════════════════════════════════════════════════ */
+
+.holo-card {
+  --hue: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.holo-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(255, 255, 255, 0.12) 45%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0.12) 55%,
+      transparent 60%
+    ),
+    linear-gradient(
+      var(--hue, 0deg),
+      #ff000015 0%,
+      #ff880015 14%,
+      #ffff0015 28%,
+      #00ff0015 42%,
+      #0088ff15 57%,
+      #8800ff15 71%,
+      #ff00ff15 85%,
+      #ff000015 100%
+    );
+  background-size: 200% 100%, 300% 300%;
+  background-position: calc(100% - var(--mouse-x, 50) * 1%) 0, center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 30;
+  mix-blend-mode: color-dodge;
+}
+
+.holo-card:hover::before {
+  opacity: 1;
+}
+
+/* Shine sweep animation */
+.holo-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.08) 42%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.08) 58%,
+    transparent 60%,
+    transparent 100%
+  );
+  transform: rotate(30deg);
+  pointer-events: none;
+  z-index: 31;
+  animation: holo-shine 4s ease-in-out infinite;
+}
+
+@keyframes holo-shine {
   0%, 100% {
-    opacity: 0.4;
-    transform: rotate(0deg);
-  }
-  25% {
-    opacity: 0.7;
+    transform: rotate(30deg) translateY(-10%);
   }
   50% {
-    opacity: 0.4;
-    transform: rotate(180deg);
+    transform: rotate(30deg) translateY(10%);
   }
-  75% {
-    opacity: 0.7;
+}
+
+/* Rainbow border animation */
+@keyframes holo-border {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
   }
 }

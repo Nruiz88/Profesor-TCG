@@ -1,3 +1,7 @@
+'use client'
+
+import { useRef, useCallback } from 'react'
+
 interface TrainerCredentialCardProps {
   username: string
   city: string | null
@@ -8,9 +12,8 @@ interface TrainerCredentialCardProps {
 }
 
 /**
- * Tarjeta de Credencial estilo Pokémon Card: aspecto de carta TCG real con
- * borde holográfico rainbow, efecto de brillo, y layout de carta.
- * Basada en la inspiración de FaceBinder pero con el estilo ciberpunk del proyecto.
+ * Tarjeta de Credencial estilo Pokémon Card con efecto holográfico CSS puro.
+ * El rainbow sigue el mouse y el brillo se anima automáticamente.
  */
 export default function TrainerCredentialCard({
   username,
@@ -20,21 +23,32 @@ export default function TrainerCredentialCard({
   rank
 }: TrainerCredentialCardProps) {
   const initial = (username[0] ?? '?').toUpperCase()
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current
+    if (!card) return
+    const rect = card.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    const hue = Math.round((x / 100) * 360)
+    card.style.setProperty('--hue', `${hue}deg`)
+    card.style.setProperty('--mouse-x', `${x}`)
+  }, [])
 
   return (
     <div className="relative mx-auto w-full max-w-[340px]">
-      {/* Efecto de glow detrás de la carta */}
+      {/* Glow detrás de la carta */}
       <div className="absolute -inset-1 rounded-[2rem] bg-gradient-to-br from-[#00ffcc]/30 via-violet-500/30 to-fuchsia-500/30 opacity-60 blur-xl" />
 
-      {/* Carta principal con borde holográfico */}
-      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#00ffcc] via-violet-500 via-50% to-fuchsia-500 p-[3px] shadow-[0_0_40px_rgba(0,255,204,0.25),0_0_80px_rgba(139,92,246,0.15)]">
-        {/* Interior de la carta */}
-        <div className="relative overflow-hidden rounded-[calc(2rem-3px)] bg-[#080c15]">
-          {/* Efecto holográfico animado en el borde */}
-          <div className="pointer-events-none absolute inset-0 z-10">
-            <div className="absolute inset-0 animate-[holo_6s_ease-in-out_infinite] bg-[conic-gradient(from_0deg,transparent_0%,rgba(0,255,204,0.15)_10%,transparent_20%,rgba(139,92,246,0.15)_30%,transparent_40%,rgba(244,114,182,0.15)_50%,transparent_60%,rgba(34,211,238,0.15)_70%,transparent_80%,rgba(0,255,204,0.15)_90%,transparent_100%)]" />
-          </div>
-
+      {/* Carta principal con borde holográfico animado */}
+      <div className="relative overflow-hidden rounded-[2rem] p-[3px] shadow-[0_0_40px_rgba(0,255,204,0.25),0_0_80px_rgba(139,92,246,0.15)]" style={{ background: 'linear-gradient(var(--hue, 135deg), #00ffcc, #8b5cf6, #f472b6, #00ffcc)' }}>
+        {/* Interior de la carta con efecto holo */}
+        <div
+          ref={cardRef}
+          onMouseMove={handleMouseMove}
+          className="holo-card relative overflow-hidden rounded-[calc(2rem-3px)] bg-[#080c15]"
+        >
           {/* Patrón de fondo "POKÉMON" watermark */}
           <div className="pointer-events-none absolute inset-0 opacity-[0.03]">
             <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-4 font-black uppercase leading-none tracking-widest text-white">
@@ -117,9 +131,6 @@ export default function TrainerCredentialCard({
             </div>
           </div>
 
-          {/* Brillo holográfico en esquina (efecto de carta) */}
-          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-white/10 to-transparent blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-gradient-to-tl from-[#00ffcc]/10 to-transparent blur-2xl" />
         </div>
       </div>
     </div>
