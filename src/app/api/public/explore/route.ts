@@ -151,7 +151,7 @@ export async function GET(req: Request) {
 
   const params = validate(exploreSchema, extractParams(req))
   if (params.error) return params.error
-  const { view, mode, q: rawQ, set: setFilter, rarity: rarityFilter, city: cityFilter, type: typeFilter, language: languageFilter, sort, limit: rawLimit } = params.data
+  const { view, mode, q: rawQ, set: setFilter, rarity: rarityFilter, city: cityFilter, type: typeFilter, language: languageFilter, sort, minPrice, maxPrice, limit: rawLimit } = params.data
   const q = rawQ.trim()
   const limit = Math.min(rawLimit, MAX_LIMIT)
 
@@ -197,6 +197,8 @@ export async function GET(req: Request) {
       typeFilter,
       languageFilter,
       sort,
+      minPrice,
+      maxPrice,
       limit,
       requesterId,
       wantlistCardIds
@@ -218,6 +220,8 @@ async function getCards(
     typeFilter: string
     languageFilter: string
     sort: string
+    minPrice: number
+    maxPrice: number
     limit: number
     /** user_id del visitante con sesión (null si anónimo). */
     requesterId: string | null
@@ -387,6 +391,9 @@ async function getCards(
     if (opts.rarityFilter && rarity !== opts.rarityFilter) continue
     if (opts.cityFilter && seller?.city !== opts.cityFilter) continue
     if (opts.typeFilter && !(m?.types ?? []).includes(opts.typeFilter)) continue
+    // Filtro de rango de precio (sobre el precio efectivo)
+    if (opts.maxPrice > 0 && (price ?? 0) > opts.maxPrice) continue
+    if (opts.minPrice > 0 && (price ?? 0) < opts.minPrice) continue
 
     enriched.push({
       id: r.id,

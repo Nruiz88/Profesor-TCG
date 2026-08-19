@@ -70,6 +70,16 @@ export const exploreSchema = z.object({
     .enum(['recent', 'price_asc', 'price_desc', 'name'])
     .optional()
     .default('recent'),
+  minPrice: z.coerce
+    .number()
+    .min(0, 'Precio mínimo no puede ser negativo')
+    .optional()
+    .default(0),
+  maxPrice: z.coerce
+    .number()
+    .min(0, 'Precio máximo no puede ser negativo')
+    .optional()
+    .default(0),
   limit,
   offset
 })

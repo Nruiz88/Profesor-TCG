@@ -1,30 +1,15 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import {
-  CardsIcon,
-  CompassIcon,
-  HomeIcon,
-  PokeballIcon,
-  UserIcon,
-  XIcon
-} from '@/components/icons'
-import type { ComponentType, SVGProps } from 'react'
+import { XIcon } from '@/components/icons'
+import type { SVGProps } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getUserBinders } from '@/lib/binders'
 import SidebarMenu, { type SidebarMenuProps } from '@/components/SidebarMenu'
 import type { Profile } from '@/lib/profile'
 
 type IconProps = SVGProps<SVGSVGElement>
-
-interface BottomNavItem {
-  label: string
-  icon: ComponentType<IconProps>
-  href: string
-  isActive: (p: string) => boolean
-}
 
 interface Binder {
   id: string
@@ -43,7 +28,6 @@ interface Binder {
 export default function BottomNav() {
   const router = useRouter()
   const pathname = usePathname()
-  const [profileHref, setProfileHref] = useState('/login')
   const [profile, setProfile] = useState<Profile | null>(null)
   const [binders, setBinders] = useState<Binder[]>([])
   const [pendingOffers, setPendingOffers] = useState(0)
@@ -79,7 +63,6 @@ export default function BottomNav() {
   // Resolver perfil y binders del usuario.
   useEffect(() => {
     if (!user) {
-      setProfileHref('/login')
       setProfile(null)
       setBinders([])
       return
@@ -92,7 +75,6 @@ export default function BottomNav() {
         if (!active) return
         if (data.profile?.username) {
           setProfile(data.profile)
-          setProfileHref(`/profile/${encodeURIComponent(data.profile.username)}`)
         }
         const list = await getUserBinders(user.id)
         if (active) setBinders(list || [])
@@ -159,39 +141,6 @@ export default function BottomNav() {
     }
     setDragPx(0)
   }
-
-  const items: BottomNavItem[] = [
-    {
-      label: 'Inicio',
-      icon: HomeIcon,
-      href: '/',
-      isActive: (p) => p === '/'
-    },
-    {
-      label: 'Perfil',
-      icon: UserIcon,
-      href: profileHref,
-      isActive: (p) => p.startsWith('/profile')
-    },
-    {
-      label: 'Binder',
-      icon: CardsIcon,
-      href: '/binder',
-      isActive: (p) => p === '/binder' || p.startsWith('/binder/') || p.startsWith('/b/')
-    },
-    {
-      label: 'Market',
-      icon: CompassIcon,
-      href: '/explore',
-      isActive: (p) => p.startsWith('/explore')
-    },
-    {
-      label: 'Buscados',
-      icon: PokeballIcon,
-      href: '/buscados',
-      isActive: (p) => p.startsWith('/buscados')
-    }
-  ]
 
   const isActive = (p: string) => pathname === p || pathname.startsWith(`${p}/`)
 
@@ -281,65 +230,28 @@ export default function BottomNav() {
         </div>
       )}
 
-      {/* ─── Barra inferior fija ─── */}
+      {/* ─── Barra inferior fija con el menú del sidebar (solo móvil) ─── */}
       <nav
         aria-label="Navegación principal"
         className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-slate-800 bg-[#090d16] lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="grid w-full grid-cols-5">
-          {items.map(({ label, icon: Icon, href, isActive: itemActive }) => {
-            const active = itemActive(pathname)
-            return (
-              <Link
-                key={label}
-                href={href}
-                aria-current={active ? 'page' : undefined}
-                className={`relative flex flex-col items-center justify-center gap-1 pb-2 pt-2.5 text-[10px] font-bold uppercase tracking-widest transition-colors duration-150 ${
-                  active ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                <span className="relative flex h-5 w-5 items-center justify-center">
-                  {active && (
-                    <span className="absolute -top-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-cyan-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.8)]" />
-                  )}
-                  <Icon
-                    className={`h-5 w-5 ${
-                      active
-                        ? 'text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.7)]'
-                        : 'text-slate-500'
-                    }`}
-                  />
-                </span>
-                {label}
-              </Link>
-            )
-          })}
-
-          {/* Botón central "Más" */}
-          <button
-            onClick={() => setMoreOpen((v) => !v)}
-            aria-expanded={moreOpen}
-            aria-label={moreOpen ? 'Cerrar menú' : 'Abrir menú'}
-            className={`relative flex flex-col items-center justify-center gap-1 pb-2 pt-2.5 text-[10px] font-bold uppercase tracking-widest transition-colors duration-150 ${
-              moreOpen ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'
+        {/* Botón que expande/colapsa el menú completo del sidebar */}
+        <button
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-expanded={moreOpen}
+          aria-label={moreOpen ? 'Contraer menú' : 'Abrir menú'}
+          className="flex w-full items-center justify-center gap-2 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-300"
+        >
+          <MenuDotsIcon
+            className={`h-5 w-5 ${
+              moreOpen
+                ? 'text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.7)]'
+                : 'text-slate-500'
             }`}
-          >
-            <span className="relative flex h-5 w-5 items-center justify-center">
-              {moreOpen && (
-                <span className="absolute -top-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-cyan-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.8)]" />
-              )}
-              <MenuDotsIcon
-                className={`h-5 w-5 ${
-                  moreOpen
-                    ? 'text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.7)]'
-                    : 'text-slate-500'
-                }`}
-              />
-            </span>
-            Más
-          </button>
-        </div>
+          />
+          {moreOpen ? 'Contraer menú' : 'Menú completo'}
+        </button>
       </nav>
     </>
   )

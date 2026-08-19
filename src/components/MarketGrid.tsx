@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { ExploreBinder, ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
 import { slugify } from '@/lib/utils'
-import { ArrowRightIcon } from '@/components/icons'
+import { AlertIcon, ArrowRightIcon } from '@/components/icons'
 
 // Mensaje pre-armado del claim (mismo formato que el resto de la app)
 function claimHref(card: ExploreCard): string {
@@ -56,10 +56,15 @@ export default function MarketGrid({
 
   if (cards.length === 0) {
     return (
-      <div className="rounded-3xl border border-slate-800/80 bg-slate-900/40 px-6 py-16 text-center backdrop-blur-xl">
-        <p className="text-lg font-semibold text-white">Sin resultados</p>
-        <p className="mt-1 text-sm text-slate-500">
-          No hay cartas en venta o intercambio que coincidan con esos filtros.
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-800/80 bg-slate-900/40 px-6 py-20 text-center backdrop-blur-xl">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10">
+          <AlertIcon className="h-7 w-7 text-amber-400" />
+        </span>
+        <p className="mt-4 text-sm font-bold uppercase tracking-widest text-white">
+          No hay cartas en venta con esos filtros
+        </p>
+        <p className="mt-2 text-sm text-slate-500">
+          Probá ajustar o limpiar los filtros para ver más resultados.
         </p>
       </div>
     )

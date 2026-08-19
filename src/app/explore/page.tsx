@@ -88,6 +88,8 @@ export default function ExplorePage() {
   const [setFilter, setSetFilter] = useState('')
   const [rarityFilter, setRarityFilter] = useState('')
   const [cityFilter, setCityFilter] = useState('')
+  const [minPrice, setMinPrice] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
   const [sort, setSort] = useState('recent')
 
   const [cards, setCards] = useState<ExploreCard[]>([])
@@ -129,6 +131,8 @@ export default function ExplorePage() {
           if (cityFilter) params.set('city', cityFilter)
           if (typeFilter) params.set('type', typeFilter)
           if (languageFilter) params.set('language', languageFilter)
+          if (minPrice && !Number.isNaN(Number(minPrice))) params.set('minPrice', String(Number(minPrice)))
+          if (maxPrice && !Number.isNaN(Number(maxPrice))) params.set('maxPrice', String(Number(maxPrice)))
           params.set('limit', String(limitRef.current))
           params.set('sort', sort)
         }
@@ -149,7 +153,7 @@ export default function ExplorePage() {
         setLoadingMore(false)
       }
     },
-    [view, mode, debouncedQ, setFilter, rarityFilter, cityFilter, typeFilter, languageFilter, sort]
+    [view, mode, debouncedQ, setFilter, rarityFilter, cityFilter, typeFilter, languageFilter, minPrice, maxPrice, sort]
   )
 
   // Cualquier cambio de filtro/vista reinicia la paginación a la primera página
@@ -167,7 +171,7 @@ export default function ExplorePage() {
     void load(true)
   }
 
-  const hasActiveFilters = !!(q || setFilter || rarityFilter || cityFilter || typeFilter || languageFilter)
+  const hasActiveFilters = !!(q || setFilter || rarityFilter || cityFilter || typeFilter || languageFilter || minPrice || maxPrice)
   const activeMode = MODES.find((m) => m.id === mode) ?? MODES[0]
 
   return (
@@ -235,44 +239,137 @@ export default function ExplorePage() {
           ))}
         </div>
 
-        {/* Caja de filtros estilo Pokédex */}
-        <section className="mt-4 rounded-3xl border border-slate-800/90 bg-slate-900/40 p-4 shadow-[0_16px_50px_-20px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-5">
-          {/* Buscador con lupa acento */}
-          <div className="relative">
-            <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-rose-400" />
-            <input
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscá por nombre de carta, Pokémon o número de set…"
-              className="w-full rounded-2xl border border-slate-800/80 bg-slate-950/70 py-3 pl-11 pr-10 text-sm text-white placeholder-slate-600 outline-none backdrop-blur transition-colors focus:border-rose-500/50 focus:ring-2 focus:ring-rose-500/20"
-              aria-label="Buscar cartas"
-            />
-            {q && (
-              <button
-                onClick={() => setQ('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 transition-colors hover:text-white"
-                aria-label="Limpiar búsqueda"
-              >
-                <XIcon width={15} height={15} />
-              </button>
-            )}
-          </div>
-
+        {/* Layout de 2 columnas: filtros (izquierda) + resultados (derecha) */}
+        <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
+          {/* ─── Columna izquierda: Sidebar de filtros ─── */}
           {view === 'cards' && (
-            <>
-              {/* Fila de tipos de energía */}
-              <div className="mt-4">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            <aside className="w-full shrink-0 rounded-3xl border border-slate-800/90 bg-slate-900/40 p-5 shadow-[0_16px_50px_-20px_rgba(0,0,0,0.7)] backdrop-blur-xl lg:sticky lg:top-6 lg:w-[300px]">
+              {/* Título de sección */}
+              <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-emerald-500">
+                Filtros
+              </h2>
+
+              {/* NOMBRE DE CARTA */}
+              <label className="mb-4 block">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Nombre de carta
+                </span>
+                <div className="relative">
+                  <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-rose-400" />
+                  <input
+                    type="search"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Charmander, Pikachu…"
+                    className="w-full rounded-xl border border-slate-800/80 bg-slate-950/70 py-2.5 pl-10 pr-9 text-sm text-white placeholder-slate-600 outline-none transition-colors focus:border-rose-500/50 focus:ring-2 focus:ring-rose-500/20"
+                    aria-label="Buscar por nombre de carta"
+                  />
+                  {q && (
+                    <button
+                      onClick={() => setQ('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 transition-colors hover:text-white"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <XIcon width={14} height={14} />
+                    </button>
+                  )}
+                </div>
+              </label>
+
+              {/* VARIANTE */}
+              <label className="mb-4 block">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Variante
+                </span>
+                <SelectField value={rarityFilter} onChange={setRarityFilter} label="Filtrar por variante">
+                  <option value="">Todas las variantes</option>
+                  {facets.rarities.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </SelectField>
+              </label>
+
+              {/* SET */}
+              <label className="mb-4 block">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Set
+                </span>
+                <SelectField value={setFilter} onChange={setSetFilter} label="Filtrar por set">
+                  <option value="">Todos los sets</option>
+                  {facets.sets.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </SelectField>
+              </label>
+
+              {/* PRECIO (min / max) */}
+              <div className="mb-4">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Precio (USD)
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">
+                      $
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={minPrice}
+                      onChange={(e) => setMinPrice(e.target.value)}
+                      placeholder="Mín"
+                      className="w-full rounded-xl border border-slate-800/80 bg-slate-950/70 py-2.5 pl-6 pr-2 text-sm text-white placeholder-slate-600 outline-none transition-colors focus:border-rose-500/50"
+                      aria-label="Precio mínimo"
+                    />
+                  </div>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">
+                      $
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(e.target.value)}
+                      placeholder="Máx"
+                      className="w-full rounded-xl border border-slate-800/80 bg-slate-950/70 py-2.5 pl-6 pr-2 text-sm text-white placeholder-slate-600 outline-none transition-colors focus:border-rose-500/50"
+                      aria-label="Precio máximo"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* CIUDAD */}
+              <label className="mb-4 block">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Ciudad
+                </span>
+                <SelectField value={cityFilter} onChange={setCityFilter} label="Filtrar por ciudad">
+                  <option value="">Todas las ciudades</option>
+                  {facets.cities.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </SelectField>
+              </label>
+
+              {/* Tipo de energía (compacto) */}
+              <div className="mb-4">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
                   Tipo de energía
-                </p>
-                <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
+                </span>
+                <div className="flex flex-wrap gap-1.5">
                   <button
                     onClick={() => setTypeFilter('')}
-                    className={`shrink-0 rounded-xl border bg-slate-950 px-3 py-2 text-xs font-bold transition-all ${
+                    className={`rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-all ${
                       typeFilter === ''
-                        ? 'scale-105 border-rose-500/60 text-rose-400 ring-2 ring-rose-500/40'
-                        : 'border-slate-800 text-slate-400 hover:border-slate-600 hover:text-white'
+                        ? 'border-rose-500/60 bg-rose-500/15 text-rose-400'
+                        : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-600'
                     }`}
                   >
                     Todas
@@ -286,61 +383,45 @@ export default function ExplorePage() {
                         aria-pressed={active}
                         title={t.label}
                         aria-label={t.label}
-className={`flex shrink-0 items-center justify-center rounded-xl border bg-slate-950 p-2 transition-all ${
-  active
-    ? `scale-105 ring-2 ring-rose-500/60 ${t.borderClass}`
-    : 'border-slate-800 hover:brightness-125'
-}`}
-                      >
-                        <TypeIcon type={t.id} lg />
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Fila de idiomas */}
-              <div className="mt-4">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                  Idioma
-                </p>
-                <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
-                  <button
-                    onClick={() => setLanguageFilter('')}
-                    className={`shrink-0 rounded-xl border bg-slate-950 px-3 py-2 text-xs font-bold transition-all ${
-                      languageFilter === ''
-                        ? 'scale-105 border-rose-500/60 text-rose-400 ring-2 ring-rose-500/40'
-                        : 'border-slate-800 text-slate-400 hover:border-slate-600 hover:text-white'
-                    }`}
-                  >
-                    Todas
-                  </button>
-                  {CARD_LANGUAGES.map((lang) => {
-                    const active = languageFilter === lang
-                    return (
-                      <button
-                        key={lang}
-                        onClick={() => setLanguageFilter(active ? '' : lang)}
-                        aria-pressed={active}
-                        title={CARD_LANGUAGE_META[lang].label}
-                        className={`shrink-0 rounded-xl border bg-slate-950 px-3 py-2 text-xs font-bold transition-all ${
-                          active
-                            ? 'scale-105 border-rose-500/60 text-rose-400 ring-2 ring-rose-500/40'
-                            : 'border-slate-800 text-slate-400 hover:border-slate-600 hover:text-white'
+                        className={`flex items-center justify-center rounded-lg border bg-slate-950 p-1.5 transition-all ${
+                          active ? `ring-2 ring-rose-500/60 ${t.borderClass}` : 'border-slate-800 hover:brightness-125'
                         }`}
                       >
-                        <span aria-hidden="true">{CARD_LANGUAGE_META[lang].flag}</span>{' '}
-                        <span className="hidden sm:inline">{CARD_LANGUAGE_META[lang].label}</span>
-                        <span className="sm:hidden">{lang}</span>
+                        <TypeIcon type={t.id} />
                       </button>
                     )
                   })}
                 </div>
               </div>
 
-              {/* Fila inferior: modos + dropdowns */}
-              <div className="mt-4 flex flex-wrap items-center gap-2.5">
-                {/* Modos de transacción */}
+              {/* Limpiar filtros */}
+              {hasActiveFilters && (
+                <button
+                  onClick={() => {
+                    setQ('')
+                    setSetFilter('')
+                    setRarityFilter('')
+                    setCityFilter('')
+                    setTypeFilter('')
+                    setLanguageFilter('')
+                    setMinPrice('')
+                    setMaxPrice('')
+                    setSort('recent')
+                  }}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950/60 py-2.5 text-xs font-medium text-slate-400 transition-colors hover:border-slate-600 hover:text-white"
+                >
+                  <XIcon width={12} height={12} />
+                  Limpiar filtros
+                </button>
+              )}
+            </aside>
+          )}
+
+          {/* ─── Columna derecha: Área de resultados ─── */}
+          <section className="min-w-0 flex-1">
+            {/* Barra de acciones: modo + orden */}
+            {view === 'cards' && (
+              <div className="mb-4 flex flex-wrap items-center gap-2.5">
                 <div className="flex rounded-xl bg-slate-950/80 p-1">
                   {MODES.map((m) => (
                     <button
@@ -358,35 +439,6 @@ className={`flex shrink-0 items-center justify-center rounded-xl border bg-slate
                     </button>
                   ))}
                 </div>
-
-                {/* Dropdowns compactos */}
-                <SelectField value={setFilter} onChange={setSetFilter} label="Filtrar por expansión">
-                  <option value="">Sets</option>
-                  {facets.sets.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </SelectField>
-
-                <SelectField value={rarityFilter} onChange={setRarityFilter} label="Filtrar por rareza">
-                  <option value="">Rarezas</option>
-                  {facets.rarities.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </SelectField>
-
-                <SelectField value={cityFilter} onChange={setCityFilter} label="Filtrar por ciudad">
-                  <option value="">Ciudades</option>
-                  {facets.cities.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </SelectField>
-
                 <div className="ml-auto">
                   <SelectField value={sort} onChange={setSort} label="Ordenar">
                     {SORTS.map((s) => (
@@ -397,75 +449,69 @@ className={`flex shrink-0 items-center justify-center rounded-xl border bg-slate
                   </SelectField>
                 </div>
               </div>
-            </>
-          )}
-
-          {/* Estado de filtros */}
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-800/60 pt-3">
-            <div className="flex items-center gap-2">
-              <span className="rounded-full border border-rose-500/25 bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-bold text-rose-300">
-                {view === 'cards'
-                  ? `${cards.length}${hasMore ? '+' : ''}`
-                  : String(binders.length)}
-              </span>
-              <p className="text-xs text-slate-500">
-                {view === 'cards'
-                  ? `${activeMode.label.toLowerCase()}${typeFilter ? ` · ${ENERGY_TYPES.find((t) => t.id === typeFilter)?.label ?? typeFilter}` : ''}${languageFilter ? ` · ${CARD_LANGUAGE_META[languageFilter as keyof typeof CARD_LANGUAGE_META]?.label ?? languageFilter}` : ''}`
-                  : 'binders destacados'}
-              </p>
-            </div>
-            {hasActiveFilters && (
-              <button
-                onClick={() => {
-                  setQ('')
-                  setSetFilter('')
-                  setRarityFilter('')
-                  setCityFilter('')
-                  setTypeFilter('')
-                  setLanguageFilter('')
-                  setSort('recent')
-                }}
-                className="flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-white"
-              >
-                <XIcon width={12} height={12} />
-                Limpiar filtros
-              </button>
             )}
-          </div>
-        </section>
 
-        {/* Resultados */}
-        <section className="mt-6">
-          {error ? (
-            <div className="rounded-2xl border border-red-900/50 bg-red-950/30 px-6 py-10 text-center">
-              <p className="text-sm font-semibold text-red-400">{error}</p>
-            </div>
-          ) : view === 'cards' ? (
-            <>
-              <MarketGrid cards={cards} loading={loading} />
-              {hasMore && !loading && (
-                <div className="mt-8 flex justify-center">
-                  <button
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-6 py-3 text-sm font-semibold text-slate-200 shadow-lg backdrop-blur transition-colors hover:border-rose-500/50 hover:text-white disabled:cursor-wait disabled:opacity-60"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-rose-400" />
-                        Cargando más…
-                      </>
-                    ) : (
-                      <>Cargar más cartas ({limit} de hasta {MAX_RESULTS})</>
-                    )}
-                  </button>
+            {/* Estado de filtros */}
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full border border-rose-500/25 bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-bold text-rose-300">
+                  {view === 'cards'
+                    ? `${cards.length}${hasMore ? '+' : ''}`
+                    : String(binders.length)}
+                </span>
+                <p className="text-xs text-slate-500">
+                  {view === 'cards'
+                    ? `${activeMode.label.toLowerCase()}${typeFilter ? ` · ${ENERGY_TYPES.find((t) => t.id === typeFilter)?.label ?? typeFilter}` : ''}${languageFilter ? ` · ${CARD_LANGUAGE_META[languageFilter as keyof typeof CARD_LANGUAGE_META]?.label ?? languageFilter}` : ''}`
+                    : 'binders destacados'}
+                </p>
+              </div>
+              {view === 'cards' && (
+                <div className="flex items-center gap-2">
+                  {/* Selector de idioma compacto */}
+                  <SelectField value={languageFilter} onChange={setLanguageFilter} label="Filtrar por idioma">
+                    <option value="">Idioma</option>
+                    {CARD_LANGUAGES.map((lang) => (
+                      <option key={lang} value={lang}>
+                        {CARD_LANGUAGE_META[lang].flag} {CARD_LANGUAGE_META[lang].label}
+                      </option>
+                    ))}
+                  </SelectField>
                 </div>
               )}
-            </>
-          ) : (
-            <BindersGrid binders={binders} loading={loading} />
-          )}
-        </section>
+            </div>
+
+            {/* Resultados */}
+            {error ? (
+              <div className="rounded-2xl border border-red-900/50 bg-red-950/30 px-6 py-10 text-center">
+                <p className="text-sm font-semibold text-red-400">{error}</p>
+              </div>
+            ) : view === 'cards' ? (
+              <>
+                <MarketGrid cards={cards} loading={loading} />
+                {hasMore && !loading && (
+                  <div className="mt-8 flex justify-center">
+                    <button
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-6 py-3 text-sm font-semibold text-slate-200 shadow-lg backdrop-blur transition-colors hover:border-rose-500/50 hover:text-white disabled:cursor-wait disabled:opacity-60"
+                    >
+                      {loadingMore ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-rose-400" />
+                          Cargando más…
+                        </>
+                      ) : (
+                        <>Cargar más cartas ({limit} de hasta {MAX_RESULTS})</>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <BindersGrid binders={binders} loading={loading} />
+            )}
+          </section>
+        </div>
       </main>
 
       <footer className="border-t border-slate-800/60 py-6 text-center text-xs text-slate-600">
