@@ -8,6 +8,7 @@ import PokedexSearchModal from '@/components/PokedexSearchModal'
 import type { SearchResult } from '@/types'
 import type { CardLanguage } from '@/lib/cardLanguage'
 import ProfileRequiredModal from '@/components/ProfileRequiredModal'
+import BinderShareModal from '@/components/BinderShareModal'
 import EditCardModal from '@/components/EditCardModal'
 import BinderSettingsModal from '@/components/BinderSettingsModal'
 import BinderToolbar from '@/components/BinderToolbar'
@@ -97,6 +98,7 @@ export default function BinderPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [pendingOrder, setPendingOrder] = useState<(SlotCard | null)[] | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
+  const [showShareImage, setShowShareImage] = useState(false)
   const shareMenuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -668,7 +670,7 @@ export default function BinderPage() {
       <div className="pb-20 lg:pb-0 lg:pl-64">
         <main className="mx-auto w-full max-w-7xl px-4 py-4 lg:py-8">
             {/* Header compacto: título + stats inline + acciones */}
-            <div className="mb-5 overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
+            <div className="mb-5 rounded-2xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -754,6 +756,13 @@ export default function BinderPage() {
                             <ChatIcon className="h-3.5 w-3.5 text-emerald-400" /> WhatsApp buscadas
                           </button>
                         )}
+                        <div className="my-0.5 h-px bg-slate-800" />
+                        <button
+                          onClick={() => { setShareOpen(false); setShowShareImage(true) }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+                        >
+                          🖼️ Imagen del binder
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1060,6 +1069,16 @@ export default function BinderPage() {
       )}
 
       {showClaims && <ClaimsPanel onClose={() => setShowClaims(false)} />}
+
+      {showShareImage && profile?.username && (
+        <BinderShareModal
+          binderTitle={binder?.title ?? 'Mi Binder'}
+          cards={cards}
+          username={profile.username}
+          binderUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/binder/${encodeURIComponent(profile.username)}`}
+          onClose={() => setShowShareImage(false)}
+        />
+      )}
           </main>
         </div>
     </div>
