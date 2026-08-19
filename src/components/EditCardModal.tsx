@@ -16,7 +16,13 @@ import {
   formatCondition,
   isCardCondition
 } from '@/lib/cardCondition'
-import PriceInputWithGuide from './PriceInputWithGuide'
+import {
+  buildCardmarketUrl,
+  buildEbayUrl,
+  buildPriceChartingUrl,
+  CURRENCIES
+} from '@/lib/priceGuide'
+import LanguagePills from './LanguagePills'
 import ClaimKitModal from './ClaimKitModal'
 
 interface EditCardModalProps {
@@ -24,53 +30,73 @@ interface EditCardModalProps {
   profile: Profile | null
   onRequireProfile: (availability: Availability) => void
   onSaved: () => void
-  /** Refresca el binder sin cerrar el modal (tras guardar el precio manual) */
-  onRefresh?: () => void
   onClose: () => void
 }
 
-// Modal de edición de una carta del binder: define la modalidad de
-// disponibilidad (solo colección, en venta, para intercambio o ambas),
-// el precio manual y las notas de "¿Qué busco a cambio?".
+// Iconos compactos para cada modalidad
+const AVAIL_ICONS: Record<Availability, string> = {
+  solo_coleccion: '🔒',
+  solo_venta: '💰',
+  solo_cambio: '🔄',
+  venta_o_cambio: '💎'
+}
+
 export default function EditCardModal({
   card,
   profile,
   onRequireProfile,
   onSaved,
-  onRefresh,
   onClose
 }: EditCardModalProps) {
   const [availability, setAvailability] = useState<Availability>(() =>
     availabilityFromFlags(card.is_for_sale, card.is_for_trade)
   )
-  const [priceInput, setPriceInput] = useState<string>(
-    card.manual_price != null
-      ? String(card.manual_price)
-      : card.price != null
-        ? String(card.price)
-        : card.price_override != null
-          ? String(card.price_override)
-          : ''
-  )
+  const [priceInput, setPriceInput] = useState<string>(() => {
+    const p = card.manual_price ?? card.price ?? card.price_override
+    return p != null ? String(p) : ''
+  })
   const [currency, setCurrency] = useState<Currency>(() => normalizeCurrency(card.currency))
   const [tradeNotes, setTradeNotes] = useState<string>(card.trade_notes ?? '')
   const [condition, setCondition] = useState<string>(card.condition ?? '')
   const [language, setLanguage] = useState<CardLanguage>(() => normalizeLanguage(card.language))
   const [showKit, setShowKit] = useState(false)
+  const [showRefs, setShowRefs] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const withSale = availability === 'solo_venta' || availability === 'venta_o_cambio'
   const withTrade = availability === 'solo_cambio' || availability === 'venta_o_cambio'
 
-  // Opciones de condición: nomenclaturas estándar + el valor legacy (texto
-  // libre) que ya estuviera guardado, para no perderlo al re-guardar.
   const conditionOptions: { id: string; label: string }[] = CARD_CONDITIONS.map((c) => ({
     id: c.id,
     label: formatCondition(c.id) ?? c.id
   }))
   if (condition !== '' && !isCardCondition(condition)) {
     conditionOptions.unshift({ id: condition, label: condition })
+  }
+
+  const guideUrls = {
+    priceCharting: buildPriceChartingUrl({
+      cardName: card.card_name,
+      setId: card.set_id,
+      set_name: card.set_name,
+      number: card.number,
+      language
+    }),
+    ebay: buildEbayUrl({
+      cardName: card.card_name,
+      setId: card.set_id,
+      set_name: card.set_name,
+      number: card.number,
+      language
+    }),
+    cardmarket: buildCardmarketUrl({
+      cardName: card.card_name,
+      setId: card.set_id,
+      set_name: card.set_name,
+      number: card.number,
+      language
+    })
   }
 
   function parsePrice(): number | null {
@@ -83,7 +109,6 @@ export default function EditCardModal({
   async function handleSave() {
     setError(null)
 
-    // Onboarding progresivo: si va a vender, necesita perfil con whatsapp
     if (withSale && !isProfileComplete(profile)) {
       onRequireProfile(availability)
       return
@@ -101,16 +126,11 @@ export default function EditCardModal({
 
     setSaving(true)
     try {
-      const body: Record<string, unknown> = { availability }
-      if (withSale) {
-        body.price = price
-      } else {
-        body.price = null
-      }
+      const body: Record<string, unknown> = { availability, language, currency }
+      body.price = withSale ? price : null
+      body.manual_price = price
       body.trade_notes = tradeNotes.trim() === '' ? null : tradeNotes.trim()
       body.condition = condition.trim() === '' ? null : condition.trim()
-      body.language = language
-      body.currency = currency
 
       const res = await fetch(`/api/binder/slots/${card.id}`, {
         method: 'PATCH',
@@ -128,10 +148,7 @@ export default function EditCardModal({
   }
 
   return (
-    <div
-      className="modal-overlay z-50"
-      onClick={onClose}
-    >
+    <div className="modal-overlay z-50" onClick={onClose}>
       <div
         className="modal-card modal-card--md modal-card--scroll max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
@@ -139,148 +156,200 @@ export default function EditCardModal({
         aria-modal="true"
         aria-label={`Editar ${card.card_name}`}
       >
-        <div className="modal-header">
-          <h2 className="modal-title">Editar carta</h2>
-          <button onClick={onClose} className="modal-close">
-            Cerrar
+        {/* Header compacto */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-white">{card.card_name}</h2>
+            <p className="truncate text-xs text-slate-500">
+              {card.set_id.toUpperCase()} · #{card.number}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="shrink-0 rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
+          >
+            ✕
           </button>
         </div>
 
-        <p className="mt-1 truncate text-sm text-slate-500">
-          {card.card_name} · {card.set_id.toUpperCase()} {card.number}
-        </p>
-
-        {/* Idioma + precio manual con guía de referencia externa */}
-        <div className="mt-5">
-          <PriceInputWithGuide
-            card={card}
-            onLanguageChange={setLanguage}
-            onPriceInputChange={setPriceInput}
-            onCurrencyChange={setCurrency}
-            onSaved={onRefresh}
-          />
+        {/* Idioma — pills compactos */}
+        <div className="mt-4">
+          <LanguagePills value={language} onChange={setLanguage} />
         </div>
 
-        {/* Selector de modalidad */}
+        {/* Precio + moneda — fila compacta */}
+        <div className="mt-4 flex items-end gap-2">
+          <div className="flex-1">
+            <label className="block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              Precio
+            </label>
+            <div className="relative mt-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
+                $
+              </span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={priceInput}
+                onChange={(e) => setPriceInput(e.target.value)}
+                placeholder={
+                  card.market_price != null && card.market_price > 0
+                    ? `Mercado: ${card.market_price.toFixed(2)}`
+                    : '0.00'
+                }
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 py-2.5 pl-7 pr-3 text-sm text-white placeholder-slate-600 focus:border-rose-500 focus:outline-none"
+              />
+            </div>
+          </div>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value as Currency)}
+            className="shrink-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-rose-500 focus:outline-none"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.symbol} {c.id}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Referencias externas — colapsable */}
+        <button
+          type="button"
+          onClick={() => setShowRefs(!showRefs)}
+          className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500 transition-colors hover:text-slate-300"
+        >
+          <span className={`transition-transform ${showRefs ? 'rotate-90' : ''}`}>▸</span>
+          Ver precios de referencia
+        </button>
+        {showRefs && (
+          <div className="mt-2 grid grid-cols-3 gap-1.5">
+            <a
+              href={guideUrls.priceCharting}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-sky-500/40 hover:text-sky-300"
+            >
+              🔍 PriceCharting ↗
+            </a>
+            <a
+              href={guideUrls.ebay}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-emerald-500/40 hover:text-emerald-300"
+            >
+              🛒 eBay ↗
+            </a>
+            <a
+              href={guideUrls.cardmarket}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-300"
+            >
+              🏷️ Cardmarket ↗
+            </a>
+          </div>
+        )}
+
+        {/* Modalidad — grid compacto 2x2 */}
         <div className="mt-5">
-          <p className="field-label">Modalidad</p>
-          <div className="mt-2 grid gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            Disponibilidad
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
             {AVAILABILITIES.map((a) => (
               <button
                 key={a}
                 type="button"
                 onClick={() => setAvailability(a)}
-                aria-pressed={availability === a}
-                className={`rounded-xl border px-4 py-2.5 text-left transition-colors ${
+                className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors ${
                   availability === a
-                    ? 'border-binder-accent/60 bg-binder-accent/10'
+                    ? 'border-rose-500/50 bg-rose-500/10'
                     : 'border-slate-800 bg-slate-950 hover:border-slate-600'
                 }`}
               >
+                <span className="text-base">{AVAIL_ICONS[a]}</span>
                 <span
-                  className={`block text-sm font-semibold ${
-                    availability === a ? 'text-binder-accent' : 'text-slate-200'
+                  className={`text-xs font-semibold ${
+                    availability === a ? 'text-rose-300' : 'text-slate-300'
                   }`}
                 >
                   {AVAILABILITY_META[a].label}
-                </span>
-                <span className="block text-xs text-slate-500">
-                  {AVAILABILITY_META[a].description}
                 </span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Recordatorio: el precio manual se guarda en la sección superior */}
-        {withSale && priceInput.trim() === '' && (
-          <p className="mt-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-            Para poner la carta en venta fijá el precio en «Precio manual» (sección superior).
-          </p>
-        )}
-
-        {/* Notas de intercambio (solo si acepta cambio) */}
+        {/* Notas de intercambio */}
         {withTrade && (
-          <div className="mt-5">
-            <label
-              htmlFor="edit-trade-notes"
-              className="field-label"
-            >
-              ¿Qué busco a cambio?
+          <div className="mt-4">
+            <label className="block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              Busco a cambio
             </label>
             <textarea
-              id="edit-trade-notes"
               value={tradeNotes}
               onChange={(e) => setTradeNotes(e.target.value)}
               rows={2}
               maxLength={500}
-              placeholder="Ej: Busco Full Arts de 151, cartas de tipo Fuego…"
-              className="field mt-1.5 resize-none"
+              placeholder="Ej: Full Arts de 151, cartas fuego…"
+              className="mt-1.5 w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-rose-500 focus:outline-none"
             />
-            <p className="field-hint text-right">{tradeNotes.length}/500</p>
           </div>
         )}
 
-        {/* Condición física (opcional, va en el mensaje del claim) */}
+        {/* Condición */}
         {(withSale || withTrade) && (
-          <div className="mt-5">
-            <label
-              htmlFor="edit-condition"
-              className="field-label"
-            >
+          <div className="mt-4">
+            <label className="block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
               Condición
             </label>
             <select
-              id="edit-condition"
               value={condition}
               onChange={(e) => setCondition(e.target.value)}
-              className="field mt-1.5"
+              className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-rose-500 focus:outline-none"
             >
-              <option value="">Sin especificar</option>
+              <option value="">No especificada</option>
               {conditionOptions.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.label}
                 </option>
               ))}
             </select>
-            <p className="field-hint">
-              Nomenclatura estándar del TCG (NM = Near Mint). Aparece en el mensaje del claim y en
-              el kit.
-            </p>
           </div>
         )}
 
-        {error && (
-          <p className="banner banner--error mt-4">{error}</p>
-        )}
-
-        {/* Kit de Claim: texto estructurado + imagen 1080x1080 para vender en redes/grupos */}
+        {/* Kit de Claim — link sutil */}
         {(withSale || withTrade) && (
-          <div className="mt-5 rounded-xl border border-binder-accent/20 bg-binder-accent/5 p-3">
-            <button
-              onClick={() => setShowKit(true)}
-              className="w-full rounded-xl bg-binder-accent/90 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-binder-accent"
-            >
-              📦 Generar Kit de Claim
-            </button>
-            <p className="mt-2 text-center text-[11px] text-slate-500">
-              Copiá el texto estructurado o generá la imagen 1080×1080 para publicar en grupos y
-              redes.
-            </p>
+          <button
+            onClick={() => setShowKit(true)}
+            className="mt-4 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-xs font-semibold text-slate-400 transition-colors hover:border-rose-500/30 hover:text-rose-300"
+          >
+            📦 Generar Kit de Claim
+          </button>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div className="mt-3 rounded-xl border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs text-red-400">
+            {error}
           </div>
         )}
 
-        <div className="mt-6 flex justify-end gap-3">
+        {/* Footer */}
+        <div className="mt-5 flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="btn-claim btn-claim--compact btn-claim--ghost"
+            className="rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="btn-claim btn-claim--compact btn-claim--accent"
+            className="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500 disabled:opacity-50"
           >
             {saving ? 'Guardando…' : 'Guardar'}
           </button>
