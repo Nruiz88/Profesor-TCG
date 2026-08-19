@@ -61,7 +61,7 @@ function drawBinderImage(
   const cols = 3
   const rows = Math.ceil(Math.max(opts.cards.length, 9) / cols)
   const headerH = 180
-  const footerH = 80
+  const footerH = 130
   const gap = 16
   const cardPadding = 20
   const gridW = W - cardPadding * 2
@@ -171,15 +171,26 @@ function drawBinderImage(
     }
   }
 
-  // Footer: valor total + marca de agua
+  // Footer: valor total centrado, grande y en negrita + marca de agua
   const footerY = gridStartY + gridH + cardPadding
-  ctx.fillStyle = '#10b981'
-  ctx.font = '800 36px system-ui, -apple-system, sans-serif'
-  ctx.fillText(
-    totalValue > 0 ? `Valor total: $${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD` : '',
-    W / 2,
-    footerY + 30
-  )
+  ctx.textAlign = 'center'
+  if (totalValue > 0) {
+    // Badge destacado detrás del valor
+    const valueText = `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
+    ctx.font = '900 60px system-ui, -apple-system, sans-serif'
+    const vw = ctx.measureText(valueText).width + 56
+    const vh = 84
+    const vx = (W - vw) / 2
+    const vy = footerY - 24
+    roundedRect(ctx, vx, vy, vw, vh, 18)
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.18)'
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.45)'
+    ctx.lineWidth = 3
+    ctx.stroke()
+    ctx.fillStyle = '#10b981'
+    ctx.fillText(valueText, W / 2, vy + vh / 2 + 20)
+  }
   ctx.fillStyle = 'rgba(148, 163, 184, 0.7)'
   ctx.font = '600 24px system-ui, sans-serif'
   ctx.fillText(
