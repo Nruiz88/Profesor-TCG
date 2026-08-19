@@ -47,6 +47,16 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
+/**
+ * Versión corta de un id UUID para URLs compartidas (/c/<short>).
+ * Usa los primeros 8 caracteres hex (32 bits): colisión ~1 en 4 mil millones
+ * por par, suficiente para links efímeros. La ruta /c/[short] lo resuelve por
+ * prefijo y redirige a la URL canónica.
+ */
+export function shortCardId(uuid: string): string {
+  return uuid.replace(/-/g, '').slice(0, 8).toLowerCase()
+}
+
 /** Sesión expirada: el middleware redirigió la llamada a /login. */
 export class SessionExpiredError extends Error {
   constructor() {

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { effectivePrice } from '@/lib/cardStatus'
-import { slugify } from '@/lib/utils'
+import { shortCardId, slugify } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
 // WhatsApp Claim — lógica compartida del circuito de compra/venta:
@@ -77,8 +77,16 @@ export function claimPrice(card: {
 // URL pública de la carta (página /card/[id]/[slug] con su og:image propia).
 // El preview de WhatsApp muestra la carta real (nombre, set y precio), no la
 // portada del binder.
+//
+// Si el id es un UUID de slot (binder_cards.id) se comparte la versión corta
+// /c/<short> (8 chars) que redirige a la canónica. Los card_id del catálogo
+// (ej. "base1-4") no son UUID y se mantienen como /card/<id>/<slug>.
 export function cardPublicUrl(cardId: string, cardName: string): string {
   const base = typeof window !== 'undefined' ? window.location.origin : ''
+  const isSlotUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-/.test(cardId)
+  if (isSlotUuid) {
+    return `${base}/c/${shortCardId(cardId)}`
+  }
   return `${base}/card/${cardId}/${slugify(cardName)}`
 }
 
