@@ -1,17 +1,26 @@
 /**
  * Resolución de imágenes de cartas Pokémon.
  *
- * 1. Lee image-manifest.json (pre-computado offline, cero requests HTTP)
- * 2. Fallback: verifica server-side con HEAD requests (pokemontcg → Scrydex → TCGdex)
+ * Orden por idioma:
+ * - No-inglés: TCGdex localizada → pokemontcg (EN) → Scrydex (EN) → TCGdex EN.
+ * - Inglés:   según el source del manifest (pokemontcg | scrydex | tcgdex),
+ *   y si la carta puntual no existe ahí, cae al resto de fuentes.
+ *
+ * Puntos clave:
+ * - pokemontcg.io y TCGdex responden 404 limpio para cartas que no tienen:
+ *   un HEAD alcanza para verificarlas.
+ * - Scrydex responde 200 con el REVERSO de la carta como body para las que no
+ *   tiene: se verifica descargando y comparando el hash del reverso.
+ * - Cada carta se verifica y cachea por instancia serverless.
  *
  * El manifest se genera con: node scripts/precompute-images.mjs
  */
 
 import type { CardLanguage } from '@/lib/cardLanguage'
-import { pokemontcgUrl } from './pokemontcg'
-import { scrydexUrl, unpadNumber } from './scrydex'
+import { tryPokemontcg } from './pokemontcg'
+import { scrydexUrl, unpadNumber, scrydexUrlExists } from './scrydex'
 import { tryTcgdex } from './tcgdex'
-import { head, NO_IMAGE_PLACEHOLDER } from './utils'
+import { NO_IMAGE_PLACEHOLDER, imageCache, cacheImage } from './utils'
 
 // Re-exportar para uso externo
 export { NO_IMAGE_PLACEHOLDER } from './utils'
@@ -24,6 +33,33 @@ type ImageSource = 'pokemontcg' | 'scrydex' | 'scrydex-unpadded' | 'tcgdex' | 'n
 // @ts-ignore — Next.js resuelve JSON imports en build time
 import manifestData from '../../content/image-manifest.json'
 const manifest: Record<string, ImageSource> = manifestData as Record<string, ImageSource>
+
+// ── Verificadores por fuente ─────────────────────────────────────────
+
+/**
+ * Scrydex solo cubre sets de pokemon-tcg-data. El manifest marca 'none' a los
+ * sets que ni pokemontcg.io, ni Scrydex ni TCGdex tienen (verificado offline en
+ * precompute-images.mjs): para esos, evitar descargar el reverso en cada carta.
+ */
+async function tryScrydex(
+  setId: string,
+  number: string,
+  unpadded = false
+): Promise<string | null> {
+  if (manifest[setId] === 'none') return null
+  const n = unpadded ? unpadNumber(number) : number
+  const url = scrydexUrl(setId, n)
+  return (await scrydexUrlExists(url)) ? url : null
+}
+
+/** Encadena candidatos y devuelve la primera URL verificada. */
+async function firstOf(candidates: Promise<string | null>[]): Promise<string | null> {
+  for (const candidate of candidates) {
+    const url = await candidate
+    if (url) return url
+  }
+  return null
+}
 
 // ── Resolución ───────────────────────────────────────────────────────
 
@@ -40,75 +76,67 @@ export async function resolveCardImage(
   number: string,
   language: CardLanguage = 'EN'
 ): Promise<string> {
-  // ── 0. Manifest pre-computado (cero HTTP) ──
-  const source = manifest[setId]
-  if (source) {
-    return resolveFromSource(setId, number, language, source)
-  }
+  const cacheKey = `${setId}:${number}:${language}`
+  const cached = imageCache.get(cacheKey)
+  if (cached) return cached
 
-  // ── 1. Fallback: HEAD requests en runtime ──
-  return resolveViaHead(setId, number, language)
-}
+  let url: string | null = null
 
-function resolveFromSource(
-  setId: string,
-  number: string,
-  language: CardLanguage,
-  source: ImageSource
-): string {
-  // Para idiomas no-ingleses, TCGdex es la fuente preferida
-  if (language !== 'EN' && source !== 'tcgdex') {
-    // Intentamos TCGdex de todas formas — si no está en el manifest como
-    // fuente primaria, igualmente probamos (el manifest solo tiene EN).
-    // Retornamos la URL de la fuente EN y el caller puede intentar TCGdex aparte.
-    // Por simplicidad, usamos la fuente EN y dejamos que el frontend maneje el idioma.
-  }
-
-  const unpadded = unpadNumber(number)
-
-  switch (source) {
-    case 'pokemontcg':
-      return pokemontcgUrl(setId, number)
-
-    case 'scrydex':
-      return scrydexUrl(setId, number)
-
-    case 'scrydex-unpadded':
-      return scrydexUrl(setId, unpadded)
-
-    case 'tcgdex': {
-      // Para tcgdex en el manifest, construir la URL EN
-      const series = (setId.match(/^([a-z]+)/i) || [])[1]?.toLowerCase() || ''
-      return `https://assets.tcgdex.net/en/${series}/${setId}/${number}/high.png`
-    }
-
-    default:
-      return NO_IMAGE_PLACEHOLDER
-  }
-}
-
-async function resolveViaHead(
-  setId: string,
-  number: string,
-  language: CardLanguage
-): Promise<string> {
-  // Para idiomas no-ingleses, intentar TCGdex primero
   if (language !== 'EN') {
-    const tcgdexResult = await tryTcgdex(setId, number, language)
-    if (tcgdexResult) return tcgdexResult
+    url = await firstOf([
+      tryTcgdex(setId, number, language),
+      tryPokemontcg(setId, number),
+      tryScrydex(setId, number),
+      tryScrydex(setId, number, true),
+      tryTcgdex(setId, number, 'EN')
+    ])
+  } else {
+    const source = manifest[setId]
+    switch (source) {
+      case 'pokemontcg':
+        url = await firstOf([
+          tryPokemontcg(setId, number),
+          tryScrydex(setId, number),
+          tryScrydex(setId, number, true),
+          tryTcgdex(setId, number, 'EN')
+        ])
+        break
+      case 'scrydex-unpadded':
+        url = await firstOf([
+          tryScrydex(setId, number, true),
+          tryScrydex(setId, number),
+          tryPokemontcg(setId, number),
+          tryTcgdex(setId, number, 'EN')
+        ])
+        break
+      case 'scrydex':
+        url = await firstOf([
+          tryScrydex(setId, number),
+          tryScrydex(setId, number, true),
+          tryPokemontcg(setId, number),
+          tryTcgdex(setId, number, 'EN')
+        ])
+        break
+      case 'tcgdex':
+        url = await firstOf([
+          tryTcgdex(setId, number, 'EN'),
+          tryPokemontcg(setId, number),
+          tryScrydex(setId, number),
+          tryScrydex(setId, number, true)
+        ])
+        break
+      default:
+        url = await firstOf([
+          tryPokemontcg(setId, number),
+          tryScrydex(setId, number),
+          tryScrydex(setId, number, true),
+          tryTcgdex(setId, number, 'EN')
+        ])
+        break
+    }
   }
 
-  // pokemontcg.io
-  const pokemontcg = pokemontcgUrl(setId, number)
-  if (await head(pokemontcg)) return pokemontcg
-
-  // Scrydex
-  const unpadded = unpadNumber(number)
-  const scrydexPadded = scrydexUrl(setId, number)
-  const scrydexUnpadded = scrydexUrl(setId, unpadded)
-
-  if (await head(scrydexPadded)) return scrydexPadded
-  if (unpadded !== number && (await head(scrydexUnpadded))) return scrydexUnpadded
-
-  return NO_IMAGE_PLACEHOLDER
+  const result = url ?? NO_IMAGE_PLACEHOLDER
+  cacheImage(cacheKey, result)
+  return result
 }

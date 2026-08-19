@@ -9,6 +9,20 @@
  * - No cubre todos los sets (ej: sets chicos como McDonald's).
  */
 
+import { head } from './utils'
+
 export function pokemontcgUrl(setId: string, number: string): string {
   return `https://images.pokemontcg.io/${setId}/${number}_hires.png`
+}
+
+/**
+ * Verifica server-side que la carta exista: pokemontcg.io responde 404 (con el
+ * reverso como body) para cartas que no tiene, y el HEAD distingue eso.
+ */
+export async function tryPokemontcg(
+  setId: string,
+  number: string
+): Promise<string | null> {
+  const url = pokemontcgUrl(setId, number)
+  return (await head(url)) ? url : null
 }

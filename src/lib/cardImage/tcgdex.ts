@@ -1,13 +1,16 @@
 /**
  * Fuente multilingüe: TCGdex (https://tcgdex.dev).
  *
- * Tiene imágenes localizadas en español, japonés, coreano y chino.
- * Cubre sets desde SM (Sol y Luna, 2017) hasta SV (Scarlet & Violet).
- * Sets viejos (era EX, Diamond & Pearl) no siempre están.
+ * Tiene imágenes localizadas en español, japonés, coreano y chino, y además
+ * cubre sets que pokemontcg.io/Scrydex NO tienen: Pokémon TCG Pocket (A1, B1a,
+ * ...) y los sets japoneses (S, SV, SM, M, ...).
  *
- * URL de imagen: assets.tcgdex.net/{lang}/{series}/{setId}/{number}/high.png
- * El "series" se extrae del prefijo alfabético del set ID:
- *   sv01 → sv, swsh3 → swsh, sm1 → sm, ex1 → ex, xy1 → xy
+ * URL de imagen: assets.tcgdex.net/{lang}/{serie}/{setId}/{number}/high.png
+ *
+ * Para los sets del catálogo que no cubre pokemontcg.io usamos un mapa estático
+ * (src/content/tcgdex-images.json) generado offline: ahí está la serie correcta
+ * (tcgp para Pocket, SV/S/SM en mayúsculas para los sets japoneses, etc.).
+ * Para los sets estándar EN se deriva la serie del prefijo del ID (sv3 → sv).
  *
  * TCGdex usa "ja" para japonés (nuestro código es "JP").
  */
@@ -15,6 +18,10 @@
 import type { CardLanguage } from '@/lib/cardLanguage'
 import { unpadNumber } from './scrydex'
 import { head } from './utils'
+
+// @ts-ignore — Next.js resuelve JSON imports en build time
+import tcgdexImages from '../../content/tcgdex-images.json'
+const tcgdexMap = tcgdexImages as Record<string, string>
 
 /** Mapeo de nuestros códigos de idioma a los códigos de TCGdex (ISO 639-1). */
 const LANG_MAP: Record<string, string> = {
@@ -32,6 +39,34 @@ function extractSeries(setId: string): string {
 }
 
 /**
+ * Prefijo base de imagen TCGdex ("lang/serie/tcgdexId") para un set.
+ * Prioriza el mapa estático; para sets estándar EN lo deriva del prefijo.
+ */
+export function tcgdexImagePrefix(
+  setId: string,
+  language: CardLanguage
+): string | null {
+  const mapped = tcgdexMap[setId]
+  if (mapped) return mapped
+
+  const lang = LANG_MAP[language] || 'en'
+  const series = extractSeries(setId)
+  if (!series) return null
+  return `${lang}/${series}/${setId}`
+}
+
+/** URL (sin verificar) de la imagen TCGdex para una carta. */
+export function tcgdexUrl(
+  setId: string,
+  number: string,
+  language: CardLanguage
+): string | null {
+  const prefix = tcgdexImagePrefix(setId, language)
+  if (!prefix) return null
+  return `https://assets.tcgdex.net/${prefix}/${number}/high.png`
+}
+
+/**
  * Intenta obtener la imagen localizada de TCGdex para una carta.
  * Retorna la URL si existe, null si no.
  */
@@ -40,21 +75,14 @@ export async function tryTcgdex(
   number: string,
   language: CardLanguage
 ): Promise<string | null> {
-  const lang = LANG_MAP[language]
-  if (!lang) return null
-
-  const series = extractSeries(setId)
-  if (!series) return null
-
-  // Intentar con el número tal cual (puede tener padding: "075")
-  const url = `https://assets.tcgdex.net/${lang}/${series}/${setId}/${number}/high.png`
-  if (await head(url)) return url
+  const url = tcgdexUrl(setId, number, language)
+  if (url && (await head(url))) return url
 
   // Intentar sin padding (ej: "075" → "75")
   const unpadded = unpadNumber(number)
   if (unpadded !== number) {
-    const urlUnpadded = `https://assets.tcgdex.net/${lang}/${series}/${setId}/${unpadded}/high.png`
-    if (await head(urlUnpadded)) return urlUnpadded
+    const urlUnpadded = tcgdexUrl(setId, unpadded, language)
+    if (urlUnpadded && (await head(urlUnpadded))) return urlUnpadded
   }
 
   return null

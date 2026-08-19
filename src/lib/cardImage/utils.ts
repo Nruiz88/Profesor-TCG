@@ -26,4 +26,13 @@ export const NO_IMAGE_PLACEHOLDER = `data:image/svg+xml;utf8,${encodeURIComponen
 )}`
 
 /** Cache en memoria de resultados (por instancia serverless). */
+const MAX_CACHE = 5000
 export const imageCache = new Map<string, string>()
+
+export function cacheImage(key: string, value: string): void {
+  if (imageCache.size >= MAX_CACHE) {
+    const oldest = imageCache.keys().next().value
+    if (oldest !== undefined) imageCache.delete(oldest)
+  }
+  imageCache.set(key, value)
+}
