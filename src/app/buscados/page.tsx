@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import SiteNav from '@/components/SiteNav'
 import WantlistGrid from '@/components/WantlistGrid'
 import type {
   PublicWantlistEntry,
@@ -130,8 +129,6 @@ export default function BuscadosPage() {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
-      <SiteNav label="Buscados" active="buscados" />
-
       <main className="mx-auto max-w-7xl px-4 py-10">
         {/* Hero simplificado */}
         <section className="relative overflow-hidden">

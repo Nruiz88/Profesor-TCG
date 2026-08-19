@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import SiteNav from '@/components/SiteNav'
 import MarketGrid, { BindersGrid } from '@/components/MarketGrid'
 import type { ExploreBinder, ExploreCard, ExploreFacets } from '@/app/api/public/explore/route'
 import { ENERGY_TYPES, TypeIcon } from '@/components/TypeIcon'
@@ -174,8 +173,6 @@ export default function ExplorePage() {
   return (
     <div className="relative min-h-screen bg-[#090d16] text-slate-200">
       <GhostPokemon />
-      {/* Header flotante glass */}
-      <SiteNav label="Explorar" active="explore" />
 
       <main className="mx-auto max-w-7xl px-4 py-10">
         {/* Hero simplificado */}

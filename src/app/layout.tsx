@@ -10,6 +10,7 @@ import '../components/claim.css'
 import '../components/activity.css'
 import SiteFooter from '@/components/SiteFooter'
 import BottomNav from '@/components/BottomNav'
+import AppShell from '@/components/AppShell'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
@@ -30,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen antialiased pb-20 lg:pb-0">
-        {children}
+        <AppShell>{children}</AppShell>
         <SiteFooter />
         <BottomNav />
       </body>

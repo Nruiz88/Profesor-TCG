@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import SiteNav from '@/components/SiteNav'
 import LanguageBadge from '@/components/LanguageBadge'
 import { formatPrice } from '@/lib/priceGuide'
 import { formatCondition } from '@/lib/cardCondition'
@@ -86,7 +85,6 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
   if (loading) {
     return (
       <div className="min-h-screen text-slate-200">
-        <SiteNav />
         <p className="py-24 text-center text-slate-500">Cargando carta…</p>
       </div>
     )
@@ -95,7 +93,6 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
   if (error || !data) {
     return (
       <div className="min-h-screen text-slate-200">
-        <SiteNav />
         <div className="mx-auto max-w-3xl px-4 py-12">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-14 text-center">
             <h1 className="text-xl font-bold text-white">Profesor TCG</h1>
@@ -143,7 +140,6 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
 
   return (
     <div className="min-h-screen text-slate-200">
-      <SiteNav />
       <div className="mx-auto max-w-5xl px-4 py-8">
         {/* Barra de navegación + badges */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">

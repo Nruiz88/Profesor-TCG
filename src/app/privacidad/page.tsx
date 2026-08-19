@@ -1,20 +1,8 @@
 import Link from 'next/link'
-import SiteNav from '@/components/SiteNav'
-import { createClient } from '@/lib/supabase/server'
 
 export default async function PrivacidadPage() {
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-300">
-      {/* Nav */}
-      <SiteNav
-        initialUser={user ? { id: user.id, email: user.email ?? undefined } : null}
-      />
-
       <main className="mx-auto max-w-3xl px-4 py-16 sm:py-20">
         <p className="text-xs font-bold uppercase tracking-widest text-binder-accent">
           Política de privacidad

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -8,19 +8,16 @@ import {
   CardsIcon,
   ChevronDownIcon,
   CompassIcon,
-  FileTextIcon,
   FolderIcon,
   GearIcon,
   HomeIcon,
   LogoutIcon,
-  MenuIcon,
   PlusIcon,
   PokeballIcon,
   RefreshIcon,
   ShieldIcon,
   SwapIcon,
-  UserIcon,
-  XIcon
+  UserIcon
 } from '@/components/icons'
 import NotificationsBell from './NotificationsBell'
 import type { Profile } from '@/lib/profile'
@@ -314,35 +311,6 @@ function SidebarContent({
           </SidebarSection>
         )}
 
-        {/* SISTEMA / OBSIDIAN */}
-        <SidebarSection icon={<FileTextIcon className="h-5 w-5" />} title="Sistema / Obsidian">
-          <Link
-            href="/notas"
-            onClick={onClose}
-            className={`${NAV_ITEM} ${isActive('/notas') && !isActive('/notas/registro-cambios') ? NAV_ACTIVE : NAV_IDLE}`}
-          >
-            <FileTextIcon
-              className={`h-5 w-5 ${
-                isActive('/notas') && !isActive('/notas/registro-cambios')
-                  ? 'text-rose-300'
-                  : 'text-slate-500'
-              }`}
-            />
-            Registro de Notas
-          </Link>
-          <Link
-            href="/notas/registro-cambios"
-            onClick={onClose}
-            className={`${NAV_ITEM} ${isActive('/notas/registro-cambios') ? NAV_ACTIVE : NAV_IDLE}`}
-          >
-            <RefreshIcon
-              className={`h-5 w-5 ${
-                isActive('/notas/registro-cambios') ? 'text-rose-300' : 'text-slate-500'
-              }`}
-            />
-            Cambios de Código
-          </Link>
-        </SidebarSection>
       </nav>
 
       {/* ─── Footer: perfil del usuario ─── */}
@@ -386,18 +354,15 @@ function SidebarContent({
 }
 
 /**
- * Barra lateral fija (estilo dashboard): reemplaza el header superior y el
- * panel lateral del binder. Contiene la navegación completa agrupada por
- * secciones y el perfil del usuario en el footer. En mobile se pliega como
- * drawer desde la izquierda.
+ * Barra lateral fija (estilo dashboard): reemplaza el header superior en
+ * desktop. Contiene la navegación completa agrupada por secciones y el
+ * perfil del usuario en el footer. Solo visible en lg+ (en mobile navega
+ * el BottomNav).
  */
 export default function AppSidebar(props: AppSidebarProps) {
-  const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<{ id: string; email?: string } | null>(props.user)
   const [pendingOffers, setPendingOffers] = useState(0)
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const drawerRef = useRef<HTMLDivElement | null>(null)
   const isActive = useActivePath()
 
   // Sincronizar sesión en el cliente (auth de Supabase)
@@ -443,78 +408,15 @@ export default function AppSidebar(props: AppSidebarProps) {
     }
   }, [user?.id, pathname])
 
-  // Cerrar drawer al navegar y con Escape / clic afuera
-  useEffect(() => {
-    setMobileOpen(false)
-  }, [pathname])
-
-  useEffect(() => {
-    if (!mobileOpen) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setMobileOpen(false)
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [mobileOpen])
-
-  const close = () => setMobileOpen(false)
-
   return (
-    <>
-      {/* Barra superior en mobile: logo + hamburguesa */}
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-800/60 bg-[#090d16]/80 px-4 backdrop-blur-xl lg:hidden">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-rose-600 to-rose-400 text-sm font-bold text-white shadow-lg shadow-rose-900/40">
-            P
-          </span>
-          <span className="text-base font-bold tracking-tight text-white">Profesor TCG</span>
-        </Link>
-        <div className="flex items-center gap-2">
-          {user && <NotificationsBell />}
-          <button
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
-            aria-expanded={mobileOpen}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 transition-colors hover:border-slate-600 hover:text-white"
-          >
-            {mobileOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
-          </button>
-        </div>
-      </header>
-
-      {/* Drawer mobile */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={close}
-            aria-hidden="true"
-          />
-          <div
-            ref={drawerRef}
-            className="absolute inset-y-0 left-0 w-[19rem] max-w-[85vw] border-r border-slate-800 bg-[#0a0c10] shadow-2xl"
-          >
-            <SidebarContent
-              {...props}
-              user={user}
-              pendingOffers={pendingOffers}
-              isActive={isActive}
-              onClose={close}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Sidebar fijo en desktop */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 border-r border-slate-800/60 bg-[#0a0c10] lg:block">
-        <SidebarContent
-          {...props}
-          user={user}
-          pendingOffers={pendingOffers}
-          isActive={isActive}
-          onClose={() => {}}
-        />
-      </aside>
-    </>
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 border-r border-slate-800/60 bg-[#0a0c10] lg:block">
+      <SidebarContent
+        {...props}
+        user={user}
+        pendingOffers={pendingOffers}
+        isActive={isActive}
+        onClose={() => {}}
+      />
+    </aside>
   )
 }

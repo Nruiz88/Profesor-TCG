@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import SiteNav from '@/components/SiteNav'
 import {
   normalizeOfferStatus,
   tradeIsFavorable,
@@ -94,8 +93,6 @@ export default function OffersPage() {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
-      <SiteNav active="offers" />
-
       <div className="mx-auto max-w-4xl px-4 py-8">
       {/* Encabezado con acento neón */}
       <header className="relative mb-6 overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 p-6 backdrop-blur-xl">

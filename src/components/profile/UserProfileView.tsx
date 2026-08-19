@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import SiteNav from '@/components/SiteNav'
 import MarketCard from '@/components/MarketCard'
 import WantlistSlot from '@/components/binder/WantlistSlot'
 import { buildSwapOfferUrl } from '@/lib/matchmaking'
@@ -262,8 +261,6 @@ export default function UserProfileView({
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
-      <SiteNav />
-
       <div className="mx-auto w-full max-w-7xl px-4 py-8">
         {/* ═══════════ 1. HEADER DEL PERFIL (Banner Superior) ═══════════ */}
         <header className="relative mb-8 overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl">

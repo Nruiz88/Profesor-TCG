@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import SiteNav from '@/components/SiteNav'
-import { createClient } from '@/lib/supabase/server'
 import { getNota, listNotas } from '@/lib/notas'
 import MarkdownView from '@/components/notas/MarkdownView'
 
@@ -30,11 +28,6 @@ export default async function NotaPage({ params }: NotaPageProps) {
   const nota = await getNota(slug)
   if (!nota) notFound()
 
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-
   const todas = await listNotas()
   const index = todas.findIndex((n) => n.slug === slug)
   const prev = index > 0 ? todas[index - 1] : null
@@ -42,11 +35,6 @@ export default async function NotaPage({ params }: NotaPageProps) {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-300">
-      <SiteNav
-        label="Notas"
-        initialUser={user ? { id: user.id, email: user.email ?? undefined } : null}
-      />
-
       <main className="mx-auto max-w-3xl px-4 py-16 sm:py-20">
         <Link
           href="/notas"
