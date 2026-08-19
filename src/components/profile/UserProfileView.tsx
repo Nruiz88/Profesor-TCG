@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import MarketCard from '@/components/MarketCard'
 import WantlistSlot from '@/components/binder/WantlistSlot'
 import { buildSwapOfferUrl } from '@/lib/matchmaking'
@@ -41,18 +40,7 @@ export interface ProfileInfo {
   created_at?: string
 }
 
-// La sección de configuración (edición + cambio de contraseña) se carga solo
-// cuando el dueño del perfil abre su pestaña: bundle aparte, carga inicial
-// más liviana.
-const ProfileSettingsSection = dynamic(
-  () => import('./ProfileSettingsSection'),
-  {
-    ssr: false,
-    loading: () => (
-      <p className="py-16 text-center text-sm text-slate-500">Cargando configuración…</p>
-    )
-  }
-)
+
 
 export interface SetCollection {
   setId: string
@@ -768,17 +756,7 @@ export default function UserProfileView({
             )}
           </div>
 
-          {/* Configuración (solo perfil propio) */}
-          {isOwnProfile && (
-            <section className="mt-10 border-t border-slate-800/70 pt-8">
-              <div className="mb-4 flex items-center gap-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-slate-500/40 bg-slate-500/10 px-3 py-1 font-mono text-xs font-bold uppercase tracking-widest text-slate-200">
-                  ⚙️ — Configuración
-                </span>
-              </div>
-              <ProfileSettingsSection profile={profile} />
-            </section>
-          )}
+
 
           {/* Toast de feedback al compartir */}
           {copied && (
