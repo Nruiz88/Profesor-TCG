@@ -52,7 +52,7 @@ export default function CardDetailModal({ card, canEdit = false, onSaved, onClos
   return (
     <div className="modal-overlay z-50" onClick={onClose} role="dialog" aria-modal="true">
       <div
-        className="modal-card modal-card--sm max-h-[90vh] w-full max-w-sm"
+        className="modal-card modal-card--md max-h-[90vh] w-full max-w-sm overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header minimal */}
