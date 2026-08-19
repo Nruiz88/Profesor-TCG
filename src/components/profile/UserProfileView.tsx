@@ -752,7 +752,7 @@ const setManifest: Record<string, string> = manifestData as Record<string, strin
 function logoCandidates(setId: string): string[] {
   const source = setManifest[setId]
   const pokemontcg = `https://images.pokemontcg.io/${setId}/logo.png`
-  const scrydex = `https://images.scrydex.com/pokemon/${setId}/logo`
+  const scrydex = `https://images.scrydex.com/pokemon/${setId}-logo/logo`
   switch (source) {
     case 'scrydex':
     case 'scrydex-unpadded':
