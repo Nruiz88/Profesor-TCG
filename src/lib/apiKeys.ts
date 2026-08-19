@@ -32,6 +32,15 @@ export const KNOWN_API_KEYS: ApiKeyInfo[] = [
     pattern: /^pk_(live|test)_[A-Za-z0-9_\-]{8,}$/,
     patternHint: 'Debe empezar con pk_live_ o pk_test_',
     docsUrl: 'https://pokewallet.io/api-docs'
+  },
+  {
+    name: 'tcgapi_key',
+    label: 'TCG API',
+    env: 'TCGAPI_KEY',
+    hint: 'Clave de TCG API — precios de 89+ juegos (100 req/día en plan free)',
+    pattern: /^[A-Za-z0-9_\-]{16,}$/,
+    patternHint: 'Clave alfanumérica de al menos 16 caracteres',
+    docsUrl: 'https://tcgapi.dev'
   }
 ]
 

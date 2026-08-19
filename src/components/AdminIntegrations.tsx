@@ -242,9 +242,11 @@ export default function AdminIntegrations() {
       <p className="mt-3 text-xs leading-relaxed text-slate-600">
         Las claves se guardan <strong className="text-slate-500">solo en el servidor</strong>{' '}
         (tabla sin acceso desde el navegador, escritura exclusiva de administradores) y nunca se
-        muestran completas. En producción podés usar la variable de entorno{' '}
+        muestran completas. En producción podés usar las variables de entorno{' '}
         <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">POKEWALLET_API_KEY</code>{' '}
-        que tiene prioridad sobre la base de datos.
+y{' '}
+        <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">TCGAPI_KEY</code>{' '}
+        que tienen prioridad sobre la base de datos.
       </p>
     </section>
   )

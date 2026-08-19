@@ -8,6 +8,7 @@ import {
   setApiKey
 } from '@/lib/apiKeys'
 import { pokeWalletTest } from '@/lib/pokeWallet'
+import { tcgApiTest } from '@/lib/tcgApi'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,13 +75,19 @@ export async function POST(req: Request) {
 
   try {
     if (body.action === 'test') {
-      // Solo se prueba la integración de PokeWallet por ahora
       if (name === 'pokewallet_api_key') {
         const result = await pokeWalletTest()
         return NextResponse.json({
           ok: result.ok,
           detail: result.detail,
           budget: result.budget
+        })
+      }
+      if (name === 'tcgapi_key') {
+        const result = await tcgApiTest()
+        return NextResponse.json({
+          ok: result.ok,
+          detail: result.detail
         })
       }
       return NextResponse.json({ ok: false, detail: 'Sin prueba disponible' })
