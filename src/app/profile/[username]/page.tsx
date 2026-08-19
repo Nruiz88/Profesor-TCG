@@ -189,28 +189,6 @@ async function loadWantlist(
   )
 }
 
-// Valor estimado del portafolio: suma del precio efectivo de todas las cartas
-// del usuario en todos sus binders (sin duplicados, cada carta una vez).
-async function loadPortfolioValue(
-  admin: QueryClient,
-  binderIds: string[]
-): Promise<number> {
-  if (binderIds.length === 0) return 0
-  try {
-    const { data: rows } = await admin
-      .from('binder_cards')
-      .select('market_price, price_override, price')
-      .in('binder_id', binderIds)
-    return (rows || []).reduce(
-      (sum: number, r: { market_price: number | null; price_override: number | null; price: number | null }) =>
-        sum + (effectivePrice(r.market_price, r.price_override, r.price) ?? 0),
-      0
-    )
-  } catch {
-    return 0
-  }
-}
-
 // Pokédex del usuario: especies de Pokémon distintas en todos sus binders,
 // contra el total de especies del catálogo. Cosmético, se luce en el perfil.
 async function loadPokedex(
@@ -437,7 +415,7 @@ export default async function UserProfilePage({
       : Promise.resolve({ data: null })
   ])
 
-  const [rep, saleCards, wantlist, reviews, pokedex, collectionBySet, showcaseCards, portfolioValue] =
+  const [rep, saleCards, wantlist, reviews, pokedex, collectionBySet, showcaseCards] =
     await Promise.all([
       loadReputation(admin, profile.id),
       loadSaleCards(admin, profile, binders || []),
@@ -445,8 +423,7 @@ export default async function UserProfilePage({
       loadReviews(admin, profile.id),
       loadPokedex(admin, binderIds),
       loadCollectionBySet(admin, binderIds),
-      loadShowcaseCards(admin, profile, binders || []),
-      loadPortfolioValue(admin, binderIds)
+      loadShowcaseCards(admin, profile, binders || [])
     ])
 
   const enrichedSaleCards: ExploreCard[] = saleCards.map((c) => ({
@@ -500,7 +477,6 @@ export default async function UserProfilePage({
       trainerScore={trainerScore}
       collectionBySet={collectionBySet}
       showcaseCards={showcaseCards}
-      portfolioValue={portfolioValue}
       followerCount={followerCount ?? 0}
       followingCount={followingCount ?? 0}
       viewerFollows={!!isFollowingRow?.data}

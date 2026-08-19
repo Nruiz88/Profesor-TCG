@@ -11,7 +11,6 @@ import { pokedexLevel } from '@/lib/pokedex'
 import type { TrainerScore } from '@/lib/trainer'
 import TrainerScoreCard from './TrainerScoreCard'
 import TrainerCredentialCard from './TrainerCredentialCard'
-import PortfolioValueCard from './PortfolioValueCard'
 import ShowroomCards from './ShowroomCards'
 import FollowButton from './FollowButton'
 import { createClient } from '@/lib/supabase/client'
@@ -70,8 +69,6 @@ interface UserProfileViewProps {
   collectionBySet?: SetCollection[]
   /** Showcase: cartas más valiosas del binder */
   showcaseCards?: ExploreCard[]
-  /** Valor estimado del portafolio (suma de todas las cartas) */
-  portfolioValue?: number
   /** Cantidad de seguidores del usuario del perfil */
   followerCount?: number
   /** Cantidad de usuarios a los que sigue */
@@ -184,7 +181,6 @@ export default function UserProfileView({
   trainerScore,
   collectionBySet = [],
   showcaseCards = [],
-  portfolioValue = 0,
   followerCount = 0,
   followingCount = 0,
   viewerFollows = false
@@ -403,8 +399,7 @@ export default function UserProfileView({
               rank={trainerScore?.rank ?? null}
             />
 
-            {/* b) Valor Estimado del Portafolio */}
-            <PortfolioValueCard value={portfolioValue} />
+
 
             {/* c) Mis Cartas Destacadas / Showroom */}
             <ShowroomCards cards={showcaseCards} />
