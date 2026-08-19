@@ -21,7 +21,13 @@ interface Binder {
   title: string
 }
 
-export default function PublicBinderByUsernamePage({ username }: { username: string }) {
+export default function PublicBinderByUsernamePage({
+  username,
+  binderId
+}: {
+  username: string
+  binderId?: string
+}) {
   const [binder, setBinder] = useState<Binder | null>(null)
   const [seller, setSeller] = useState<SellerInfo | null>(null)
   const [cards, setCards] = useState<SlotCard[]>([])
@@ -34,7 +40,12 @@ export default function PublicBinderByUsernamePage({ username }: { username: str
     if (!username) return
     ;(async () => {
       try {
-        const res = await fetch(`/api/public/by-username/${encodeURIComponent(username)}`)
+        // Con ?binderId=<id> mostramos ESE binder concreto (no el primero).
+        // Sin binderId, resolvemos el primer binder público del usuario.
+        const endpoint = binderId
+          ? `/api/public/binder/${encodeURIComponent(binderId)}`
+          : `/api/public/by-username/${encodeURIComponent(username)}`
+        const res = await fetch(endpoint)
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Binder no encontrado')
         setBinder(data.binder)
@@ -63,7 +74,7 @@ export default function PublicBinderByUsernamePage({ username }: { username: str
         setLoading(false)
       }
     })()
-  }, [username])
+  }, [username, binderId])
 
   const totalValue = computeTotalValue(cards)
   const sheets = groupIntoSheets(cards)

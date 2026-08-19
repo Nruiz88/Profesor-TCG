@@ -7,14 +7,18 @@ const fmt = (n: number) =>
 
 // Metadata dinámica del binder público: la resuelve el server (la vista es un
 // client component) y alimenta el preview de WhatsApp/redes junto con la
-// imagen generada en opengraph-image.tsx.
+// imagen generada en opengraph-image.tsx. Si llega ?binderId=<id> se muestra
+// ese binder concreto; sin él, el primer binder público del usuario.
 export async function generateMetadata({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ username: string }>
+  searchParams: Promise<{ binderId?: string }>
 }): Promise<Metadata> {
   const { username } = await params
-  const data = await getBinderOgData({ username })
+  const { binderId } = await searchParams
+  const data = await getBinderOgData(binderId ? { binderId } : { username })
   if (!data) {
     return { title: 'Binder no encontrado · Profesor TCG' }
   }
@@ -32,7 +36,14 @@ export async function generateMetadata({
   }
 }
 
-export default async function Page({ params }: { params: Promise<{ username: string }> }) {
+export default async function Page({
+  params,
+  searchParams
+}: {
+  params: Promise<{ username: string }>
+  searchParams: Promise<{ binderId?: string }>
+}) {
   const { username } = await params
-  return <PublicBinderByUsernameView username={username} />
+  const { binderId } = await searchParams
+  return <PublicBinderByUsernameView username={username} binderId={binderId} />
 }

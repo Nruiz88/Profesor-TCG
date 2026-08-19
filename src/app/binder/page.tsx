@@ -337,7 +337,9 @@ export default function BinderPage() {
     }
   }
 
-  // Asegura que el binder sea público y devuelve su link base /binder/[username].
+  // Asegura que el binder sea público y devuelve su link directo
+  // /binder/[username]?binderId=<id>. El binderId es lo que hace que la ficha
+  // pública muestre ESTE binder y no el primero del usuario.
   async function ensurePublicBinder(): Promise<string | null> {
     if (!binder || !profile?.username) return null
     // Si está privado, lo hacemos público automáticamente al compartir
@@ -352,7 +354,7 @@ export default function BinderPage() {
       setBinder(data.binder)
       setBinders((prev) => prev.map((b) => (b.id === data.binder.id ? data.binder : b)))
     }
-    return `${window.location.origin}/binder/${encodeURIComponent(profile.username)}`
+    return `${window.location.origin}/binder/${encodeURIComponent(profile.username)}?binderId=${encodeURIComponent(binder.id)}`
   }
 
   async function copyLink(url: string, message: string) {
@@ -667,7 +669,7 @@ export default function BinderPage() {
       <div className="pb-20 lg:pb-0 lg:pl-64">
         <main className="mx-auto w-full max-w-7xl px-4 py-4 lg:py-8">
             {/* Header compacto: título + stats inline + acciones */}
-            <div className="mb-5 rounded-2xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
+            <div className="relative z-40 mb-5 rounded-2xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -1069,12 +1071,12 @@ export default function BinderPage() {
 
       {showClaims && <ClaimsPanel onClose={() => setShowClaims(false)} />}
 
-      {showShareImage && profile?.username && (
+      {showShareImage && profile?.username && binder && (
         <BinderShareModal
           binderTitle={binder?.title ?? 'Mi Binder'}
           cards={cards}
           username={profile.username}
-          binderUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/binder/${encodeURIComponent(profile.username)}`}
+          binderUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/binder/${encodeURIComponent(profile.username)}?binderId=${encodeURIComponent(binder.id)}`}
           onClose={() => setShowShareImage(false)}
         />
       )}

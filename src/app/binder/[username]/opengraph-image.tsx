@@ -8,8 +8,16 @@ export const alt = 'Binder en Profesor TCG'
 
 // Imagen de preview (WhatsApp/redes) de /binder/[username]: portada del
 // binder, título, dueño y estadísticas. Generada al vuelo con @vercel/og.
-export default async function Image({ params }: { params: Promise<{ username: string }> }) {
+// Respeta ?binderId=<id> para generar la miniatura del binder correcto.
+export default async function Image({
+  params,
+  searchParams
+}: {
+  params: Promise<{ username: string }>
+  searchParams: Promise<{ binderId?: string }>
+}) {
   const { username } = await params
-  const data = await getBinderOgData({ username })
+  const { binderId } = await searchParams
+  const data = await getBinderOgData(binderId ? { binderId } : { username })
   return new ImageResponse(<BinderOgImage data={data} />, { ...size })
 }
