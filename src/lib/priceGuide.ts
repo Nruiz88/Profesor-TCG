@@ -110,3 +110,16 @@ export function buildCardmarketUrl(opts: {
   const q = queryParts(opts, languageWordFor(opts)).join(' ')
   return `https://www.cardmarket.com/en/Pokemon/Products/Singles?searchString=${encodeURIComponent(q)}`
 }
+
+// TCGPlayer: mercado principal de EE.UU., referencia estándar para
+// precios de singles. Búsqueda por nombre + set + número.
+export function buildTcgPlayerUrl(opts: {
+  cardName: string
+  setId: string
+  set_name?: string | null
+  number: string
+  language?: string | null
+}): string {
+  const q = queryParts(opts, languageWordFor(opts)).join(' ')
+  return `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(q)}&view=grid`
+}

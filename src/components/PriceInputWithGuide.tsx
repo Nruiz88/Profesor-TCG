@@ -8,6 +8,7 @@ import {
   buildCardmarketUrl,
   buildEbayUrl,
   buildPriceChartingUrl,
+  buildTcgPlayerUrl,
   CURRENCIES,
   normalizeCurrency,
   type Currency
@@ -43,10 +44,12 @@ export default function PriceInputWithGuide({
 
   const hasAutoPrice = card.market_price != null && card.market_price > 0
 
+  const opts = { cardName: card.card_name, setId: card.set_id, set_name: card.set_name, number: card.number, language }
   const guideUrls = {
-    pc: buildPriceChartingUrl({ cardName: card.card_name, setId: card.set_id, set_name: card.set_name, number: card.number, language }),
-    eb: buildEbayUrl({ cardName: card.card_name, setId: card.set_id, set_name: card.set_name, number: card.number, language }),
-    cm: buildCardmarketUrl({ cardName: card.card_name, setId: card.set_id, set_name: card.set_name, number: card.number, language })
+    tcg: buildTcgPlayerUrl(opts),
+    pc: buildPriceChartingUrl(opts),
+    eb: buildEbayUrl(opts),
+    cm: buildCardmarketUrl(opts)
   }
 
   function handleLanguage(lang: CardLanguage) {
@@ -106,17 +109,21 @@ export default function PriceInputWithGuide({
       <LanguagePills value={language} onChange={handleLanguage} />
 
       {/* Links de referencia — inline, compactos */}
-      <div className="flex gap-1.5">
+      <div className="grid grid-cols-2 gap-1.5">
+        <a href={guideUrls.tcg} target="_blank" rel="noopener noreferrer"
+          className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-sky-500/40 hover:text-sky-300">
+          TCGPlayer
+        </a>
         <a href={guideUrls.pc} target="_blank" rel="noopener noreferrer"
-          className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-sky-500/40 hover:text-sky-300">
+          className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-sky-500/40 hover:text-sky-300">
           PriceCharting
         </a>
         <a href={guideUrls.eb} target="_blank" rel="noopener noreferrer"
-          className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-emerald-500/40 hover:text-emerald-300">
+          className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-emerald-500/40 hover:text-emerald-300">
           eBay
         </a>
         <a href={guideUrls.cm} target="_blank" rel="noopener noreferrer"
-          className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-amber-500/40 hover:text-amber-300">
+          className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-center text-[11px] font-medium text-slate-400 transition-colors hover:border-amber-500/40 hover:text-amber-300">
           Cardmarket
         </a>
       </div>
