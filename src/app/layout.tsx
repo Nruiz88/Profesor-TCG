@@ -10,7 +10,6 @@ import '../components/forms.css'
 import '../components/marketplace.css'
 import '../components/claim.css'
 import '../components/activity.css'
-import SiteFooter from '@/components/SiteFooter'
 import AppShell from '@/components/AppShell'
 
 export const metadata: Metadata = {
@@ -33,7 +32,6 @@ export default function RootLayout({
     <html lang="es">
       <body className="min-h-screen antialiased">
         <AppShell>{children}</AppShell>
-        <SiteFooter />
         <Analytics />
         <SpeedInsights />
       </body>

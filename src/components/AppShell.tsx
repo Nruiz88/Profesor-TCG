@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import ResponsiveNav from '@/components/ResponsiveNav'
+import SiteFooter from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/client'
 import { getUserBinders } from '@/lib/binders'
 import type { Profile } from '@/lib/profile'
@@ -86,7 +87,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [])
 
   if (!showSidebar) {
-    return <>{children}</>
+    return (
+      <>
+        {children}
+        <SiteFooter />
+      </>
+    )
   }
 
   return (
@@ -121,7 +127,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         }}
         onShowClaims={() => router.push('/binder')}
       />
-      <div className="pb-20 lg:pb-0 lg:pl-64">{children}</div>
+      <div className="pb-20 lg:pb-0 lg:pl-64">
+        {children}
+        <SiteFooter />
+      </div>
     </div>
   )
 }
