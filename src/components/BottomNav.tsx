@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   CardsIcon,
+  ChevronDownIcon,
   CompassIcon,
   GearIcon,
   HomeIcon,
@@ -36,11 +37,22 @@ interface Binder {
   is_public?: boolean
 }
 
+// Etiqueta de sección del Bottom Sheet (estética coherente con el sidebar).
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-500">
+      {children}
+    </p>
+  )
+}
+
 /**
  * Barra de navegación inferior fija (estilo FaceBinder): visible solo en
  * móviles/tablets (< lg). Los items principales quedan a la vista y el botón
- * central "Más" abre un panel deslizable desde abajo con todas las opciones
- * del menú lateral (AppSidebar): Mi espacio, Mercado y Herramientas.
+ * central "Más" abre un Bottom Sheet (panel emergente desde abajo) con la
+ * estructura completa del menú: GENERAL, MI COLECCIÓN/BINDER, MERCADO,
+ * HERRAMIENTAS y SESIÓN. El panel se cierra deslizándolo hacia abajo, tocando
+ * el fondo oscuro o con Escape, y tiene alto máximo con scroll interno.
  */
 export default function BottomNav() {
   const router = useRouter()
@@ -53,7 +65,13 @@ export default function BottomNav() {
   const [updating, setUpdating] = useState(false)
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [binderOpen, setBinderOpen] = useState(true)
   const moreRef = useRef<HTMLDivElement | null>(null)
+
+  // Gestión del gesto de deslizar hacia abajo para cerrar el panel.
+  const dragStartY = useRef<number | null>(null)
+  const dragOffset = useRef<number>(0)
+  const [dragPx, setDragPx] = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
@@ -124,26 +142,42 @@ export default function BottomNav() {
     }
   }, [user?.id, pathname])
 
-  // Cerrar el panel "Más" al navegar y con Escape / clic afuera
+  // Cerrar el panel al navegar y con Escape
   useEffect(() => {
     setMoreOpen(false)
+    setDragPx(0)
   }, [pathname])
 
   useEffect(() => {
     if (!moreOpen) return
-    function onDocClick(e: MouseEvent) {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false)
-    }
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setMoreOpen(false)
     }
-    document.addEventListener('mousedown', onDocClick)
     document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDocClick)
-      document.removeEventListener('keydown', onKey)
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [moreOpen])
+
+  // ── Gesto de arrastre del Bottom Sheet ─────────────────────────────
+  function onDragStart(clientY: number) {
+    dragStartY.current = clientY
+    dragOffset.current = 0
+  }
+  function onDragMove(clientY: number) {
+    if (dragStartY.current === null) return
+    const delta = clientY - dragStartY.current
+    // Solo arrastrar hacia abajo; ignorar hacia arriba (deja que el scroll trabaje)
+    if (delta > 0) {
+      dragOffset.current = delta
+      setDragPx(Math.min(delta, 240))
+    }
+  }
+  function onDragEnd() {
+    dragStartY.current = null
+    if (dragOffset.current > 110) {
+      setMoreOpen(false)
+    }
+    setDragPx(0)
+  }
 
   async function logout() {
     const supabase = createClient()
@@ -207,7 +241,7 @@ export default function BottomNav() {
 
   return (
     <>
-      {/* ─── Panel "Más" desplegable (solo móvil) ─── */}
+      {/* ─── Bottom Sheet del menú (solo móvil) ─── */}
       {moreOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
@@ -217,11 +251,25 @@ export default function BottomNav() {
           />
           <div
             ref={moreRef}
-            className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-3xl border-t border-slate-800 bg-[#0a0c10] p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] shadow-2xl"
+            style={{ transform: `translateY(${dragPx}px)` }}
+            className="absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-3xl border-t border-slate-800 bg-[#0a0c10] shadow-2xl transition-transform duration-100"
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-700" />
+            {/* Handle de arrastre: deslizar hacia abajo cierra el panel */}
+            <div
+              className="flex shrink-0 cursor-grab touch-none flex-col items-center py-3 active:cursor-grabbing"
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture(e.pointerId)
+                onDragStart(e.clientY)
+              }}
+              onPointerMove={(e) => onDragMove(e.clientY)}
+              onPointerUp={onDragEnd}
+              onPointerCancel={onDragEnd}
+            >
+              <div className="h-1 w-10 rounded-full bg-slate-700" />
+            </div>
 
-            <div className="mb-4 flex items-center justify-between">
+            {/* Encabezado */}
+            <div className="mb-1 flex shrink-0 items-center justify-between px-4 pb-2">
               <h2 className="text-sm font-bold uppercase tracking-widest text-white">Menú</h2>
               <button
                 onClick={() => setMoreOpen(false)}
@@ -232,41 +280,56 @@ export default function BottomNav() {
               </button>
             </div>
 
-            {/* INICIO / PERFIL */}
-            <div className="mb-2 flex flex-col gap-0.5">
-              <Link href="/" onClick={() => setMoreOpen(false)} className={labelClass(isActive('/'))}>
-                <HomeIcon className="h-5 w-5 text-slate-500" />
-                Inicio
-              </Link>
-              {profileUsername && (
-                <Link
-                  href={profileHref}
-                  onClick={() => setMoreOpen(false)}
-                  className={labelClass(isActive('/profile'))}
-                >
-                  <UserIcon className="h-5 w-5 text-slate-500" />
-                  Perfil
+            {/* Cuerpo con scroll interno si no cabe */}
+            <div className="overflow-y-auto px-2 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+              {/* GENERAL */}
+              <SectionLabel>General</SectionLabel>
+              <div className="mb-4 flex flex-col gap-0.5">
+                <Link href="/" onClick={() => setMoreOpen(false)} className={labelClass(isActive('/'))}>
+                  <HomeIcon className="h-5 w-5 text-slate-500" />
+                  Inicio
                 </Link>
-              )}
-            </div>
-
-            {/* BINDER (con binders correspondientes anidados) */}
-            {user && (
-              <>
-                <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-500">
-                  Binder
-                </p>
-                <div className="mb-4 flex flex-col gap-0.5">
+                {profileUsername && (
                   <Link
-                    href="/binder"
+                    href={profileHref}
                     onClick={() => setMoreOpen(false)}
-                    className={labelClass(pathname === '/binder')}
+                    className={labelClass(isActive('/profile'))}
                   >
-                    <CardsIcon className="h-5 w-5 text-slate-500" />
-                    Mi Binder
+                    <UserIcon className="h-5 w-5 text-slate-500" />
+                    Perfil
                   </Link>
-                  {binders.length > 0 && (
-                    <div className="flex flex-col gap-0.5">
+                )}
+              </div>
+
+              {/* MI COLECCIÓN / BINDER */}
+              {user && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setBinderOpen((v) => !v)}
+                    aria-expanded={binderOpen}
+                    className="mb-1.5 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-emerald-500 hover:bg-gray-800"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <CardsIcon className="h-4 w-4" />
+                      Mi Colección / Binder
+                    </span>
+                    <ChevronDownIcon
+                      className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${
+                        binderOpen ? '' : '-rotate-90'
+                      }`}
+                    />
+                  </button>
+                  {binderOpen && (
+                    <div className="mb-4 flex flex-col gap-0.5">
+                      <Link
+                        href="/binder"
+                        onClick={() => setMoreOpen(false)}
+                        className={labelClass(pathname === '/binder' && !binders.length)}
+                      >
+                        <CardsIcon className="h-5 w-5 text-slate-500" />
+                        Mi Binder
+                      </Link>
                       {binders.map((b) => (
                         <Link
                           key={b.id}
@@ -278,124 +341,120 @@ export default function BottomNav() {
                           <span className="min-w-0 flex-1 truncate">{b.title}</span>
                         </Link>
                       ))}
+                      <Link
+                        href="/binder"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-gray-800 hover:text-emerald-300"
+                      >
+                        <PlusIcon className="h-5 w-5" />
+                        Crear nuevo binder
+                      </Link>
                     </div>
                   )}
+                </>
+              )}
+
+              {/* MERCADO */}
+              <SectionLabel>Mercado</SectionLabel>
+              <div className="mb-4 flex flex-col gap-0.5">
+                <Link
+                  href="/explore"
+                  onClick={() => setMoreOpen(false)}
+                  className={labelClass(isActive('/explore'))}
+                >
+                  <CompassIcon className="h-5 w-5 text-slate-500" />
+                  Explorar
+                </Link>
+                <Link
+                  href="/buscados"
+                  onClick={() => setMoreOpen(false)}
+                  className={labelClass(isActive('/buscados'))}
+                >
+                  <PokeballIcon className="h-5 w-5 text-slate-500" />
+                  Buscados
+                </Link>
+                {user && (
+                  <Link
+                    href="/offers"
+                    onClick={() => setMoreOpen(false)}
+                    className={labelClass(isActive('/offers'))}
+                  >
+                    <SwapIcon className="h-5 w-5 text-slate-500" />
+                    Ofertas
+                    {pendingOffers > 0 && (
+                      <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
+                        {pendingOffers > 9 ? '9+' : pendingOffers}
+                      </span>
+                    )}
+                  </Link>
+                )}
+                {user && (
                   <Link
                     href="/binder"
                     onClick={() => setMoreOpen(false)}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-gray-800 hover:text-emerald-300"
-                  >
-                    <PlusIcon className="h-5 w-5" />
-                    Crear nuevo binder
-                  </Link>
-                </div>
-              </>
-            )}
-
-            {/* MERCADO */}
-            <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-500">
-              Mercado
-            </p>
-            <div className="mb-4 flex flex-col gap-0.5">
-              <Link
-                href="/explore"
-                onClick={() => setMoreOpen(false)}
-                className={labelClass(isActive('/explore'))}
-              >
-                <CompassIcon className="h-5 w-5 text-slate-500" />
-                Explorar
-              </Link>
-              <Link
-                href="/buscados"
-                onClick={() => setMoreOpen(false)}
-                className={labelClass(isActive('/buscados'))}
-              >
-                <PokeballIcon className="h-5 w-5 text-slate-500" />
-                Buscados
-              </Link>
-              {user && (
-                <Link
-                  href="/offers"
-                  onClick={() => setMoreOpen(false)}
-                  className={labelClass(isActive('/offers'))}
-                >
-                  <SwapIcon className="h-5 w-5 text-slate-500" />
-                  Ofertas
-                  {pendingOffers > 0 && (
-                    <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
-                      {pendingOffers > 9 ? '9+' : pendingOffers}
-                    </span>
-                  )}
-                </Link>
-              )}
-              {user && (
-                <Link
-                  href="/binder"
-                  onClick={() => setMoreOpen(false)}
-                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5"
-                >
-                  <SwapIcon className="h-5 w-5 text-sky-400" />
-                  Mis Transacciones
-                </Link>
-              )}
-            </div>
-
-            {/* HERRAMIENTAS */}
-            {user && (
-              <>
-                <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-500">
-                  Herramientas
-                </p>
-                <div className="mb-4 flex flex-col gap-0.5">
-                  <button
-                    onClick={updatePrices}
-                    disabled={updating}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-50"
-                  >
-                    <RefreshIcon className="h-5 w-5 text-slate-500" />
-                    {updating ? 'Actualizando precios…' : 'Actualizar precios'}
-                  </button>
-                  <Link
-                    href={profileHref}
-                    onClick={() => setMoreOpen(false)}
                     className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5"
                   >
-                    <GearIcon className="h-5 w-5 text-slate-500" />
-                    Configuración
+                    <SwapIcon className="h-5 w-5 text-sky-400" />
+                    Mis Transacciones
                   </Link>
-                  {isAdmin && (
+                )}
+              </div>
+
+              {/* HERRAMIENTAS */}
+              {user && (
+                <>
+                  <SectionLabel>Herramientas</SectionLabel>
+                  <div className="mb-4 flex flex-col gap-0.5">
+                    <button
+                      onClick={updatePrices}
+                      disabled={updating}
+                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-50"
+                    >
+                      <RefreshIcon className="h-5 w-5 text-slate-500" />
+                      {updating ? 'Actualizando precios…' : 'Actualizar precios'}
+                    </button>
                     <Link
-                      href="/admin"
+                      href={profileHref}
                       onClick={() => setMoreOpen(false)}
                       className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5"
                     >
-                      <ShieldIcon className="h-5 w-5 text-violet-400" />
-                      Panel Admin
+                      <GearIcon className="h-5 w-5 text-slate-500" />
+                      Configuración
                     </Link>
-                  )}
-                </div>
-              </>
-            )}
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5"
+                      >
+                        <ShieldIcon className="h-5 w-5 text-violet-400" />
+                        Panel Admin
+                      </Link>
+                    )}
+                  </div>
+                </>
+              )}
 
-            <div className="my-2 h-px bg-slate-800" />
-
-            {user ? (
-              <button
-                onClick={logout}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:bg-red-600/15 hover:text-red-300"
-              >
-                <LogoutIcon className="h-5 w-5" />
-                Cerrar sesión
-              </button>
-            ) : (
-              <Link
-                href="/login"
-                onClick={() => setMoreOpen(false)}
-                className="flex w-full items-center justify-center rounded-xl bg-rose-600 px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500"
-              >
-                Ingresar
-              </Link>
-            )}
+              {/* SESIÓN */}
+              <div className="my-2 h-px bg-slate-800" />
+              {user ? (
+                <button
+                  onClick={logout}
+                  className="mb-2 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:bg-red-600/15 hover:text-red-300"
+                >
+                  <LogoutIcon className="h-5 w-5" />
+                  Cerrar sesión
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMoreOpen(false)}
+                  className="mb-2 flex w-full items-center justify-center rounded-xl bg-rose-600 px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500"
+                >
+                  Ingresar
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       )}
