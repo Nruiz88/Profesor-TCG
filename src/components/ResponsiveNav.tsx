@@ -198,7 +198,10 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
             { label: 'Mi Binder', href: '/binder' },
             ...binders.map((b) => ({
               label: b.title,
-              href: `/binder?binderId=${b.id}`
+              onClick: () => {
+                setOpenPopover(null)
+                props.onSelectBinder(b.id)
+              }
             })),
             {
               label: 'Crear nuevo binder',
