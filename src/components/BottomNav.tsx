@@ -232,11 +232,8 @@ export default function BottomNav() {
               </button>
             </div>
 
-            {/* MI ESPACIO */}
-            <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-500">
-              Mi espacio
-            </p>
-            <div className="mb-4 flex flex-col gap-0.5">
+            {/* INICIO / PERFIL */}
+            <div className="mb-2 flex flex-col gap-0.5">
               <Link href="/" onClick={() => setMoreOpen(false)} className={labelClass(isActive('/'))}>
                 <HomeIcon className="h-5 w-5 text-slate-500" />
                 Inicio
@@ -251,42 +248,49 @@ export default function BottomNav() {
                   Perfil
                 </Link>
               )}
-              {user && (
-                <Link
-                  href="/binder"
-                  onClick={() => setMoreOpen(false)}
-                  className={labelClass(pathname === '/binder')}
-                >
-                  <CardsIcon className="h-5 w-5 text-slate-500" />
-                  Mi Binder
-                </Link>
-              )}
-              {user && binders.length > 0 && (
-                <div className="flex flex-col gap-0.5">
-                  {binders.map((b) => (
-                    <Link
-                      key={b.id}
-                      href={`/binder?binderId=${b.id}`}
-                      onClick={() => setMoreOpen(false)}
-                      className={`${labelClass(false)} pl-8`}
-                    >
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-slate-600" />
-                      <span className="min-w-0 flex-1 truncate">{b.title}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-              {user && (
-                <Link
-                  href="/binder"
-                  onClick={() => setMoreOpen(false)}
-                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-gray-800 hover:text-emerald-300"
-                >
-                  <PlusIcon className="h-5 w-5" />
-                  Crear nuevo binder
-                </Link>
-              )}
             </div>
+
+            {/* BINDER (con binders correspondientes anidados) */}
+            {user && (
+              <>
+                <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-500">
+                  Binder
+                </p>
+                <div className="mb-4 flex flex-col gap-0.5">
+                  <Link
+                    href="/binder"
+                    onClick={() => setMoreOpen(false)}
+                    className={labelClass(pathname === '/binder')}
+                  >
+                    <CardsIcon className="h-5 w-5 text-slate-500" />
+                    Mi Binder
+                  </Link>
+                  {binders.length > 0 && (
+                    <div className="flex flex-col gap-0.5">
+                      {binders.map((b) => (
+                        <Link
+                          key={b.id}
+                          href={`/binder?binderId=${b.id}`}
+                          onClick={() => setMoreOpen(false)}
+                          className={`${labelClass(false)} pl-8`}
+                        >
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-slate-600" />
+                          <span className="min-w-0 flex-1 truncate">{b.title}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                  <Link
+                    href="/binder"
+                    onClick={() => setMoreOpen(false)}
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-gray-800 hover:text-emerald-300"
+                  >
+                    <PlusIcon className="h-5 w-5" />
+                    Crear nuevo binder
+                  </Link>
+                </div>
+              </>
+            )}
 
             {/* MERCADO */}
             <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-500">
@@ -322,6 +326,16 @@ export default function BottomNav() {
                       {pendingOffers > 9 ? '9+' : pendingOffers}
                     </span>
                   )}
+                </Link>
+              )}
+              {user && (
+                <Link
+                  href="/binder"
+                  onClick={() => setMoreOpen(false)}
+                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5"
+                >
+                  <SwapIcon className="h-5 w-5 text-sky-400" />
+                  Mis Transacciones
                 </Link>
               )}
             </div>

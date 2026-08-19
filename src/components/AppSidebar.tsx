@@ -137,8 +137,8 @@ function SidebarContent({
 
       {/* ─── Navegación ─── */}
       <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-5">
-        {/* MI ESPACIO */}
-        <SidebarSection icon={<HomeIcon className="h-5 w-5" />} title="Mi espacio">
+        {/* INICIO / PERFIL */}
+        <div className="flex flex-col gap-0.5">
           <Link
             href="/"
             onClick={onClose}
@@ -165,6 +165,10 @@ function SidebarContent({
               Perfil
             </Link>
           )}
+        </div>
+
+        {/* BINDER (con binders correspondientes) */}
+        <SidebarSection icon={<CardsIcon className="h-5 w-5" />} title="Binder">
           {user && (
             <Link
               href="/binder"
