@@ -116,8 +116,8 @@ export default function EditCardModal({
     }
 
     const price = parsePrice()
-    // Si el usuario puso un precio, validarlo
-    if (!Number.isNaN(price) && (price === null || (price as number) < 0)) {
+    // Si el usuario puso un precio numérico, validarlo (null = vacío está OK)
+    if (price !== null && !Number.isNaN(price) && price < 0) {
       setError('El precio no puede ser negativo.')
       return
     }
