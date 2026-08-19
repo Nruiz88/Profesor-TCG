@@ -11,9 +11,10 @@ out/
 .freebuff/
 
 # Notas y archivos de Obsidian (no van al repo)
-notas/
+/notas/
 .obsidian/
 Sin título.*
 Notas de perfil.canvas
 *.canvas
 *.base
+20*.md

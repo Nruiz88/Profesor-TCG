@@ -245,6 +245,19 @@ export const ChevronDownIcon = (p: IconProps) => (
   </Svg>
 )
 
+export const ChevronRightIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m9 6 6 6-6 6" />
+  </Svg>
+)
+
+export const FileTextIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+  </Svg>
+)
+
 // Pokébola abierta: la mitad superior se desliza a la derecha y un haz de luz
 // marca el Pokémon liberado (icono de la sección Buscados).
 export const PokeballIcon = (p: IconProps) => (

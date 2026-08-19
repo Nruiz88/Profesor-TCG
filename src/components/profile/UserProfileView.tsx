@@ -12,6 +12,10 @@ import { REVIEW_TAGS } from '@/lib/reputation'
 import { pokedexLevel } from '@/lib/pokedex'
 import type { TrainerScore } from '@/lib/trainer'
 import TrainerScoreCard from './TrainerScoreCard'
+import TrainerCredentialCard from './TrainerCredentialCard'
+import PortfolioValueCard from './PortfolioValueCard'
+import ShowroomCards from './ShowroomCards'
+import FollowButton from './FollowButton'
 import { createClient } from '@/lib/supabase/client'
 import { ChatIcon, CheckIcon, ShareIcon, SparklesIcon } from '@/components/icons'
 import type { ExploreCard } from '@/app/api/public/explore/route'
@@ -33,11 +37,10 @@ export interface ProfileInfo {
   whatsapp_number: string | null
   city: string | null
   country: string | null
+  favorite_energy?: string | null
   isVerified: boolean
   created_at?: string
 }
-
-type ProfileTab = 'sale' | 'wantlist' | 'collection' | 'reviews' | 'settings'
 
 // La sección de configuración (edición + cambio de contraseña) se carga solo
 // cuando el dueño del perfil abre su pestaña: bundle aparte, carga inicial
@@ -79,6 +82,14 @@ interface UserProfileViewProps {
   collectionBySet?: SetCollection[]
   /** Showcase: cartas más valiosas del binder */
   showcaseCards?: ExploreCard[]
+  /** Valor estimado del portafolio (suma de todas las cartas) */
+  portfolioValue?: number
+  /** Cantidad de seguidores del usuario del perfil */
+  followerCount?: number
+  /** Cantidad de usuarios a los que sigue */
+  followingCount?: number
+  /** Si el visitante autenticado ya sigue a este perfil */
+  viewerFollows?: boolean
 }
 
 function Stars({ rating }: { rating: number }) {
@@ -157,17 +168,12 @@ export default function UserProfileView({
   pokedex,
   trainerScore,
   collectionBySet = [],
-  showcaseCards = []
+  showcaseCards = [],
+  portfolioValue = 0,
+  followerCount = 0,
+  followingCount = 0,
+  viewerFollows = false
 }: UserProfileViewProps) {
-  // Tab inicial desde la URL (?tab=settings) para que "Configurar perfil"
-  // aterrice directo en la configuración del perfil propio.
-  const [tab, setTab] = useState<ProfileTab>(() => {
-    if (typeof window === 'undefined') return 'sale'
-    const t = new URLSearchParams(window.location.search).get('tab')
-    if (t === 'settings' && isOwnProfile) return 'settings'
-    if (t === 'wantlist') return 'wantlist'
-    return 'sale'
-  })
   const [copied, setCopied] = useState(false)
   const [viewer, setViewer] = useState<{
     username?: string
@@ -254,100 +260,75 @@ export default function UserProfileView({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const initial = (profile.username[0] ?? '?').toUpperCase()
-
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
       <SiteNav />
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        {/* Header de identidad y reputación */}
-        <header className="relative mb-10 overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl">
-          {/* Acentos neón superior e inferior */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/80 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sky-500/50 to-transparent" />
-          {/* Glows decorativos de fondo */}
-          <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-fuchsia-500/15 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -right-16 h-64 w-64 rounded-full bg-sky-500/10 blur-3xl" />
-          {/* Patrón sutil de cuadrícula */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:18px_18px]" />
+      <div className="mx-auto w-full max-w-7xl px-4 py-8">
+        {/* ═══════════ 1. HEADER DEL PERFIL (Banner Superior) ═══════════ */}
+        <header className="relative mb-8 overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#00ffcc]/70 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+          <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-[#00ffcc]/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -right-16 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(0,255,204,0.04)_1px,transparent_1px)] [background-size:18px_18px]" />
 
           <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
-            {/* Identidad */}
-            <div className="flex items-center gap-5">
-              <div className="relative shrink-0">
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-fuchsia-500/50 via-rose-500/40 to-sky-500/40 text-4xl font-black text-white ring-2 ring-fuchsia-400/60 shadow-[0_0_45px_rgba(217,70,239,0.4)]">
-                  {initial}
-                </div>
+            {/* Izquierda: subtítulo + nombre + badges */}
+            <div className="min-w-0">
+              <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#00ffcc]">
+                — Perfil Maestro Pokémon
+              </p>
+              <h1 className="mt-2 truncate text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+                {profile.username}
+              </h1>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#00ffcc]/30 bg-[#00ffcc]/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-[#00ffcc]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#00ffcc] shadow-[0_0_6px_rgba(0,255,204,0.9)]" />
+                  Coleccionista
+                </span>
                 {profile.isVerified && (
-                  <span
-                    className="absolute -right-1.5 -top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-sm text-white shadow-lg shadow-emerald-900/50 ring-2 ring-slate-900"
-                    title="Verificado"
-                  >
-                    ⚡
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-300">
+                    ⚡ Verificado
                   </span>
                 )}
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="truncate bg-gradient-to-r from-white via-rose-100 to-fuchsia-200 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
-                    {profile.username}
-                  </h1>
-                  {profile.isVerified && (
-                    <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-300 ring-1 ring-emerald-500/30">
-                      ⚡ Verificado
-                    </span>
-                  )}
-                </div>
-                <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-slate-400">
-                  <span className="font-mono text-slate-500">@{profile.username}</span>
-                  {location && (
-                    <>
-                      <span className="text-slate-700">•</span>
-                      <span className="inline-flex items-center gap-1 rounded-full border border-slate-700/80 bg-slate-900/70 px-2.5 py-1 text-xs font-semibold text-slate-300">
-                        📍 {location}
-                      </span>
-                    </>
-                  )}
-                  {memberSince && (
-                    <>
-                      <span className="text-slate-700">•</span>
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500">
-                        🗓️ Miembro desde {memberSince}
-                      </span>
-                    </>
-                  )}
-                </p>
+                {ratingAvg != null && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-amber-300">
+                    ★ {ratingAvg.toFixed(1)} · {reviewCount}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-950/70 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-slate-300">
+                  🤝 {completedClaims} tratos
+                </span>
               </div>
             </div>
 
-            {/* Reputación + acciones */}
-            <div className="flex flex-col gap-4 lg:items-end">
-              <div className="flex flex-wrap items-center gap-2">
-                {ratingAvg != null ? (
-                  <div className="inline-flex items-center gap-2 rounded-xl border border-amber-400/20 bg-slate-950/70 px-3 py-2">
-                    <span className="text-base">⭐</span>
-                    <span className="text-sm font-bold text-amber-400">{ratingAvg.toFixed(1)}</span>
-                    <span className="text-xs text-slate-500">
-                      {reviewCount} reseña{reviewCount !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs text-slate-500">
-                    ⭐ Sin reseñas aún
-                  </div>
-                )}
-                <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-slate-950/70 px-3 py-2">
-                  <span className="text-base">🤝</span>
-                  <span className="text-sm font-bold text-emerald-300">{completedClaims}</span>
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400/70">
-                    tratos
-                  </span>
+            {/* Derecha: datos rápidos + acciones */}
+            <div className="flex flex-col items-start gap-5 lg:items-end">
+              <dl className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                <div className="flex items-center justify-between gap-6">
+                  <dt>Energía Favorita</dt>
+                  <dd className="font-bold text-slate-200">
+                    {profile.favorite_energy ?? '—'}
+                  </dd>
                 </div>
-              </div>
+                <div className="mt-1.5 flex items-center justify-between gap-6">
+                  <dt>País</dt>
+                  <dd className="font-bold text-white">/ {profile.country ?? '—'}</dd>
+                </div>
+                <div className="mt-1.5 flex items-center justify-between gap-6">
+                  <dt>Ciudad</dt>
+                  <dd className="font-bold text-white">/ {profile.city ?? '—'}</dd>
+                </div>
+              </dl>
 
               <div className="flex flex-wrap items-center gap-3">
+                <FollowButton
+                  username={profile.username}
+                  initialFollowing={viewerFollows}
+                  initialFollowers={followerCount}
+                  isOwnProfile={isOwnProfile}
+                />
                 {profile.whatsapp_number ? (
                   <a
                     href={whatsAppLink(profile.whatsapp_number)}
@@ -371,59 +352,48 @@ export default function UserProfileView({
           </div>
         </header>
 
-        {/* Showcase: cartas más valiosas destacadas en la parte superior */}
-        {showcaseCards.length > 0 && (
-          <div className="mb-8">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="text-lg">🌟</span>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">
-                Cartas Destacadas
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {showcaseCards.map((card) => (
-                <div
-                  key={card.id}
-                  className="group relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/40 p-3 backdrop-blur-xl transition-all hover:-translate-y-1 hover:border-amber-500/30 hover:shadow-[0_0_25px_rgba(245,158,11,0.15)]"
-                >
-                  <div className="aspect-[2.5/3.5] overflow-hidden rounded-xl bg-slate-800">
-                    {card.image ? (
-                      <img
-                        src={card.image}
-                        alt={card.card_name}
-                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-2xl text-slate-600">
-                        🃏
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2">
-                    <p className="truncate text-xs font-bold text-white">{card.card_name}</p>
-                    <p className="mt-0.5 truncate text-[10px] text-slate-500">
-                      {card.set_name} · {card.number}
-                    </p>
-                    {card.price != null && card.price > 0 && (
-                      <p className="mt-1 text-xs font-bold text-amber-400">
-                        ${card.price.toFixed(2)} USD
-                      </p>
-                    )}
-                  </div>
-                  {/* Badge de rareza */}
-                  {card.rarity && (
-                    <span className="absolute right-2 top-2 rounded-md bg-slate-950/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-300 backdrop-blur-sm">
-                      {card.rarity}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
+        {/* Banner de matchmaking: el visitante tiene cartas que este perfil busca */}
+        {matchCount > 0 && !isOwnProfile && (
+          <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-fuchsia-500/60 bg-fuchsia-500/10 px-5 py-4 shadow-[0_0_25px_rgba(217,70,239,0.25)] sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-relaxed text-fuchsia-100">
+              🎯 ¡Oportunidad de Match! Tenés{' '}
+              <strong>
+                {matchCount} carta{matchCount !== 1 ? 's' : ''}
+              </strong>{' '}
+              que <strong>@{profile.username}</strong> busca en su Wantlist.
+            </p>
+            <button
+              onClick={() => {
+                document
+                  .getElementById('seccion-buscadas')
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }}
+              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-fuchsia-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-fuchsia-600"
+            >
+              Ofrecer Swap
+            </button>
           </div>
         )}
 
-        {/* Pokédex: especies Pokémon capturadas en los binders (cosmético) */}
+        {/* ═══════════ 2. SECCIÓN PRINCIPAL (vertical estricto) ═══════════ */}
+        <section className="mb-8 flex flex-col gap-6">
+          {/* a) Tarjeta de presentación / ID */}
+          <TrainerCredentialCard
+            username={profile.username}
+            city={profile.city}
+            country={profile.country}
+            isVerified={profile.isVerified}
+            rank={trainerScore?.rank ?? null}
+          />
+
+          {/* b) Valor Estimado del Portafolio */}
+          <PortfolioValueCard value={portfolioValue} />
+
+          {/* c) Mis Cartas Destacadas / Showroom */}
+          <ShowroomCards cards={showcaseCards} />
+        </section>
+
+        {/* Extras: Pokédex + Puntos de Entrenador */}
         {pokedex && pokedex.total > 0 && (
           <div className="mb-8 rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -458,384 +428,317 @@ export default function UserProfileView({
           </div>
         )}
 
-        {/* Puntos de Entrenador: XP unificada por actividad (cosmético) */}
         {trainerScore && <TrainerScoreCard score={trainerScore} />}
 
-        {/* Banner de matchmaking: el visitante tiene cartas que este perfil busca */}
-        {matchCount > 0 && !isOwnProfile && (
-          <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-fuchsia-500/60 bg-fuchsia-500/10 px-5 py-4 shadow-[0_0_25px_rgba(217,70,239,0.25)] sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm leading-relaxed text-fuchsia-100">
-              🎯 ¡Oportunidad de Match! Tenés{' '}
-              <strong>
-                {matchCount} carta{matchCount !== 1 ? 's' : ''}
-              </strong>{' '}
-              que <strong>@{profile.username}</strong> busca en su Wantlist.
-            </p>
-            <button
-              onClick={() => setTab('wantlist')}
-              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-fuchsia-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-fuchsia-600"
-            >
-              Ofrecer Swap
-            </button>
-          </div>
-        )}
-
-        {/* Control de pestañas */}
-        <div className="mb-6 flex flex-wrap gap-2">
-          {[
-            {
-              id: 'sale' as const,
-              icon: '🛍️',
-              label: 'En Venta / Trade',
-              count: saleCards.length,
-              activeClass: 'from-rose-500 to-orange-500'
-            },
-            {
-              id: 'wantlist' as const,
-              icon: '✨',
-              label: 'Cartas Buscadas',
-              count: wantlist.length,
-              activeClass: 'from-fuchsia-600 to-violet-500'
-            },
-            {
-              id: 'collection' as const,
-              icon: '📦',
-              label: 'Colección',
-              count: collectionBySet.length,
-              activeClass: 'from-sky-500 to-cyan-500'
-            },
-            {
-              id: 'reviews' as const,
-              icon: '⭐',
-              label: 'Reseñas',
-              count: reviews.length,
-              activeClass: 'from-amber-500 to-yellow-500'
-            }
-          ].map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              aria-pressed={tab === t.id}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                tab === t.id
-                  ? `bg-gradient-to-r ${t.activeClass} text-white shadow-lg shadow-black/40`
-                  : 'border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-600 hover:text-white'
-              }`}
-            >
-              <span>{t.icon}</span>
-              {t.label}
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-                  tab === t.id ? 'bg-white/25 text-white' : 'bg-white/10 text-slate-400'
-                }`}
-              >
-                {t.count}
-              </span>
-            </button>
-          ))}
-          {isOwnProfile && (
-            <button
-              type="button"
-              onClick={() => setTab('settings')}
-              aria-pressed={tab === 'settings'}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                tab === 'settings'
-                  ? 'bg-gradient-to-r from-slate-600 to-slate-500 text-white shadow-lg shadow-black/40'
-                  : 'border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-600 hover:text-white'
-              }`}
-            >
-              <span>⚙️</span>
-              Configuración
-            </button>
-          )}
-        </div>
-
-        {/* Contenido de la pestaña activa */}
-        {tab === 'sale' &&
-          (saleCards.length === 0 ? (
-            <EmptyState
-              icon="🛍️"
-              title="Sin publicaciones activas"
-              description={`@${profile.username} todavía no tiene cartas en venta o intercambio.`}
-            />
-          ) : (
-            <div>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-500/5 px-4 py-3">
-                <p className="flex items-center gap-2 text-sm font-semibold text-rose-200">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-400" />
+        {/* ═══════════ 3. SECCIÓN INFERIOR (bloques apilados verticales) ═══════════ */}
+        <div className="space-y-12 border-t border-slate-800/70 pt-10">
+          {/* 3.1 CARTAS QUE NECESITO & CARTAS EN VENTA */}
+          <section>
+            <div className="mb-6 grid gap-6 lg:grid-cols-2">
+              {/* Cartas que necesito */}
+              <div id="seccion-buscadas">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[#00ffcc]/40 bg-[#00ffcc]/10 px-3 py-1 font-mono text-xs font-bold uppercase tracking-widest text-[#00ffcc]">
+                    <SparklesIcon width={13} height={13} />
+                    — Cartas que necesito
                   </span>
-                  {saleCards.length} carta{saleCards.length !== 1 ? 's' : ''} disponible
-                  {saleCards.length !== 1 ? 's' : ''} para vender o intercambiar
-                </p>
-                <Link
-                  href="/explore"
-                  className="text-xs font-semibold text-rose-300 underline-offset-4 transition-colors hover:text-rose-200 hover:underline"
-                >
-                  Ver el mercado completo →
-                </Link>
-              </div>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {saleCards.map((card) => (
-                  <MarketCard key={card.id} card={card} />
-                ))}
-              </div>
-            </div>
-          ))}
-
-        {tab === 'wantlist' &&
-          (wantlist.length === 0 ? (
-            <EmptyState
-              icon="✨"
-              title="Wantlist vacía"
-              description={`@${profile.username} todavía no agregó cartas a su lista de buscadas.`}
-            />
-          ) : (
-            <div>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/10 px-4 py-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-400/40 bg-fuchsia-500/10 px-3 py-1 text-xs font-bold text-fuchsia-300">
-                  <SparklesIcon width={13} height={13} />
-                  @{profile.username} busca {wantlist.length} carta
-                  {wantlist.length !== 1 ? 's' : ''}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleShareWantlist}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold text-fuchsia-200 transition-colors hover:bg-fuchsia-500/20"
-                >
-                  <ShareIcon className="h-4 w-4" />
-                  Compartir buscadas
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-                {wantlist.map((w) => (
-                  <WantlistSlot key={w.id} entry={w} offerUrl={buildOfferUrl(w) ?? undefined} />
-                ))}
-              </div>
-            </div>
-          ))}
-
-        {tab === 'collection' &&
-          (collectionBySet.length === 0 ? (
-            <EmptyState
-              icon="📦"
-              title="Sin colección"
-              description={`@${profile.username} todavía no tiene cartas en su binder.`}
-            />
-          ) : (
-            <div>
-              {/* Stats resumen */}
-              {(() => {
-                const totalOwned = collectionBySet.reduce((s, c) => s + c.owned, 0)
-                const totalAll = collectionBySet.reduce((s, c) => s + c.total, 0)
-                const avgPct = totalAll > 0 ? Math.round((totalOwned / totalAll) * 100) : 0
-                const completedSets = collectionBySet.filter((c) => c.percentage >= 100).length
-                const series = [...new Set(collectionBySet.map((c) => c.series).filter(Boolean))]
-                return (
-                  <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
-                      <p className="text-2xl font-extrabold text-white">{collectionBySet.length}</p>
-                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Sets</p>
-                    </div>
-                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
-                      <p className="text-2xl font-extrabold text-white">{totalOwned.toLocaleString()}</p>
-                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cartas</p>
-                    </div>
-                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
-                      <p className="text-2xl font-extrabold text-sky-400">~{avgPct}%</p>
-                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Promedio</p>
-                    </div>
-                    <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
-                      <p className="text-2xl font-extrabold text-emerald-400">{completedSets}</p>
-                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Completados</p>
-                    </div>
+                  {wantlist.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleShareWantlist}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#00ffcc]/40 bg-[#00ffcc]/10 px-3 py-1.5 text-xs font-semibold text-[#00ffcc] transition-colors hover:bg-[#00ffcc]/20"
+                    >
+                      <ShareIcon className="h-4 w-4" />
+                      Compartir buscadas
+                    </button>
+                  )}
+                </div>
+                {wantlist.length === 0 ? (
+                  <EmptyState
+                    icon="✨"
+                    title="Wantlist vacía"
+                    description={`@${profile.username} todavía no agregó cartas a su lista de buscadas.`}
+                  />
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+                    {wantlist.map((w) => (
+                      <WantlistSlot key={w.id} entry={w} offerUrl={buildOfferUrl(w) ?? undefined} />
+                    ))}
                   </div>
-                )
-              })()}
+                )}
+              </div>
 
-              {/* Sets agrupados por serie */}
-              {(() => {
-                const grouped = new Map<string, typeof collectionBySet>()
-                for (const sc of collectionBySet) {
-                  const key = sc.series || 'Otros'
-                  if (!grouped.has(key)) grouped.set(key, [])
-                  grouped.get(key)!.push(sc)
-                }
-                // Series ordenadas: la que más sets tiene primero
-                const sortedSeries = [...grouped.entries()].sort((a, b) => b[1].length - a[1].length)
+              {/* Cartas en venta / trade */}
+              <div>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-500/10 px-3 py-1 font-mono text-xs font-bold uppercase tracking-widest text-rose-300">
+                    — Cartas en venta
+                  </span>
+                  <Link
+                    href="/explore"
+                    className="text-xs font-semibold text-rose-300 underline-offset-4 transition-colors hover:text-rose-200 hover:underline"
+                  >
+                    Ver el mercado completo →
+                  </Link>
+                </div>
+                {saleCards.length === 0 ? (
+                  <EmptyState
+                    icon="🛍️"
+                    title="Sin publicaciones activas"
+                    description={`@${profile.username} todavía no tiene cartas en venta o intercambio.`}
+                  />
+                ) : (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    {saleCards.map((card) => (
+                      <MarketCard key={card.id} card={card} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
 
-                return sortedSeries.map(([seriesName, sets]) => {
-                  const seriesOwned = sets.reduce((s, c) => s + c.owned, 0)
-                  const seriesTotal = sets.reduce((s, c) => s + c.total, 0)
-                  const seriesPct = seriesTotal > 0 ? Math.round((seriesOwned / seriesTotal) * 100) : 0
+          {/* 3.2 COLECCIÓN (Master Sets) */}
+          <section>
+            <div className="mb-4 flex items-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-1 font-mono text-xs font-bold uppercase tracking-widest text-cyan-300">
+                📦 — Colección / Master Sets
+              </span>
+            </div>
+            {collectionBySet.length === 0 ? (
+              <EmptyState
+                icon="📦"
+                title="Sin colección"
+                description={`@${profile.username} todavía no tiene cartas en su binder.`}
+              />
+            ) : (
+              <div>
+                {/* Stats resumen */}
+                {(() => {
+                  const totalOwned = collectionBySet.reduce((s, c) => s + c.owned, 0)
+                  const totalAll = collectionBySet.reduce((s, c) => s + c.total, 0)
+                  const avgPct = totalAll > 0 ? Math.round((totalOwned / totalAll) * 100) : 0
+                  const completedSets = collectionBySet.filter((c) => c.percentage >= 100).length
                   return (
-                    <div key={seriesName} className="mb-6">
-                      <div className="mb-3 flex items-center justify-between">
-                        <h3 className="text-sm font-bold text-white">{seriesName}</h3>
-                        <span className="text-[10px] font-medium text-slate-500">
-                          {sets.length} set{sets.length !== 1 ? 's' : ''} · {seriesOwned} cartas · ~{seriesPct}%
-                        </span>
+                    <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
+                        <p className="text-2xl font-extrabold text-white">{collectionBySet.length}</p>
+                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Sets</p>
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {sets.map((sc) => (
-                          <div
-                            key={sc.setId}
-                            className="group rounded-2xl border border-slate-800/80 bg-slate-900/40 p-4 backdrop-blur-xl transition-colors hover:border-sky-500/30"
-                          >
-                            <div className="flex items-start gap-3">
-                              {/* Logo del set */}
-                              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-800">
-                                <img
-                                  src={`https://images.pokemontcg.io/${sc.setId}/logo.png`}
-                                  alt={sc.setName}
-                                  className="h-full w-full object-contain p-0.5"
-                                  loading="lazy"
-                                  onError={(e) => {
-                                    ;(e.target as HTMLImageElement).style.display = 'none'
-                                  }}
-                                />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-start justify-between gap-2">
-                                  <p className="min-w-0 truncate text-sm font-bold text-white">{sc.setName}</p>
-                                  <span
-                                    className={`shrink-0 rounded-lg px-2 py-1 text-xs font-bold ${
-                                      sc.percentage >= 100
-                                        ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30'
-                                        : sc.percentage >= 50
-                                          ? 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30'
-                                          : sc.percentage >= 20
-                                            ? 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30'
-                                            : 'bg-slate-700/50 text-slate-400 ring-1 ring-slate-600/30'
-                                    }`}
-                                  >
-                                    {sc.percentage}%
-                                  </span>
+                      <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
+                        <p className="text-2xl font-extrabold text-white">{totalOwned.toLocaleString()}</p>
+                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cartas</p>
+                      </div>
+                      <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
+                        <p className="text-2xl font-extrabold text-sky-400">~{avgPct}%</p>
+                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Promedio</p>
+                      </div>
+                      <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 text-center backdrop-blur-xl">
+                        <p className="text-2xl font-extrabold text-emerald-400">{completedSets}</p>
+                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Completados</p>
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Sets agrupados por serie */}
+                {(() => {
+                  const grouped = new Map<string, typeof collectionBySet>()
+                  for (const sc of collectionBySet) {
+                    const key = sc.series || 'Otros'
+                    if (!grouped.has(key)) grouped.set(key, [])
+                    grouped.get(key)!.push(sc)
+                  }
+                  const sortedSeries = [...grouped.entries()].sort((a, b) => b[1].length - a[1].length)
+
+                  return sortedSeries.map(([seriesName, sets]) => {
+                    const seriesOwned = sets.reduce((s, c) => s + c.owned, 0)
+                    const seriesTotal = sets.reduce((s, c) => s + c.total, 0)
+                    const seriesPct = seriesTotal > 0 ? Math.round((seriesOwned / seriesTotal) * 100) : 0
+                    return (
+                      <div key={seriesName} className="mb-6">
+                        <div className="mb-3 flex items-center justify-between">
+                          <h3 className="text-sm font-bold text-white">{seriesName}</h3>
+                          <span className="text-[10px] font-medium text-slate-500">
+                            {sets.length} set{sets.length !== 1 ? 's' : ''} · {seriesOwned} cartas · ~{seriesPct}%
+                          </span>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {sets.map((sc) => (
+                            <div
+                              key={sc.setId}
+                              className="group rounded-2xl border border-slate-800/80 bg-slate-900/40 p-4 backdrop-blur-xl transition-colors hover:border-cyan-400/30"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-800">
+                                  <img
+                                    src={`https://images.pokemontcg.io/${sc.setId}/logo.png`}
+                                    alt={sc.setName}
+                                    className="h-full w-full object-contain p-0.5"
+                                    loading="lazy"
+                                    onError={(e) => {
+                                      ;(e.target as HTMLImageElement).style.display = 'none'
+                                    }}
+                                  />
                                 </div>
-                                <div className="mt-2">
-                                  <div className="flex items-center justify-between text-[11px] text-slate-500">
-                                    <span>{sc.owned} de {sc.total}</span>
-                                    <span>{sc.percentage}%</span>
-                                  </div>
-                                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                                    <div
-                                      className={`h-full rounded-full transition-all duration-500 ${
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <p className="min-w-0 truncate text-sm font-bold text-white">{sc.setName}</p>
+                                    <span
+                                      className={`shrink-0 rounded-lg px-2 py-1 text-xs font-bold ${
                                         sc.percentage >= 100
-                                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                                          ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30'
                                           : sc.percentage >= 50
-                                            ? 'bg-gradient-to-r from-sky-500 to-cyan-400'
+                                            ? 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30'
                                             : sc.percentage >= 20
-                                              ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
-                                              : 'bg-gradient-to-r from-slate-600 to-slate-500'
+                                              ? 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30'
+                                              : 'bg-slate-700/50 text-slate-400 ring-1 ring-slate-600/30'
                                       }`}
-                                      style={{ width: `${sc.percentage}%` }}
-                                    />
+                                    >
+                                      {sc.percentage}%
+                                    </span>
+                                  </div>
+                                  <div className="mt-2">
+                                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                      <span>{sc.owned} de {sc.total}</span>
+                                      <span>{sc.percentage}%</span>
+                                    </div>
+                                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                                      <div
+                                        className={`h-full rounded-full transition-all duration-500 ${
+                                          sc.percentage >= 100
+                                            ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                                            : sc.percentage >= 50
+                                              ? 'bg-gradient-to-r from-sky-500 to-cyan-400'
+                                              : sc.percentage >= 20
+                                                ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                                                : 'bg-gradient-to-r from-slate-600 to-slate-500'
+                                        }`}
+                                        style={{ width: `${sc.percentage}%` }}
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })
-              })()}
+                    )
+                  })
+                })()}
+              </div>
+            )}
+          </section>
+
+          {/* 3.3 RESEÑAS */}
+          <section>
+            <div className="mb-4 flex items-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-500/10 px-3 py-1 font-mono text-xs font-bold uppercase tracking-widest text-amber-300">
+                ⭐ — Reseñas
+              </span>
             </div>
-          ))}
-
-        {tab === 'settings' && <ProfileSettingsSection profile={profile} />}
-
-        {tab === 'reviews' &&
-          (reviews.length === 0 ? (
-            <EmptyState
-              icon="⭐"
-              title="Sin reseñas todavía"
-              description={`Cuando @${profile.username} complete transacciones, sus compradores van a poder dejar su opinión acá.`}
-            />
-          ) : (
-            <div className="space-y-3">
-              {reviews.map((review) => {
-                const tagLabels = review.tags
-                  .map((t) => REVIEW_TAGS.find((rt) => rt.id === t)?.label)
-                  .filter((l): l is string => !!l)
-                return (
-                  <article
-                    key={review.id}
-                    className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl transition-colors hover:border-slate-700"
-                  >
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-binder-accent to-amber-500 text-sm font-bold text-white shadow">
-                        {(review.reviewer?.username[0] ?? '?').toUpperCase()}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        {review.reviewer ? (
-                          <p className="truncate text-sm">
-                            <Link
-                              href={`/profile/${encodeURIComponent(review.reviewer.username)}`}
-                              className="font-semibold text-white transition-colors hover:text-rose-300"
-                            >
-                              @{review.reviewer.username}
-                            </Link>{' '}
-                            <span className="text-slate-500">dejó una reseña</span>
-                          </p>
-                        ) : (
-                          <p className="truncate text-sm">
-                            <span className="font-semibold text-white">Un comprador</span>{' '}
-                            <span className="text-slate-500">dejó una reseña</span>
-                          </p>
-                        )}
-                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                          {review.kind && KIND_LABEL[review.kind] && (
-                            <span className="rounded-full border border-slate-700 bg-slate-950/60 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
-                              {KIND_LABEL[review.kind]}
-                            </span>
+            {reviews.length === 0 ? (
+              <EmptyState
+                icon="⭐"
+                title="Sin reseñas todavía"
+                description={`Cuando @${profile.username} complete transacciones, sus compradores van a poder dejar su opinión acá.`}
+              />
+            ) : (
+              <div className="space-y-3">
+                {reviews.map((review) => {
+                  const tagLabels = review.tags
+                    .map((t) => REVIEW_TAGS.find((rt) => rt.id === t)?.label)
+                    .filter((l): l is string => !!l)
+                  return (
+                    <article
+                      key={review.id}
+                      className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl transition-colors hover:border-slate-700"
+                    >
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-binder-accent to-amber-500 text-sm font-bold text-white shadow">
+                          {(review.reviewer?.username[0] ?? '?').toUpperCase()}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          {review.reviewer ? (
+                            <p className="truncate text-sm">
+                              <Link
+                                href={`/profile/${encodeURIComponent(review.reviewer.username)}`}
+                                className="font-semibold text-white transition-colors hover:text-rose-300"
+                              >
+                                @{review.reviewer.username}
+                              </Link>{' '}
+                              <span className="text-slate-500">dejó una reseña</span>
+                            </p>
+                          ) : (
+                            <p className="truncate text-sm">
+                              <span className="font-semibold text-white">Un comprador</span>{' '}
+                              <span className="text-slate-500">dejó una reseña</span>
+                            </p>
                           )}
-                          <time
-                            dateTime={review.createdAt}
-                            title={formatDate(review.createdAt)}
-                            className="text-xs text-slate-500"
-                          >
-                            {timeAgo(review.createdAt)}
-                          </time>
+                          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            {review.kind && KIND_LABEL[review.kind] && (
+                              <span className="rounded-full border border-slate-700 bg-slate-950/60 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
+                                {KIND_LABEL[review.kind]}
+                              </span>
+                            )}
+                            <time
+                              dateTime={review.createdAt}
+                              title={formatDate(review.createdAt)}
+                              className="text-xs text-slate-500"
+                            >
+                              {timeAgo(review.createdAt)}
+                            </time>
+                          </p>
+                        </div>
+                        <Stars rating={review.rating} />
+                      </div>
+
+                      {review.comment && (
+                        <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                          {review.comment}
                         </p>
-                      </div>
-                      <Stars rating={review.rating} />
-                    </div>
+                      )}
 
-                    {review.comment && (
-                      <p className="mt-3 text-sm leading-relaxed text-slate-300">
-                        {review.comment}
-                      </p>
-                    )}
+                      {tagLabels.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {tagLabels.map((label) => (
+                            <span
+                              key={label}
+                              className="rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1 text-[10px] font-medium text-slate-300"
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </section>
 
-                    {tagLabels.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {tagLabels.map((label) => (
-                          <span
-                            key={label}
-                            className="rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1 text-[10px] font-medium text-slate-300"
-                          >
-                            {label}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </article>
-                )
-              })}
+          {/* 3.4 CONFIGURACIÓN (solo perfil propio) */}
+          {isOwnProfile && (
+            <section>
+              <div className="mb-4 flex items-center gap-3">
+                <span className="inline-flex items-center gap-2 rounded-full border border-slate-500/40 bg-slate-500/10 px-3 py-1 font-mono text-xs font-bold uppercase tracking-widest text-slate-200">
+                  ⚙️ — Configuración
+                </span>
+              </div>
+              <ProfileSettingsSection profile={profile} />
+            </section>
+          )}
+
+          {/* Toast de feedback al compartir */}
+          {copied && (
+            <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-emerald-500/40 bg-slate-900 px-4 py-3 text-sm font-semibold text-emerald-300 shadow-2xl">
+              <CheckIcon width={16} height={16} />
+              Link del perfil copiado
             </div>
-          ))}
-
-        {/* Toast de feedback al compartir */}
-        {copied && (
-          <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-emerald-500/40 bg-slate-900 px-4 py-3 text-sm font-semibold text-emerald-300 shadow-2xl">
-            <CheckIcon width={16} height={16} />
-            Link del perfil copiado
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

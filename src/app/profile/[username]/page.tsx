@@ -189,6 +189,28 @@ async function loadWantlist(
   )
 }
 
+// Valor estimado del portafolio: suma del precio efectivo de todas las cartas
+// del usuario en todos sus binders (sin duplicados, cada carta una vez).
+async function loadPortfolioValue(
+  admin: QueryClient,
+  binderIds: string[]
+): Promise<number> {
+  if (binderIds.length === 0) return 0
+  try {
+    const { data: rows } = await admin
+      .from('binder_cards')
+      .select('market_price, price_override, price')
+      .in('binder_id', binderIds)
+    return (rows || []).reduce(
+      (sum: number, r: { market_price: number | null; price_override: number | null; price: number | null }) =>
+        sum + (effectivePrice(r.market_price, r.price_override, r.price) ?? 0),
+      0
+    )
+  } catch {
+    return 0
+  }
+}
+
 // Pokédex del usuario: especies de Pokémon distintas en todos sus binders,
 // contra el total de especies del catálogo. Cosmético, se luce en el perfil.
 async function loadPokedex(
@@ -385,7 +407,7 @@ export default async function UserProfilePage({
 
   const { data: profile } = await admin
     .from('profiles')
-    .select('id, username, whatsapp_number, country, city, is_verified, created_at')
+    .select('id, username, whatsapp_number, country, city, favorite_energy, is_verified, created_at')
     .eq('username', username.toLowerCase())
     .maybeSingle()
   if (!profile) notFound()
@@ -396,15 +418,34 @@ export default async function UserProfilePage({
     .eq('user_id', profile.id)
   const binderIds = (binders || []).map((b: { id: string }) => b.id)
 
-  const [rep, saleCards, wantlist, reviews, pokedex, collectionBySet, showcaseCards] = await Promise.all([
-    loadReputation(admin, profile.id),
-    loadSaleCards(admin, profile, binders || []),
-    loadWantlist(admin, profile.id),
-    loadReviews(admin, profile.id),
-    loadPokedex(admin, binderIds),
-    loadCollectionBySet(admin, binderIds),
-    loadShowcaseCards(admin, profile, binders || [])
+  // Seguidores / seguidos + si el visitante ya sigue a este usuario
+  const [{ count: followerCount }, { count: followingCount }, isFollowingRow] = await Promise.all([
+    admin.from('followers').select('*', { count: 'exact', head: true }).eq('following_id', profile.id),
+    admin
+      .from('followers')
+      .select('*', { count: 'exact', head: true })
+      .eq('follower_id', profile.id),
+    user
+      ? admin
+          .from('followers')
+          .select('follower_id')
+          .eq('following_id', profile.id)
+          .eq('follower_id', user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
   ])
+
+  const [rep, saleCards, wantlist, reviews, pokedex, collectionBySet, showcaseCards, portfolioValue] =
+    await Promise.all([
+      loadReputation(admin, profile.id),
+      loadSaleCards(admin, profile, binders || []),
+      loadWantlist(admin, profile.id),
+      loadReviews(admin, profile.id),
+      loadPokedex(admin, binderIds),
+      loadCollectionBySet(admin, binderIds),
+      loadShowcaseCards(admin, profile, binders || []),
+      loadPortfolioValue(admin, binderIds)
+    ])
 
   const enrichedSaleCards: ExploreCard[] = saleCards.map((c) => ({
     ...c,
@@ -441,6 +482,7 @@ export default async function UserProfilePage({
         whatsapp_number: profile.whatsapp_number,
         city: profile.city,
         country: profile.country,
+        favorite_energy: profile.favorite_energy,
         isVerified: rep.isVerified || !!profile.is_verified,
         created_at: profile.created_at
       }}
@@ -456,6 +498,10 @@ export default async function UserProfilePage({
       trainerScore={trainerScore}
       collectionBySet={collectionBySet}
       showcaseCards={showcaseCards}
+      portfolioValue={portfolioValue}
+      followerCount={followerCount ?? 0}
+      followingCount={followingCount ?? 0}
+      viewerFollows={!!isFollowingRow?.data}
     />
   )
 }

@@ -6,7 +6,9 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   CardsIcon,
+  ChevronDownIcon,
   CompassIcon,
+  FileTextIcon,
   FolderIcon,
   GearIcon,
   HomeIcon,
@@ -42,16 +44,53 @@ interface AppSidebarProps {
   onShowClaims: () => void
 }
 
-const SECTION_LABEL = 'mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-400/50'
+const SECTION_LABEL = 'mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-500'
+const SECTION_TOGGLE =
+  'px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-emerald-500'
 const NAV_ITEM =
   'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150'
 const NAV_ACTIVE =
   'bg-gradient-to-r from-rose-500/25 via-rose-500/10 to-transparent text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_2px_8px_rgba(244,63,94,0.18)] ring-1 ring-inset ring-rose-500/30'
-const NAV_IDLE = 'text-slate-400 hover:bg-white/5 hover:text-white'
+const NAV_IDLE = 'text-slate-400 hover:bg-gray-800 hover:text-white'
 
 function useActivePath() {
   const pathname = usePathname()
   return (p: string) => pathname === p || pathname.startsWith(`${p}/`)
+}
+
+function SidebarSection({
+  icon,
+  title,
+  defaultOpen = true,
+  children
+}: {
+  icon: React.ReactNode
+  title: string
+  defaultOpen?: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <section>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={`${SECTION_TOGGLE} mb-1 flex w-full items-center justify-between rounded-lg hover:bg-gray-800`}
+      >
+        <span className="flex items-center gap-2.5">
+          <span className="text-emerald-500">{icon}</span>
+          {title}
+        </span>
+        <ChevronDownIcon
+          className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${
+            open ? '' : '-rotate-90'
+          }`}
+        />
+      </button>
+      {open && <div className="flex flex-col gap-0.5">{children}</div>}
+    </section>
+  )
 }
 
 function SidebarContent({
@@ -100,192 +139,210 @@ function SidebarContent({
       </div>
 
       {/* ─── Navegación ─── */}
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-        {/* GENERAL */}
-        <section>
-          <p className={SECTION_LABEL}>General</p>
-          <div className="flex flex-col gap-0.5">
+      <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-5">
+        {/* MI ESPACIO */}
+        <SidebarSection icon={<HomeIcon className="h-5 w-5" />} title="Mi espacio">
+          <Link
+            href="/"
+            onClick={onClose}
+            className={`${NAV_ITEM} ${isActive('/') ? NAV_ACTIVE : NAV_IDLE}`}
+          >
+            <HomeIcon
+              className={`h-5 w-5 ${isActive('/') ? 'text-rose-300' : 'text-slate-500'}`}
+            />
+            Inicio
+          </Link>
+          {profileUrl && (
             <Link
-              href="/"
+              href={profileUrl}
               onClick={onClose}
-              className={`${NAV_ITEM} ${isActive('/') ? NAV_ACTIVE : NAV_IDLE}`}
+              className={`${NAV_ITEM} ${
+                isActive('/profile') ? NAV_ACTIVE : NAV_IDLE
+              }`}
             >
-              <HomeIcon className={`h-4 w-4 ${isActive('/') ? 'text-rose-300' : 'text-slate-500'}`} />
-              Inicio
+              <UserIcon
+                className={`h-5 w-5 ${
+                  isActive('/profile') ? 'text-rose-300' : 'text-slate-500'
+                }`}
+              />
+              Perfil
             </Link>
-            {profileUrl && (
-              <Link
-                href={profileUrl}
-                onClick={onClose}
-                className={`${NAV_ITEM} ${
-                  isActive('/profile') ? NAV_ACTIVE : NAV_IDLE
+          )}
+          {user && (
+            <Link
+              href="/binder"
+              onClick={onClose}
+              className={`${NAV_ITEM} ${
+                isActive('/binder') && !activeBinderId ? NAV_ACTIVE : NAV_IDLE
+              }`}
+            >
+              <CardsIcon
+                className={`h-5 w-5 ${
+                  isActive('/binder') && !activeBinderId ? 'text-rose-300' : 'text-slate-500'
                 }`}
-              >
-                <UserIcon
-                  className={`h-4 w-4 ${
-                    isActive('/profile') ? 'text-rose-300' : 'text-slate-500'
-                  }`}
-                />
-                Perfil
-              </Link>
-            )}
-          </div>
-        </section>
+              />
+              Mi Binder
+            </Link>
+          )}
 
-        {/* MI COLECCIÓN */}
-        {user && (
-          <section>
-            <p className={SECTION_LABEL}>Mi colección</p>
-            <div className="flex flex-col gap-0.5">
-              <Link
-                href="/binder"
-                onClick={onClose}
-                className={`${NAV_ITEM} ${
-                  isActive('/binder') && !activeBinderId ? NAV_ACTIVE : NAV_IDLE
-                }`}
-              >
-                <CardsIcon
-                  className={`h-4 w-4 ${
-                    isActive('/binder') && !activeBinderId ? 'text-rose-300' : 'text-slate-500'
-                  }`}
-                />
-                Mi Binder
-              </Link>
-            </div>
+          {user && binders.length > 0 && (
+            <ul className="flex flex-col gap-0.5">
+              {binders.map((b) => {
+                const active = b.id === activeBinderId
+                return (
+                  <li key={b.id}>
+                    <button
+                      onClick={() => {
+                        onSelectBinder(b.id)
+                        onClose()
+                      }}
+                      aria-current={active ? 'page' : undefined}
+                      className={`${NAV_ITEM} w-full text-left ${
+                        active ? NAV_ACTIVE : NAV_IDLE
+                      } ${active ? '' : 'pl-8'}`}
+                    >
+                      <FolderIcon
+                        className={`h-5 w-5 shrink-0 ${
+                          active ? 'text-rose-300' : 'text-slate-500'
+                        }`}
+                      />
+                      <span className="min-w-0 flex-1 truncate">{b.title}</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
 
-            {binders.length > 0 && (
-              <ul className="mt-1 flex flex-col gap-0.5">
-                {binders.map((b) => {
-                  const active = b.id === activeBinderId
-                  return (
-                    <li key={b.id}>
-                      <button
-                        onClick={() => {
-                          onSelectBinder(b.id)
-                          onClose()
-                        }}
-                        aria-current={active ? 'page' : undefined}
-                        className={`${NAV_ITEM} w-full text-left ${
-                          active ? NAV_ACTIVE : NAV_IDLE
-                        } ${active ? '' : 'pl-8'}`}
-                      >
-                        <FolderIcon
-                          className={`h-4 w-4 shrink-0 ${
-                            active ? 'text-rose-300' : 'text-slate-500'
-                          }`}
-                        />
-                        <span className="min-w-0 flex-1 truncate">{b.title}</span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-
+          {user && (
             <button
               onClick={() => {
                 onCreateBinder()
                 onClose()
               }}
-              className="mt-1.5 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/10 hover:text-emerald-300"
+              className="mt-0.5 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-gray-800 hover:text-emerald-300"
             >
-              <PlusIcon className="h-4 w-4" />
+              <PlusIcon className="h-5 w-5" />
               Crear nuevo binder
             </button>
-          </section>
-        )}
+          )}
+        </SidebarSection>
 
         {/* MERCADO */}
-        <section>
-          <p className={SECTION_LABEL}>Mercado</p>
-          <div className="flex flex-col gap-0.5">
+        <SidebarSection icon={<CompassIcon className="h-5 w-5" />} title="Mercado">
+          <Link
+            href="/explore"
+            onClick={onClose}
+            className={`${NAV_ITEM} ${isActive('/explore') ? NAV_ACTIVE : NAV_IDLE}`}
+          >
+            <CompassIcon
+              className={`h-5 w-5 ${
+                isActive('/explore') ? 'text-rose-300' : 'text-slate-500'
+              }`}
+            />
+            Explorar
+          </Link>
+          <Link
+            href="/buscados"
+            onClick={onClose}
+            className={`${NAV_ITEM} ${isActive('/buscados') ? NAV_ACTIVE : NAV_IDLE}`}
+          >
+            <PokeballIcon
+              className={`h-5 w-5 ${
+                isActive('/buscados') ? 'text-rose-300' : 'text-slate-500'
+              }`}
+            />
+            Buscados
+          </Link>
+          {user && (
             <Link
-              href="/explore"
+              href="/offers"
               onClick={onClose}
-              className={`${NAV_ITEM} ${isActive('/explore') ? NAV_ACTIVE : NAV_IDLE}`}
+              className={`${NAV_ITEM} ${isActive('/offers') ? NAV_ACTIVE : NAV_IDLE}`}
             >
-              <CompassIcon
-                className={`h-4 w-4 ${
-                  isActive('/explore') ? 'text-rose-300' : 'text-slate-500'
+              <SwapIcon
+                className={`h-5 w-5 ${
+                  isActive('/offers') ? 'text-rose-300' : 'text-slate-500'
                 }`}
               />
-              Explorar
+              Ofertas
+              {pendingOffers > 0 && (
+                <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
+                  {pendingOffers > 9 ? '9+' : pendingOffers}
+                </span>
+              )}
             </Link>
-            <Link
-              href="/buscados"
-              onClick={onClose}
-              className={`${NAV_ITEM} ${isActive('/buscados') ? NAV_ACTIVE : NAV_IDLE}`}
+          )}
+          {user && (
+            <button
+              onClick={() => {
+                onShowClaims()
+                onClose()
+              }}
+              className={`${NAV_ITEM} ${NAV_IDLE}`}
             >
-              <PokeballIcon
-                className={`h-4 w-4 ${
-                  isActive('/buscados') ? 'text-rose-300' : 'text-slate-500'
-                }`}
-              />
-              Buscados
-            </Link>
-            {user && (
-              <Link
-                href="/offers"
-                onClick={onClose}
-                className={`${NAV_ITEM} ${isActive('/offers') ? NAV_ACTIVE : NAV_IDLE}`}
-              >
-                <SwapIcon
-                  className={`h-4 w-4 ${
-                    isActive('/offers') ? 'text-rose-300' : 'text-slate-500'
-                  }`}
-                />
-                Ofertas
-                {pendingOffers > 0 && (
-                  <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
-                    {pendingOffers > 9 ? '9+' : pendingOffers}
-                  </span>
-                )}
-              </Link>
-            )}
-            {user && (
-              <button
-                onClick={() => {
-                  onShowClaims()
-                  onClose()
-                }}
-                className={`${NAV_ITEM} ${NAV_IDLE}`}
-              >
-                <SwapIcon className="h-4 w-4 text-sky-400" />
-                Mis transacciones
-              </button>
-            )}
-          </div>
-        </section>
+              <SwapIcon className="h-5 w-5 text-sky-400" />
+              Mis transacciones
+            </button>
+          )}
+        </SidebarSection>
 
         {/* HERRAMIENTAS */}
         {user && (
-          <section>
-            <p className={SECTION_LABEL}>Herramientas</p>
-            <div className="flex flex-col gap-0.5">
-              <button
-                onClick={() => {
-                  onRefreshPrices()
-                  onClose()
-                }}
-                disabled={updating}
-                className={`${NAV_ITEM} ${NAV_IDLE} disabled:opacity-50`}
-              >
-                <RefreshIcon className="h-4 w-4 text-slate-500" />
-                {updating ? 'Actualizando precios…' : 'Actualizar precios'}
-              </button>
-              <button onClick={onShowProfile} className={`${NAV_ITEM} ${NAV_IDLE}`}>
-                <GearIcon className="h-4 w-4 text-slate-500" />
-                Configuración
-              </button>
-              {admin && (
-                <Link href="/admin" onClick={onClose} className={`${NAV_ITEM} ${NAV_IDLE}`}>
-                  <ShieldIcon className="h-4 w-4 text-violet-400" />
-                  Panel Admin
-                </Link>
-              )}
-            </div>
-          </section>
+          <SidebarSection icon={<GearIcon className="h-5 w-5" />} title="Herramientas">
+            <button
+              onClick={() => {
+                onRefreshPrices()
+                onClose()
+              }}
+              disabled={updating}
+              className={`${NAV_ITEM} ${NAV_IDLE} disabled:opacity-50`}
+            >
+              <RefreshIcon className="h-5 w-5 text-slate-500" />
+              {updating ? 'Actualizando precios…' : 'Actualizar precios'}
+            </button>
+            <button onClick={onShowProfile} className={`${NAV_ITEM} ${NAV_IDLE}`}>
+              <GearIcon className="h-5 w-5 text-slate-500" />
+              Configuración
+            </button>
+            {admin && (
+              <Link href="/admin" onClick={onClose} className={`${NAV_ITEM} ${NAV_IDLE}`}>
+                <ShieldIcon className="h-5 w-5 text-violet-400" />
+                Panel Admin
+              </Link>
+            )}
+          </SidebarSection>
         )}
+
+        {/* SISTEMA / OBSIDIAN */}
+        <SidebarSection icon={<FileTextIcon className="h-5 w-5" />} title="Sistema / Obsidian">
+          <Link
+            href="/notas"
+            onClick={onClose}
+            className={`${NAV_ITEM} ${isActive('/notas') && !isActive('/notas/registro-cambios') ? NAV_ACTIVE : NAV_IDLE}`}
+          >
+            <FileTextIcon
+              className={`h-5 w-5 ${
+                isActive('/notas') && !isActive('/notas/registro-cambios')
+                  ? 'text-rose-300'
+                  : 'text-slate-500'
+              }`}
+            />
+            Registro de Notas
+          </Link>
+          <Link
+            href="/notas/registro-cambios"
+            onClick={onClose}
+            className={`${NAV_ITEM} ${isActive('/notas/registro-cambios') ? NAV_ACTIVE : NAV_IDLE}`}
+          >
+            <RefreshIcon
+              className={`h-5 w-5 ${
+                isActive('/notas/registro-cambios') ? 'text-rose-300' : 'text-slate-500'
+              }`}
+            />
+            Cambios de Código
+          </Link>
+        </SidebarSection>
       </nav>
 
       {/* ─── Footer: perfil del usuario ─── */}

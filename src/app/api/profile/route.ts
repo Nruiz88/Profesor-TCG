@@ -83,6 +83,7 @@ export async function PATCH(req: Request) {
     whatsapp_number?: string | null
     country?: string | null
     city?: string | null
+    favorite_energy?: string | null
   }
   try {
     body = await req.json()
@@ -120,6 +121,17 @@ export async function PATCH(req: Request) {
   // Ubicación: libre, se neutraliza cualquier intento de markup.
   if (body.city !== undefined) updates.city = sanitizePlainText(body.city) || null
   if (body.country !== undefined) updates.country = sanitizePlainText(body.country) || null
+
+  // Energía favorita: lista cerrada de tipos de energía (se guarda el id EN).
+  if (body.favorite_energy !== undefined) {
+    const e = body.favorite_energy?.trim() ?? ''
+    const allowed = [
+      'Fire', 'Water', 'Grass', 'Lightning', 'Psychic', 'Fighting',
+      'Darkness', 'Metal', 'Fairy', 'Dragon', 'Colorless', 'Bug',
+      'Poison', 'Electric', 'Ground', 'Rock', 'Ghost', 'Ice', 'Flying', 'Normal'
+    ]
+    updates.favorite_energy = allowed.includes(e) ? e : null
+  }
 
   if (missing) {
     return NextResponse.json({ error: missing }, { status: 400 })

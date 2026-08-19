@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { isValidWhatsApp, whatsAppLink, type Profile } from '@/lib/profile'
 import { fetchJson } from '@/lib/utils'
+import { ENERGY_TYPES } from '@/components/TypeIcon'
 
 // Campos editables del perfil público (los que ve la comunidad). Tipo
 // estructural: la página de perfil los pasa desde ProfileInfo.
@@ -11,6 +12,7 @@ export interface EditableProfileFields {
   whatsapp_number: string | null
   city: string | null
   country: string | null
+  favorite_energy?: string | null
 }
 
 interface ProfileEditFormProps {
@@ -26,6 +28,7 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
   const [whatsapp, setWhatsapp] = useState('')
   const [city, setCity] = useState('')
   const [country, setCountry] = useState('')
+  const [favoriteEnergy, setFavoriteEnergy] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -35,6 +38,7 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
     setWhatsapp(profile?.whatsapp_number ?? '')
     setCity(profile?.city ?? '')
     setCountry(profile?.country ?? '')
+    setFavoriteEnergy(profile?.favorite_energy ?? '')
   }, [profile])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -67,7 +71,8 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
           username: trimmed,
           whatsapp_number: wa === '' ? null : wa,
           city: city.trim() === '' ? null : city.trim(),
-          country: country.trim() === '' ? null : country.trim()
+          country: country.trim() === '' ? null : country.trim(),
+          favorite_energy: favoriteEnergy === '' ? null : favoriteEnergy
         })
       })
       onSaved?.(saved.profile)
@@ -138,6 +143,25 @@ export default function ProfileEditForm({ profile, onSaved }: ProfileEditFormPro
           />
         </label>
       </div>
+
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-slate-400">Energía favorita</span>
+        <select
+          value={favoriteEnergy}
+          onChange={(e) => setFavoriteEnergy(e.target.value)}
+          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-slate-200 focus:border-binder-accent focus:outline-none"
+        >
+          <option value="">Sin energía favorita</option>
+          {ENERGY_TYPES.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+        <span className="mt-1 block text-[11px] text-slate-600">
+          Se muestra en tu perfil público junto a tu ubicación.
+        </span>
+      </label>
 
       {error && (
         <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">

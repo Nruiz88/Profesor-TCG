@@ -1,24 +1,9 @@
 /* ============================================================================
-   Modales y formularios — CSS compartido por función
-   ============================================================================
-   Estilos compartidos por los modales de la app y el circuito de claim
-   (compra/venta por WhatsApp): overlay y tarjeta de modal, encabezado,
-   banners de estado, botones, notas, cajas interiores y campos de formulario.
-   Viven acá para no repetir cadenas de utilidades Tailwind en cada
-   componente. Un componente combina varias clases; los estilos exclusivos de
-   una pieza (p. ej. el canvas del kit, el selector de estrellas, los tabs)
-   quedan inline.
+   Modales — estructura de overlay y tarjeta
+   Compartido por los modales de la app (búsqueda, claim, edición, etc.).
+   El z-index se mantiene inline en cada uso (z-50 / z-[60]).
+   ============================================================================ */
 
-   Nota de arquitectura: este archivo no usa @layer components porque Tailwind
-   solo permite capas en el archivo que declara @tailwind (globals.css). Las
-   reglas quedan fuera de capas y las variantes del mismo archivo se resuelven
-   por orden de definición (las que van después ganan sobre las mismas
-   propiedades, p. ej. field--search sobre field). Los z-index y los márgenes
-   se aplican inline en cada uso según la capa y el contexto.
-   ========================================================================== */
-
-/* ---- Modal: overlay y tarjeta -------------------------------------------- */
-/* El z-index se mantiene inline en cada uso (z-50 / z-[60]) según la capa. */
 .modal-overlay {
   @apply fixed inset-0 flex items-center justify-center bg-black/70 p-4;
 }
@@ -72,87 +57,4 @@
 
 .modal-close {
   @apply rounded-full bg-white/10 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/20;
-}
-
-/* ---- Banners de estado ---------------------------------------------------- */
-/* Los márgenes (mt-4, mb-3…) se aplican inline según el contexto. */
-.banner {
-  @apply rounded-xl px-4 py-3 text-sm;
-}
-
-.banner--ok {
-  @apply border border-emerald-500/30 bg-emerald-500/10 text-emerald-300;
-}
-
-.banner--warn {
-  @apply border border-amber-500/30 bg-amber-500/10 text-amber-300;
-}
-
-.banner--error {
-  @apply border border-red-900/50 bg-red-950/30 text-red-400;
-}
-
-/* ---- Botones del circuito -------------------------------------------------- */
-.btn-claim {
-  @apply inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors;
-}
-
-/* Variante más compacta (paneles, barras de acción) */
-.btn-claim--compact {
-  @apply px-4 py-2.5;
-}
-
-/* Variante ancha para botones sueltos (ej. "Listo" del ofertador) */
-.btn-claim--wide {
-  @apply px-6;
-}
-
-.btn-claim--emerald {
-  @apply bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-60;
-}
-
-.btn-claim--sky {
-  @apply bg-sky-600 text-white hover:bg-sky-500 disabled:opacity-60;
-}
-
-.btn-claim--accent {
-  @apply bg-binder-accent text-white hover:bg-rose-500 disabled:opacity-60;
-}
-
-.btn-claim--ghost {
-  @apply border border-slate-700 font-medium text-slate-300 hover:border-slate-500 hover:text-white;
-}
-
-/* ---- Nota al pie ------------------------------------------------------------ */
-.note {
-  @apply text-center text-[11px] text-slate-600;
-}
-
-/* ---- Cajas interiores -------------------------------------------------------- */
-/* Tarjeta oscura de detalle (stats, ataques, habilidades, ítems de lista). */
-.panel-slate {
-  @apply rounded-xl border border-slate-800 bg-slate-950;
-}
-
-/* ---- Encabezados de sección --------------------------------------------------- */
-.section-label {
-  @apply text-xs font-semibold uppercase tracking-widest text-slate-500;
-}
-
-/* ---- Campos de formulario ------------------------------------------------------ */
-.field-label {
-  @apply block text-xs font-semibold uppercase tracking-widest text-slate-400;
-}
-
-.field {
-  @apply w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-binder-accent focus:outline-none;
-}
-
-/* Variante de búsqueda (input del modal de búsqueda de cartas) */
-.field--search {
-  @apply border-slate-800 px-4 py-3 text-slate-200 outline-none transition-colors;
-}
-
-.field-hint {
-  @apply mt-1 text-xs text-slate-600;
 }

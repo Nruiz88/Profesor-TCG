@@ -1,0 +1,20 @@
+/* ============================================================================
+   Banners — avisos de estado (ok, warn, error)
+   Los márgenes (mt-4, mb-3…) se aplican inline según el contexto.
+   ============================================================================ */
+
+.banner {
+  @apply rounded-xl px-4 py-3 text-sm;
+}
+
+.banner--ok {
+  @apply border border-emerald-500/30 bg-emerald-500/10 text-emerald-300;
+}
+
+.banner--warn {
+  @apply border border-amber-500/30 bg-amber-500/10 text-amber-300;
+}
+
+.banner--error {
+  @apply border border-red-900/50 bg-red-950/30 text-red-400;
+}

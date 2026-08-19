@@ -33,7 +33,7 @@ export default function BinderToolbar({
   const hasFilters = saleOnly || tradeOnly || typeFilter !== null
 
   return (
-    <div className="mb-6 rounded-3xl border border-slate-800/90 bg-slate-900/40 p-4 backdrop-blur-xl">
+    <div className="mb-6 w-full min-w-0 rounded-3xl border border-slate-800/90 bg-slate-900/40 p-4 backdrop-blur-xl">
       {/* Buscador del catálogo: abre el modal Pokédex (cmdk) */}
       <div className="relative">
         <button
