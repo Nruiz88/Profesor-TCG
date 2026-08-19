@@ -9,6 +9,7 @@ import {
 } from '@/lib/apiKeys'
 import { pokeWalletTest } from '@/lib/pokeWallet'
 import { tcgApiTest } from '@/lib/tcgApi'
+import { pokeTraceTest } from '@/lib/pokeTrace'
 
 export const dynamic = 'force-dynamic'
 
@@ -88,6 +89,14 @@ export async function POST(req: Request) {
         return NextResponse.json({
           ok: result.ok,
           detail: result.detail
+        })
+      }
+      if (name === 'poketrace_key') {
+        const result = await pokeTraceTest()
+        return NextResponse.json({
+          ok: result.ok,
+          detail: result.detail,
+          budget: result.budget
         })
       }
       return NextResponse.json({ ok: false, detail: 'Sin prueba disponible' })

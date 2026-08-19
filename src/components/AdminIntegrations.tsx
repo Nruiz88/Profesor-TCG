@@ -80,9 +80,10 @@ export default function AdminIntegrations() {
     setFeedback(null)
     try {
       const data = await post({ action: 'test', name })
+      const budgetLabel = name === 'poketrace_key' ? 'día' : 'hora'
       const budgetNote =
         data.budget && typeof data.budget.remaining === 'number'
-          ? ` · Presupuesto de la hora: ${data.budget.used}/${data.budget.limit} pedidos (quedan ${data.budget.remaining})`
+          ? ` · Presupuesto del ${budgetLabel}: ${data.budget.used}/${data.budget.limit} pedidos (quedan ${data.budget.remaining})`
           : ''
       setFeedback({
         name,
@@ -173,7 +174,7 @@ export default function AdminIntegrations() {
                   disabled={isEnv}
                   placeholder={
                     isEnv
-                      ? 'Definida por env var (POKEWALLET_API_KEY)'
+                      ? `Definida por env var (${it.label})`
                       : it.hasValue
                         ? 'Pegá una nueva clave para reemplazarla'
                         : 'Pegá la API key acá'
@@ -243,9 +244,9 @@ export default function AdminIntegrations() {
         Las claves se guardan <strong className="text-slate-500">solo en el servidor</strong>{' '}
         (tabla sin acceso desde el navegador, escritura exclusiva de administradores) y nunca se
         muestran completas. En producción podés usar las variables de entorno{' '}
-        <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">POKEWALLET_API_KEY</code>{' '}
-y{' '}
-        <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">TCGAPI_KEY</code>{' '}
+        <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">POKEWALLET_API_KEY</code>,{' '}
+        <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">TCGAPI_KEY</code>{' '}y{' '}
+        <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">POKETRACE_API_KEY</code>{' '}
         que tienen prioridad sobre la base de datos.
       </p>
     </section>

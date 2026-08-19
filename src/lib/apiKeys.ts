@@ -41,6 +41,15 @@ export const KNOWN_API_KEYS: ApiKeyInfo[] = [
     pattern: /^[A-Za-z0-9_\-]{16,}$/,
     patternHint: 'Clave alfanumérica de al menos 16 caracteres',
     docsUrl: 'https://tcgapi.dev'
+  },
+  {
+    name: 'poketrace_key',
+    label: 'PokéTrace',
+    env: 'POKETRACE_API_KEY',
+    hint: 'Clave de PokéTrace — precios TCGPlayer + eBay + CardMarket (250 req/día en plan free)',
+    pattern: /^[A-Za-z0-9_\-]{16,}$/,
+    patternHint: 'Clave alfanumérica de al menos 16 caracteres',
+    docsUrl: 'https://poketrace.com/developers'
   }
 ]
 

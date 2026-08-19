@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { pokeWalletSearch } from '@/lib/pokeWallet'
 import { tcgApiSearch, tcgApiBudget } from '@/lib/tcgApi'
+import { pokeTraceSearch, pokeTraceBudget } from '@/lib/pokeTrace'
 
 const API_BASE = 'https://api.tcgdex.net/v2/en/cards'
 const CONCURRENCY = 10
@@ -250,15 +251,41 @@ export async function POST(req: Request) {
       }
     }
 
-    // Fallback TCGAPI (si hay API key y cuota disponible): cartas que ni
+    // Fallback PokéTrace (si hay API key y cuota disponible): cartas que ni
     // TCGdex ni PokeWallet cubrieron. Tope de 15 por lote, concurrencia 2.
+    let pokeTraceFilled = 0
+    const pokeTraceRows = targetRows
+      .filter((r) => {
+        const p = priceByCard.get(r.card_id)
+        return p == null || p <= 0
+      })
+      .slice(0, 15)
+
+    if (pokeTraceRows.length > 0) {
+      const ptBudget = pokeTraceBudget()
+      if (ptBudget.remaining > 0) {
+        const ptResults = await mapLimit(pokeTraceRows, 2, async (row) => {
+          const pt = await pokeTraceSearch({ cardName: row.card_name, number: row.number })
+          return pt ? { card_id: row.card_id, price: pt.price } : null
+        })
+        for (const r of ptResults) {
+          if (r) {
+            priceByCard.set(r.card_id, r.price)
+            pokeTraceFilled++
+          }
+        }
+      }
+    }
+
+    // Fallback TCGAPI (si hay API key y cuota disponible): cartas que ni
+    // TCGdex, PokeWallet ni PokéTrace cubrieron. Tope de 10 por lote, concurrencia 2.
     let tcgApiFilled = 0
     const stillNoPriceRows = targetRows
       .filter((r) => {
         const p = priceByCard.get(r.card_id)
         return p == null || p <= 0
       })
-      .slice(0, 15)
+      .slice(0, 10)
 
     if (stillNoPriceRows.length > 0) {
       const tcgBudget = tcgApiBudget()
@@ -307,6 +334,7 @@ export async function POST(req: Request) {
       failedCards,
       skipped,
       pokeWalletFilled,
+      pokeTraceFilled,
       tcgApiFilled,
       source: 'tcgdex'
     })

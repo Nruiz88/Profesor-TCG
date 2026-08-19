@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCardMetadataMap } from '@/lib/catalog'
 import { pokeWalletSearch } from '@/lib/pokeWallet'
+import { pokeTraceSearch } from '@/lib/pokeTrace'
 import { validate, extractParams } from '@/lib/validate'
 import { priceSchema } from '@/lib/schemas'
 
@@ -51,7 +52,21 @@ export async function GET(req: Request) {
     // TCGdex caído: continuamos con el fallback de PokeWallet
   }
 
-  // Fallback PokeWallet: cartas que TCGdex no cubre (404 o sin precio)
+  // Fallback PokéTrace: cartas que TCGdex no cubre (404 o sin precio)
+  if (price == null) {
+    try {
+      const meta = await getCardMetadataMap()
+      const m = meta.get(cardId)
+      if (m) {
+        const pt = await pokeTraceSearch({ cardName: m.name, number: m.number })
+        if (pt) price = pt.price
+      }
+    } catch {
+      // fallback también falló: continuamos con PokeWallet
+    }
+  }
+
+  // Fallback PokeWallet: si PokéTrace tampoco cubrió la carta
   if (price == null) {
     try {
       const meta = await getCardMetadataMap()
