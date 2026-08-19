@@ -5,22 +5,17 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   CardsIcon,
-  ChevronDownIcon,
   CompassIcon,
-  GearIcon,
   HomeIcon,
-  LogoutIcon,
-  PlusIcon,
   PokeballIcon,
-  RefreshIcon,
-  ShieldIcon,
-  SwapIcon,
   UserIcon,
   XIcon
 } from '@/components/icons'
 import type { ComponentType, SVGProps } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getUserBinders } from '@/lib/binders'
+import SidebarMenu, { type SidebarMenuProps } from '@/components/SidebarMenu'
+import type { Profile } from '@/lib/profile'
 
 type IconProps = SVGProps<SVGSVGElement>
 
@@ -37,35 +32,24 @@ interface Binder {
   is_public?: boolean
 }
 
-// Etiqueta de sección del Bottom Sheet (estética coherente con el sidebar).
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-500">
-      {children}
-    </p>
-  )
-}
-
 /**
  * Barra de navegación inferior fija (estilo FaceBinder): visible solo en
  * móviles/tablets (< lg). Los items principales quedan a la vista y el botón
- * central "Más" abre un Bottom Sheet (panel emergente desde abajo) con la
- * estructura completa del menú: GENERAL, MI COLECCIÓN/BINDER, MERCADO,
- * HERRAMIENTAS y SESIÓN. El panel se cierra deslizándolo hacia abajo, tocando
- * el fondo oscuro o con Escape, y tiene alto máximo con scroll interno.
+ * central "Más" abre un Bottom Sheet (panel emergente desde abajo) que
+ * renderiza el MISMO menú del sidebar de escritorio (SidebarMenu), con las
+ * mismas agrupaciones y desplegación. Se cierra deslizándolo hacia abajo,
+ * tocando el fondo oscuro o con Escape, y tiene alto máximo con scroll.
  */
 export default function BottomNav() {
   const router = useRouter()
   const pathname = usePathname()
   const [profileHref, setProfileHref] = useState('/login')
-  const [profileUsername, setProfileUsername] = useState<string | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [binders, setBinders] = useState<Binder[]>([])
   const [pendingOffers, setPendingOffers] = useState(0)
   const [updating, setUpdating] = useState(false)
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [moreOpen, setMoreOpen] = useState(false)
-  const [binderOpen, setBinderOpen] = useState(true)
   const moreRef = useRef<HTMLDivElement | null>(null)
 
   // Gestión del gesto de deslizar hacia abajo para cerrar el panel.
@@ -92,12 +76,11 @@ export default function BottomNav() {
     }
   }, [])
 
-  // Resolver username, admin y binders del usuario.
+  // Resolver perfil y binders del usuario.
   useEffect(() => {
     if (!user) {
       setProfileHref('/login')
-      setProfileUsername(null)
-      setIsAdmin(false)
+      setProfile(null)
       setBinders([])
       return
     }
@@ -108,10 +91,9 @@ export default function BottomNav() {
         const data = await res.json()
         if (!active) return
         if (data.profile?.username) {
-          setProfileUsername(data.profile.username)
+          setProfile(data.profile)
           setProfileHref(`/profile/${encodeURIComponent(data.profile.username)}`)
         }
-        setIsAdmin(!!data.profile?.is_admin)
         const list = await getUserBinders(user.id)
         if (active) setBinders(list || [])
       } catch {
@@ -165,7 +147,6 @@ export default function BottomNav() {
   function onDragMove(clientY: number) {
     if (dragStartY.current === null) return
     const delta = clientY - dragStartY.current
-    // Solo arrastrar hacia abajo; ignorar hacia arriba (deja que el scroll trabaje)
     if (delta > 0) {
       dragOffset.current = delta
       setDragPx(Math.min(delta, 240))
@@ -177,27 +158,6 @@ export default function BottomNav() {
       setMoreOpen(false)
     }
     setDragPx(0)
-  }
-
-  async function logout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    setMoreOpen(false)
-    router.push('/')
-    router.refresh()
-  }
-
-  async function updatePrices() {
-    if (updating) return
-    setUpdating(true)
-    try {
-      const res = await fetch('/api/prices', { method: 'POST' })
-      if (!res.ok) throw new Error('Error')
-    } catch {
-      // silencioso
-    } finally {
-      setUpdating(false)
-    }
   }
 
   const items: BottomNavItem[] = [
@@ -234,10 +194,43 @@ export default function BottomNav() {
   ]
 
   const isActive = (p: string) => pathname === p || pathname.startsWith(`${p}/`)
-  const labelClass = (active: boolean) =>
-    `flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
-      active ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'
-    }`
+
+  const menuProps: SidebarMenuProps = {
+    profile,
+    user,
+    binders,
+    activeBinderId: null,
+    pendingOffers,
+    isActive,
+    onSelectBinder: (id) => {
+      router.push(`/binder?binderId=${id}`)
+    },
+    onCreateBinder: () => {
+      router.push('/binder')
+    },
+    onRefreshPrices: async () => {
+      if (updating) return
+      setUpdating(true)
+      try {
+        await fetch('/api/prices', { method: 'POST' })
+      } catch {
+        // silencioso
+      } finally {
+        setUpdating(false)
+      }
+    },
+    updating,
+    onShowProfile: () => {
+      if (profile?.username) {
+        router.push(`/profile/${encodeURIComponent(profile.username)}?tab=settings`)
+      }
+    },
+    onShowClaims: () => {
+      router.push('/binder')
+    },
+    onClose: () => setMoreOpen(false),
+    showHeader: false
+  }
 
   return (
     <>
@@ -252,7 +245,7 @@ export default function BottomNav() {
           <div
             ref={moreRef}
             style={{ transform: `translateY(${dragPx}px)` }}
-            className="absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-3xl border-t border-slate-800 bg-[#0a0c10] shadow-2xl transition-transform duration-100"
+            className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col overflow-hidden rounded-t-3xl border-t border-slate-800 bg-[#0a0c10] shadow-2xl transition-transform duration-100"
           >
             {/* Handle de arrastre: deslizar hacia abajo cierra el panel */}
             <div
@@ -280,180 +273,9 @@ export default function BottomNav() {
               </button>
             </div>
 
-            {/* Cuerpo con scroll interno si no cabe */}
-            <div className="overflow-y-auto px-2 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-              {/* GENERAL */}
-              <SectionLabel>General</SectionLabel>
-              <div className="mb-4 flex flex-col gap-0.5">
-                <Link href="/" onClick={() => setMoreOpen(false)} className={labelClass(isActive('/'))}>
-                  <HomeIcon className="h-5 w-5 text-slate-500" />
-                  Inicio
-                </Link>
-                {profileUsername && (
-                  <Link
-                    href={profileHref}
-                    onClick={() => setMoreOpen(false)}
-                    className={labelClass(isActive('/profile'))}
-                  >
-                    <UserIcon className="h-5 w-5 text-slate-500" />
-                    Perfil
-                  </Link>
-                )}
-              </div>
-
-              {/* MI COLECCIÓN / BINDER */}
-              {user && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setBinderOpen((v) => !v)}
-                    aria-expanded={binderOpen}
-                    className="mb-1.5 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-emerald-500 hover:bg-gray-800"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <CardsIcon className="h-4 w-4" />
-                      Mi Colección / Binder
-                    </span>
-                    <ChevronDownIcon
-                      className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${
-                        binderOpen ? '' : '-rotate-90'
-                      }`}
-                    />
-                  </button>
-                  {binderOpen && (
-                    <div className="mb-4 flex flex-col gap-0.5">
-                      <Link
-                        href="/binder"
-                        onClick={() => setMoreOpen(false)}
-                        className={labelClass(pathname === '/binder' && !binders.length)}
-                      >
-                        <CardsIcon className="h-5 w-5 text-slate-500" />
-                        Mi Binder
-                      </Link>
-                      {binders.map((b) => (
-                        <Link
-                          key={b.id}
-                          href={`/binder?binderId=${b.id}`}
-                          onClick={() => setMoreOpen(false)}
-                          className={`${labelClass(false)} pl-8`}
-                        >
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-slate-600" />
-                          <span className="min-w-0 flex-1 truncate">{b.title}</span>
-                        </Link>
-                      ))}
-                      <Link
-                        href="/binder"
-                        onClick={() => setMoreOpen(false)}
-                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-gray-800 hover:text-emerald-300"
-                      >
-                        <PlusIcon className="h-5 w-5" />
-                        Crear nuevo binder
-                      </Link>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* MERCADO */}
-              <SectionLabel>Mercado</SectionLabel>
-              <div className="mb-4 flex flex-col gap-0.5">
-                <Link
-                  href="/explore"
-                  onClick={() => setMoreOpen(false)}
-                  className={labelClass(isActive('/explore'))}
-                >
-                  <CompassIcon className="h-5 w-5 text-slate-500" />
-                  Explorar
-                </Link>
-                <Link
-                  href="/buscados"
-                  onClick={() => setMoreOpen(false)}
-                  className={labelClass(isActive('/buscados'))}
-                >
-                  <PokeballIcon className="h-5 w-5 text-slate-500" />
-                  Buscados
-                </Link>
-                {user && (
-                  <Link
-                    href="/offers"
-                    onClick={() => setMoreOpen(false)}
-                    className={labelClass(isActive('/offers'))}
-                  >
-                    <SwapIcon className="h-5 w-5 text-slate-500" />
-                    Ofertas
-                    {pendingOffers > 0 && (
-                      <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
-                        {pendingOffers > 9 ? '9+' : pendingOffers}
-                      </span>
-                    )}
-                  </Link>
-                )}
-                {user && (
-                  <Link
-                    href="/binder"
-                    onClick={() => setMoreOpen(false)}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5"
-                  >
-                    <SwapIcon className="h-5 w-5 text-sky-400" />
-                    Mis Transacciones
-                  </Link>
-                )}
-              </div>
-
-              {/* HERRAMIENTAS */}
-              {user && (
-                <>
-                  <SectionLabel>Herramientas</SectionLabel>
-                  <div className="mb-4 flex flex-col gap-0.5">
-                    <button
-                      onClick={updatePrices}
-                      disabled={updating}
-                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-50"
-                    >
-                      <RefreshIcon className="h-5 w-5 text-slate-500" />
-                      {updating ? 'Actualizando precios…' : 'Actualizar precios'}
-                    </button>
-                    <Link
-                      href={profileHref}
-                      onClick={() => setMoreOpen(false)}
-                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5"
-                    >
-                      <GearIcon className="h-5 w-5 text-slate-500" />
-                      Configuración
-                    </Link>
-                    {isAdmin && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setMoreOpen(false)}
-                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5"
-                      >
-                        <ShieldIcon className="h-5 w-5 text-violet-400" />
-                        Panel Admin
-                      </Link>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* SESIÓN */}
-              <div className="my-2 h-px bg-slate-800" />
-              {user ? (
-                <button
-                  onClick={logout}
-                  className="mb-2 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:bg-red-600/15 hover:text-red-300"
-                >
-                  <LogoutIcon className="h-5 w-5" />
-                  Cerrar sesión
-                </button>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMoreOpen(false)}
-                  className="mb-2 flex w-full items-center justify-center rounded-xl bg-rose-600 px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-colors hover:bg-rose-500"
-                >
-                  Ingresar
-                </Link>
-              )}
+            {/* Mismo menú que el sidebar de escritorio */}
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <SidebarMenu {...menuProps} />
             </div>
           </div>
         </div>
