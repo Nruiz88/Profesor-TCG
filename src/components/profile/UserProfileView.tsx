@@ -567,17 +567,7 @@ export default function UserProfileView({
                               className="group rounded-2xl border border-slate-800/80 bg-slate-900/40 p-4 backdrop-blur-xl transition-colors hover:border-cyan-400/30"
                             >
                               <div className="flex items-start gap-3">
-                                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-800">
-                                  <img
-                                    src={`https://images.pokemontcg.io/${sc.setId}/logo.png`}
-                                    alt={sc.setName}
-                                    className="h-full w-full object-contain p-0.5"
-                                    loading="lazy"
-                                    onError={(e) => {
-                                      ;(e.target as HTMLImageElement).style.display = 'none'
-                                    }}
-                                  />
-                                </div>
+                                <SetLogo setId={sc.setId} name={sc.setName} />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-start justify-between gap-2">
                                     <p className="min-w-0 truncate text-sm font-bold text-white">{sc.setName}</p>
@@ -737,6 +727,72 @@ export default function UserProfileView({
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// Iniciales para el placeholder temático cuando el logo del set no carga
+function setInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+}
+
+// @ts-ignore — Next.js resuelve JSON imports en build time
+import manifestData from '../../content/image-manifest.json'
+const setManifest: Record<string, string> = manifestData as Record<string, string>
+
+// Candidatos de URL de logo según la fuente primaria del set (del manifest).
+// Mejora sobre usar solo pokemontcg.io: muchos sets (ej. me5 "Pitch Black",
+// sets JA) solo tienen logo en Scrydex.
+function logoCandidates(setId: string): string[] {
+  const source = setManifest[setId]
+  const pokemontcg = `https://images.pokemontcg.io/${setId}/logo.png`
+  const scrydex = `https://images.scrydex.com/pokemon/${setId}/logo`
+  switch (source) {
+    case 'scrydex':
+    case 'scrydex-unpadded':
+      return [scrydex, pokemontcg]
+    case 'pokemontcg':
+      return [pokemontcg, scrydex]
+    case 'tcgdex':
+    case 'none':
+    default:
+      return [pokemontcg, scrydex]
+  }
+}
+
+// Logo del set con fallback encadenado: recorre los candidatos de URL según la
+// fuente del set y, si ninguno carga, muestra un placeholder temático con las
+// iniciales en vez de dejar un fondo vacío que parece el reverso de una carta.
+function SetLogo({ setId, name }: { setId: string; name: string }) {
+  const candidates = logoCandidates(setId)
+  const [index, setIndex] = useState(0)
+  const failedAll = index >= candidates.length
+
+  if (failedAll) {
+    return (
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-800">
+        <span className="px-1 text-[11px] font-bold tracking-tight text-slate-300">
+          {setInitials(name) || setId.toUpperCase()}
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-800">
+      <img
+        src={candidates[index]}
+        alt={`Logo de ${name}`}
+        className="h-full w-full object-contain p-0.5"
+        loading="lazy"
+        onError={() => setIndex((i) => i + 1)}
+      />
     </div>
   )
 }
