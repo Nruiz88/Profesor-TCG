@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import AppSidebar from '@/components/AppSidebar'
+import ResponsiveNav from '@/components/ResponsiveNav'
 import SheetPagination from '@/components/SheetPagination'
 import PokedexSearchModal from '@/components/PokedexSearchModal'
 import type { SearchResult } from '@/types'
@@ -617,7 +617,7 @@ export default function BinderPage() {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
-      <AppSidebar
+      <ResponsiveNav
         profile={profile}
         user={user}
         binders={binders}
@@ -637,7 +637,7 @@ export default function BinderPage() {
         onShowClaims={() => setShowClaims(true)}
       />
 
-      <div className="lg:pl-60">
+      <div className="pb-20 lg:pb-0 lg:pl-64">
         <main className="mx-auto w-full max-w-7xl px-4 py-4 lg:py-8">
             <div className="mb-5 overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
               <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">

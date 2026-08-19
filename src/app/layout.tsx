@@ -9,7 +9,6 @@ import '../components/marketplace.css'
 import '../components/claim.css'
 import '../components/activity.css'
 import SiteFooter from '@/components/SiteFooter'
-import BottomNav from '@/components/BottomNav'
 import AppShell from '@/components/AppShell'
 
 export const metadata: Metadata = {
@@ -30,10 +29,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="min-h-screen antialiased pb-20 lg:pb-0">
+      <body className="min-h-screen antialiased">
         <AppShell>{children}</AppShell>
         <SiteFooter />
-        <BottomNav />
       </body>
     </html>
   )

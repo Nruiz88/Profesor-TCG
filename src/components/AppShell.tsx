@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import AppSidebar from '@/components/AppSidebar'
+import ResponsiveNav from '@/components/ResponsiveNav'
 import { createClient } from '@/lib/supabase/client'
 import { getUserBinders } from '@/lib/binders'
 import type { Profile } from '@/lib/profile'
@@ -14,9 +14,10 @@ interface ShellBinder {
 }
 
 /**
- * Envoltorio global que aplica el sidebar lateral (AppSidebar) en desktop
- * para todas las rutas salvo la home y el binder (que ya integra su propio
- * sidebar con lógica local). En mobile no dibuja nada: navega el BottomNav.
+ * Envoltorio global que aplica la navegación responsive (ResponsiveNav) para
+ * todas las rutas salvo la home y el binder propio (que ya integra su propia
+ * navegación con lógica local). En desktop se dibuja el sidebar vertical a la
+ * izquierda; en mobile, la barra inferior con popovers.
  */
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -90,7 +91,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
-      <AppSidebar
+      <ResponsiveNav
         profile={profile}
         user={user}
         binders={binders}
@@ -120,7 +121,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         }}
         onShowClaims={() => router.push('/binder')}
       />
-      <div className="lg:pl-60">{children}</div>
+      <div className="pb-20 lg:pb-0 lg:pl-64">{children}</div>
     </div>
   )
 }
