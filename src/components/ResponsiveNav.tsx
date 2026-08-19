@@ -27,8 +27,6 @@ interface ResponsiveNavProps {
   activeBinderId: string | null
   onSelectBinder: (id: string) => void
   onCreateBinder: () => void
-  onRefreshPrices: () => void
-  updating: boolean
   onShowProfile: () => void
   onShowClaims: () => void
 }
@@ -57,7 +55,6 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
   const [profile, setProfile] = useState<Profile | null>(props.profile)
   const [binders, setBinders] = useState<SidebarBinder[]>(props.binders)
   const [pendingOffers, setPendingOffers] = useState(0)
-  const [updating, setUpdating] = useState(props.updating)
   const isActive = useActivePath()
 
   // Popover móvil: categoría abierta (null = cerrado)
@@ -88,8 +85,7 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
     setUser(props.user)
     setProfile(props.profile)
     setBinders(props.binders)
-    setUpdating(props.updating)
-  }, [props.user, props.profile, props.binders, props.updating])
+  }, [props.user, props.profile, props.binders])
 
   // Cargar perfil y binders si no vinieron por props
   useEffect(() => {
@@ -169,8 +165,6 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
     isActive,
     onSelectBinder: props.onSelectBinder,
     onCreateBinder: props.onCreateBinder,
-    onRefreshPrices: props.onRefreshPrices,
-    updating,
     onShowProfile: props.onShowProfile,
     onShowClaims: props.onShowClaims,
     onClose: () => {},
@@ -244,13 +238,6 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
       icon: <GearIcon className="h-5 w-5" />,
       items: user
         ? [
-            {
-              label: 'Actualizar precios',
-              onClick: () => {
-                setOpenPopover(null)
-                props.onRefreshPrices()
-              }
-            },
             {
               label: 'Configuración',
               onClick: () => {

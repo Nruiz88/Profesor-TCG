@@ -76,7 +76,6 @@ export default function BinderPage() {
   const [binder, setBinder] = useState<Binder | null>(null)
   const [cards, setCards] = useState<SlotCard[]>([])
   const [loading, setLoading] = useState(true)
-  const [updating, setUpdating] = useState(false)
   const [fetchingPriceId, setFetchingPriceId] = useState<string | null>(null)
   const [slotTarget, setSlotTarget] = useState<{ sheetIndex: number; slotIndex: number } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -441,34 +440,6 @@ export default function BinderPage() {
   // Sin filtros: siempre mostramos una hoja vacía al final para poder agregar
   if (sheets.length === 0 && !hasActiveFilters) sheets.push([])
 
-  async function updatePrices() {
-    if (!binder) return
-
-    setUpdating(true)
-    setMessage(null)
-    try {
-      const res = await fetch('/api/binder/update-prices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ binderId: binder.id })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error')
-      setMessage(
-        data.cards === 0
-          ? `Todos los precios ya estaban al día (${data.skipped ?? 0} cartas).`
-          : `Precios actualizados: ${data.cards} cartas, ${data.withPrice} con precio.` +
-            (data.fromCache > 0 ? ` ${data.fromCache} desde caché.` : '') +
-            (data.skipped > 0 ? ` ${data.skipped} ya estaban al día.` : '')
-      )
-      await loadBinder()
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Error al actualizar precios')
-    } finally {
-      setUpdating(false)
-    }
-  }
-
   async function fetchCardPrice(card: SlotCard) {
     if (!binder) return
     setFetchingPriceId(card.id)
@@ -682,8 +653,6 @@ export default function BinderPage() {
         activeBinderId={activeBinderId}
         onSelectBinder={selectBinder}
         onCreateBinder={() => setSettingsModal('create')}
-        onRefreshPrices={updatePrices}
-        updating={updating}
         onShowProfile={async () => {
           const p = profile ?? (await loadProfile())
           if (p?.username) {

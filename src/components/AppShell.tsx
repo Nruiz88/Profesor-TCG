@@ -27,7 +27,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [binders, setBinders] = useState<ShellBinder[]>([])
-  const [updating, setUpdating] = useState(false)
 
   const isHome = pathname === '/'
   const isLogin = pathname === '/login'
@@ -117,22 +116,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         activeBinderId={null}
         onSelectBinder={(id) => router.push(`/binder?binderId=${id}`)}
         onCreateBinder={() => router.push('/binder')}
-        onRefreshPrices={async () => {
-          if (updating) return
-          setUpdating(true)
-          try {
-            await fetch('/api/binder/update-prices', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({})
-            })
-          } catch {
-            // silencioso
-          } finally {
-            setUpdating(false)
-          }
-        }}
-        updating={updating}
         onShowProfile={() => {
           if (profile?.username) {
             router.push(`/profile/${encodeURIComponent(profile.username)}?tab=settings`)

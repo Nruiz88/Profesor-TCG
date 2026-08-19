@@ -13,7 +13,6 @@ import {
   LogoutIcon,
   PlusIcon,
   PokeballIcon,
-  RefreshIcon,
   ShieldIcon,
   SwapIcon,
   UserIcon
@@ -37,8 +36,6 @@ export interface SidebarMenuProps {
   isActive: (p: string) => boolean
   onSelectBinder: (id: string) => void
   onCreateBinder: () => void
-  onRefreshPrices: () => void
-  updating: boolean
   onShowProfile: () => void
   onShowClaims: () => void
   onClose: () => void
@@ -107,8 +104,6 @@ export default function SidebarMenu(props: SidebarMenuProps) {
     isActive,
     onSelectBinder,
     onCreateBinder,
-    onRefreshPrices,
-    updating,
     onShowProfile,
     onShowClaims,
     onClose,
@@ -297,17 +292,6 @@ export default function SidebarMenu(props: SidebarMenuProps) {
         {/* HERRAMIENTAS */}
         {user && (
           <SidebarSection icon={<GearIcon className="h-5 w-5" />} title="Herramientas">
-            <button
-              onClick={() => {
-                onRefreshPrices()
-                onClose()
-              }}
-              disabled={updating}
-              className={`${NAV_ITEM} ${NAV_IDLE} disabled:opacity-50`}
-            >
-              <RefreshIcon className="h-5 w-5 text-slate-500" />
-              {updating ? 'Actualizando precios…' : 'Actualizar precios'}
-            </button>
             <button onClick={onShowProfile} className={`${NAV_ITEM} ${NAV_IDLE}`}>
               <GearIcon className="h-5 w-5 text-slate-500" />
               Configuración
