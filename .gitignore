@@ -9,3 +9,11 @@ out/
 *.tsbuildinfo
 .DS_Store
 .freebuff/
+
+# Notas y archivos de Obsidian (no van al repo)
+notas/
+.obsidian/
+Sin título.*
+Notas de perfil.canvas
+*.canvas
+*.base

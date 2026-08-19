@@ -29,7 +29,7 @@ export async function GET(req: Request) {
 
     let binder: { id: string; title: string; is_public: boolean } | null = null
 
-    if (all) {
+    if (all === '1') {
       // Todas las cartas del usuario a través de sus binders (para proponer cambios)
       const { data: binders } = await supabase
         .from('binders')

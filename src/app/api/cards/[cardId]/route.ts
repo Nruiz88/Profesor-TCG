@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
 import { resolveCardImage } from '@/lib/cardImage'
+import { readLocalSetFile } from '@/lib/catalog'
 
 // Detalle completo de una carta. Intenta la traducción en español de TCGdex
 // (api.tcgdex.net/v2/es) y cae al catálogo local (pokemon-tcg-data, inglés)
@@ -9,8 +8,6 @@ import { resolveCardImage } from '@/lib/cardImage'
 // Datos públicos: no requiere auth (lo usa también la vista pública).
 export const dynamic = 'force-dynamic'
 
-const CACHE_DIR = path.join(process.cwd(), 'src', 'content')
-const CONTENT_DIRS = [path.join(CACHE_DIR, 'en'), path.join(CACHE_DIR, 'ja')]
 const TCGDEX_ES = (id: string) => `https://api.tcgdex.net/v2/es/cards/${encodeURIComponent(id)}`
 
 export interface FullCard {
@@ -103,17 +100,6 @@ async function fetchTcgdexEs(cardId: string): Promise<TcgdexCard | null> {
   }
 }
 
-async function readLocal(file: string): Promise<string | null> {
-  for (const dir of CONTENT_DIRS) {
-    try {
-      return await readFile(path.join(dir, file), 'utf8')
-    } catch {
-      // buscar en la siguiente carpeta
-    }
-  }
-  return null
-}
-
 // Merge: los campos traducidos de TCGdex es priman; el resto queda del catálogo local
 function mergeSpanish(local: FullCard, es: TcgdexCard): FullCard {
   const attacks = es.attacks?.map((a) => ({
@@ -178,8 +164,8 @@ export async function GET(
 
   try {
     const [setContent, setsContent] = await Promise.all([
-      readLocal(`${setId}.json`),
-      readLocal('sets.json')
+      readLocalSetFile(`${setId}.json`),
+      readLocalSetFile('sets.json')
     ])
 
     if (!setContent) {

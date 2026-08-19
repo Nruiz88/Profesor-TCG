@@ -42,9 +42,32 @@ const CACHE_DIR = path.join(process.cwd(), 'src', 'content')
 const CONTENT_DIRS = [path.join(CACHE_DIR, 'en'), path.join(CACHE_DIR, 'ja')]
 const GITHUB_BASE = 'https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master'
 
+let langMap: Record<string, 'en' | 'ja' | 'both'> | null = null
+
+async function getLangMap(): Promise<Record<string, 'en' | 'ja' | 'both'>> {
+  if (langMap) return langMap
+  let map: Record<string, 'en' | 'ja' | 'both'> = {}
+  try {
+    const raw = await readFile(path.join(CACHE_DIR, 'lang-map.json'), 'utf8')
+    map = JSON.parse(raw)
+  } catch {
+    map = {}
+  }
+  langMap = map
+  return map
+}
+
 async function readLocal(file: string): Promise<string | null> {
-  // Busca en ambas carpetas (en/ y ja/) para soportar la división por idioma
-  for (const dir of CONTENT_DIRS) {
+  // Mapa setId → carpeta/idioma para redirigir directo a la carpeta correcta
+  const setId = file.replace(/\.json$/, '')
+  const map = await getLangMap()
+  const loc = map[setId]
+  const dirs = loc
+    ? loc === 'both'
+      ? CONTENT_DIRS
+      : [path.join(CACHE_DIR, loc)]
+    : CONTENT_DIRS
+  for (const dir of dirs) {
     try {
       return await readFile(path.join(dir, file), 'utf8')
     } catch {
@@ -57,6 +80,12 @@ async function readLocal(file: string): Promise<string | null> {
   } catch {
     return null
   }
+}
+
+// Helper compartido: lee un archivo de set redirigiendo a la carpeta/idioma
+// correcta según lang-map.json (usado también por /api/cards/[cardId])
+export async function readLocalSetFile(file: string): Promise<string | null> {
+  return readLocal(file)
 }
 
 export async function getSets(): Promise<SetData[]> {
