@@ -522,6 +522,30 @@ export default function BinderPage() {
     loadBinder()
   }
 
+  // Toggle carta destacada (máximo 4 en el perfil)
+  async function handleToggleFeatured(cardId: string, isFeatured: boolean) {
+    try {
+      const res = await fetch(`/api/binder/slots/${cardId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_featured: isFeatured })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error')
+      // Actualizar estado local
+      setCards((prev) =>
+        prev.map((c) => (c.id === cardId ? { ...c, is_featured: isFeatured } : c))
+      )
+      setMessage(
+        isFeatured
+          ? '⭐ Carta destacada en tu perfil.'
+          : 'Carta quitada de destacadas.'
+      )
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Error al destacar carta')
+    }
+  }
+
   async function removeSlot(slotId: string) {
     try {
       const res = await fetch(`/api/binder/slots/${slotId}`, { method: 'DELETE' })
@@ -951,6 +975,7 @@ export default function BinderPage() {
                       onMarkSold={markCardSold}
                       onCardUpdated={() => loadBinder()}
                       onReorder={(newSlots) => handleReorder(sheetIndex, newSlots)}
+                      onToggleFeatured={handleToggleFeatured}
                     />
                   )
                 })}

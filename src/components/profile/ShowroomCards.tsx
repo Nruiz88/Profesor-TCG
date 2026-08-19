@@ -5,13 +5,39 @@ interface ShowroomCardsProps {
 }
 
 /**
- * Card "— MIS CARTAS DESTACADAS": abanico de hasta 3 cartas superpuestas.
- * Si hay menos de 3 destacadas, se muestra un overlay oscuro explicativo
- * (requisito: mínimo 3 cartas para activar el showroom).
+ * Carta placeholder gris (slot vacío) para cuando no hay cartas destacadas.
+ */
+function EmptyCardSlot({ index }: { index: number }) {
+  return (
+    <div
+      className="absolute w-24"
+      style={{
+        transform: `translateX(${(index - 1.5) * 22}px) rotate(${(index - 1.5) * 6}deg)`,
+        zIndex: 10 + index
+      }}
+    >
+      <div className="aspect-[2.5/3.5] overflow-hidden rounded-xl border-2 border-dashed border-slate-700/50 bg-slate-800/30">
+        <div className="flex h-full flex-col items-center justify-center gap-1 p-2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-slate-600" aria-hidden="true">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          </svg>
+          <span className="text-[8px] font-semibold uppercase tracking-wider text-slate-600">
+            Slot {index + 1}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Card "— MIS CARTAS DESTACADAS": muestra hasta 4 cartas destacadas del
+ * usuario en un abanico visual. Si no hay cartas destacadas, muestra 4
+ * slots grises como placeholder para que se entienda la función.
  */
 export default function ShowroomCards({ cards }: ShowroomCardsProps) {
-  const featured = cards.slice(0, 3)
-  const hasThree = featured.length >= 3
+  const featured = cards.slice(0, 4)
+  const hasCards = featured.length > 0
 
   return (
     <div className="flex h-full flex-col rounded-3xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl">
@@ -20,11 +46,21 @@ export default function ShowroomCards({ cards }: ShowroomCardsProps) {
       </p>
 
       {/* Escenario del abanico */}
-      <div className="relative mt-4 h-44 rounded-2xl border border-slate-800/60 bg-slate-950/60">
+      <div className="relative mt-4 h-48 rounded-2xl border border-slate-800/60 bg-slate-950/60">
         {/* Piso / mesa */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 rounded-b-2xl bg-gradient-to-t from-black/40 to-transparent" />
 
-        {featured.length > 0 && (
+        {/* Slots grises cuando no hay cartas */}
+        {!hasCards && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            {[0, 1, 2, 3].map((i) => (
+              <EmptyCardSlot key={i} index={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Cartas reales destacadas */}
+        {hasCards && (
           <div className="absolute inset-0 flex items-center justify-center">
             {featured.map((card, i) => {
               const offset = (i - (featured.length - 1) / 2) * 22
@@ -58,27 +94,28 @@ export default function ShowroomCards({ cards }: ShowroomCardsProps) {
             })}
           </div>
         )}
-
-        {/* Overlay de estado vacío: menos de 3 destacadas */}
-        {!hasThree && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl bg-slate-950/85 p-5 text-center backdrop-blur-sm">
-            <span className="text-2xl">🃏</span>
-            <p className="max-w-[16rem] text-xs leading-relaxed text-slate-400">
-              Va a tu inventario, haz clic en una carta y presiona{' '}
-              <span className="font-bold text-[#00ffcc]">Destacar</span> — mínimo 3 cartas
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Pie */}
       <div className="mt-3 flex items-center justify-between border-t border-slate-800/60 pt-3">
         <span className="font-mono text-[10px] uppercase tracking-widest text-slate-500">
-          {featured.length} carta{featured.length !== 1 ? 's' : ''}
+          {featured.length} de 4 destacada{featured.length !== 1 ? 's' : ''}
         </span>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-[#00ffcc]/70">
-          {hasThree ? 'Showroom activo' : 'Incompleto'}
-        </span>
+        {!hasCards && (
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[#00ffcc]/70">
+            Click ⭐ en tu binder
+          </span>
+        )}
+        {hasCards && featured.length >= 4 && (
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[#00ffcc]/70">
+            Showroom activo
+          </span>
+        )}
+        {hasCards && featured.length < 4 && (
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[#00ffcc]/70">
+            {4 - featured.length} slot{4 - featured.length !== 1 ? 's' : ''} disponible{4 - featured.length !== 1 ? 's' : ''}
+          </span>
+        )}
       </div>
     </div>
   )

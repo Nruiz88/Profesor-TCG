@@ -47,6 +47,7 @@ interface PatchBody {
   trade_notes?: unknown
   condition?: unknown
   language?: unknown
+  is_featured?: unknown
 }
 
 // Actualizar la modalidad de disponibilidad (availability), el precio manual y
@@ -159,6 +160,40 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     updates.language = body.language
   }
 
+  // Carta destacada en el perfil (máximo 4 por usuario)
+  if (body.is_featured !== undefined) {
+    const isFeatured = body.is_featured === true || body.is_featured === 'true'
+    if (isFeatured) {
+      // Contar cuántas cartas destacadas tiene el usuario en todos sus binders
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (profile) {
+        const { data: binders } = await supabase
+          .from('binders')
+          .select('id')
+          .eq('user_id', user.id)
+        if (binders && binders.length > 0) {
+          const binderIds = binders.map((b: { id: string }) => b.id)
+          const { count } = await supabase
+            .from('binder_cards')
+            .select('*', { count: 'exact', head: true })
+            .in('binder_id', binderIds)
+            .eq('is_featured', true)
+          if (count && count >= 4) {
+            return NextResponse.json(
+              { error: 'Máximo 4 cartas destacadas. Quitá una antes de agregar otra.' },
+              { status: 400 }
+            )
+          }
+        }
+      }
+    }
+    updates.is_featured = isFeatured
+  }
+
   // Backwards-compat: el body viejo seguía enviando status / price_override
   if (body.status !== undefined) {
     if (!isCardStatus(body.status)) {
@@ -190,7 +225,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select(
-        'id, card_id, card_name, set_id, number, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, reserved_until'
+        'id, card_id, card_name, set_id, number, status, price_override, market_price, is_for_sale, is_for_trade, price, trade_notes, condition, language, manual_price, currency, is_user_reported, reserved_until, is_featured'
       )
       .single()
     if (error) throw error

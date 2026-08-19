@@ -21,6 +21,7 @@ interface SortableSlotProps {
   onMarkSold?: (cardId: string) => void
   onCardClick?: (card: SlotCard) => void
   highlightCardId?: string | null
+  onToggleFeatured?: (cardId: string, isFeatured: boolean) => void
 }
 
 export default function SortableSlot({
@@ -32,7 +33,8 @@ export default function SortableSlot({
   onEditCard,
   onMarkSold,
   onCardClick,
-  highlightCardId
+  highlightCardId,
+  onToggleFeatured
 }: SortableSlotProps) {
   const {
     attributes,
@@ -134,13 +136,34 @@ export default function SortableSlot({
             className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap"
           />
 
+          {/* Estrella de destacar (visible en hover o si ya está destacada) */}
+          {onToggleFeatured && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleFeatured(slot.id, !(slot as any).is_featured)
+              }}
+              className={`absolute right-1.5 top-9 z-20 rounded-full p-1.5 transition-all ${
+                (slot as any).is_featured
+                  ? 'bg-yellow-400 text-yellow-900 shadow-[0_0_12px_rgba(250,204,21,0.5)]'
+                  : 'bg-black/70 text-white opacity-0 group-hover:opacity-100 hover:bg-yellow-400/80 hover:text-yellow-900'
+              }`} 
+              aria-label={`${(slot as any).is_featured ? 'Quitar de destacadas' : 'Destacar'} ${slot.card_name}`}
+              title={(slot as any).is_featured ? 'Quitar de destacadas' : 'Destacar en perfil'}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            </button>
+          )}
+
           {onRemoveSlot && (
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 onRemoveSlot(slot.id)
               }}
-              className="absolute right-1.5 top-9 rounded-full bg-black/70 p-1 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
+              className="absolute right-1.5 top-16 z-20 rounded-full bg-black/70 p-1 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
               aria-label={`Quitar ${slot.card_name}`}
             >
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">

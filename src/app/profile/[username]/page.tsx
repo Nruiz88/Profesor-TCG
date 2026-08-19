@@ -241,8 +241,8 @@ async function loadPokedex(
   }
 }
 
-// Showcase: las 4 cartas más caras del binder del usuario, para mostrar
-// como tarjetas destacadas en la parte superior del perfil (tipo pkmn.gg).
+// Showcase: cartas destacadas por el usuario (is_featured = true) de todos
+// sus binders. Se muestran en la sección "Mis Cartas Destacadas" del perfil.
 async function loadShowcaseCards(
   admin: QueryClient,
   profile: { id: string; username: string; city: string | null; country: string | null; whatsapp_number: string | null },
@@ -254,10 +254,11 @@ async function loadShowcaseCards(
   const { data: rows } = await admin
     .from('binder_cards')
     .select(
-      'id, binder_id, card_id, card_name, set_id, number, market_price, status, price_override, is_for_sale, is_for_trade, price, language, manual_price, currency, is_user_reported, updated_at'
+      'id, binder_id, card_id, card_name, set_id, number, market_price, status, price_override, is_for_sale, is_for_trade, price, language, manual_price, currency, is_user_reported, is_featured, updated_at'
     )
     .in('binder_id', binderIds)
-    .order('market_price', { ascending: false })
+    .eq('is_featured', true)
+    .order('updated_at', { ascending: false })
     .limit(4)
   if (!rows || rows.length === 0) return []
 
