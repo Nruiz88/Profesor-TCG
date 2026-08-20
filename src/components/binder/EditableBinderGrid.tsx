@@ -82,12 +82,15 @@ export default function EditableBinderGrid({
   )
 
   function handleCardClick(card: SlotCard) {
-    if (!onRemoveSlot && !onEditCard) {
-      const s = normalizeStatus(card.status)
-      if (s === 'for_sale' || s === 'for_trade') {
-        setClaimCard(card)
-        return
-      }
+    if (onEditCard) {
+      // En el binder propio el click abre directamente el editor completo.
+      onEditCard(card)
+      return
+    }
+    const s = normalizeStatus(card.status)
+    if (s === 'for_sale' || s === 'for_trade') {
+      setClaimCard(card)
+      return
     }
     setSelected(card)
   }

@@ -25,6 +25,7 @@ import {
 } from '@/lib/priceGuide'
 import LanguagePills from './LanguagePills'
 import ClaimKitModal from './ClaimKitModal'
+import PokemonCard from './PokemonCard'
 
 interface EditCardModalProps {
   card: SlotCard
@@ -175,6 +176,11 @@ export default function EditCardModal({
           >
             ✕
           </button>
+        </div>
+
+        {/* Carta */}
+        <div className="mx-auto mt-4 w-44 sm:w-52">
+          <PokemonCard card={card} />
         </div>
 
         {/* Idioma — pills compactos */}

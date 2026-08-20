@@ -192,19 +192,6 @@ export default function SortableSlot({
             </button>
           )}
 
-          {onEditCard && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onEditCard(slot)
-              }}
-              className="absolute bottom-7 right-1.5 z-20 rounded-full bg-binder-accent px-2.5 py-1 text-[10px] font-bold text-white opacity-0 shadow-md transition-opacity hover:bg-rose-500 group-hover:opacity-100"
-              aria-label={`Editar ${slot.card_name}`}
-            >
-              Editar
-            </button>
-          )}
-
           {onFetchPrice && (
             <button
               onClick={(e) => {
