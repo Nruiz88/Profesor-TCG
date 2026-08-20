@@ -2,6 +2,7 @@
 
 import { useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
 import { CARD_LANGUAGE_META, normalizeLanguage } from '@/lib/cardLanguage'
@@ -85,12 +86,12 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
             boxShadow: `inset 0 0 0 1px ${glow}, 0 12px 34px -12px ${glow}`
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={card.image}
             alt={card.card_name}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+            fill
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.06]"
           />
 
           {/* Brillo especular que sigue el cursor */}

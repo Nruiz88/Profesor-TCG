@@ -71,6 +71,10 @@ const nextConfig = {
         hostname: 'images.pokemontcg.io'
       },
       {
+        protocol: 'https',
+        hostname: 'images.scrydex.com'
+      },
+      {
         // Supabase Storage: <project-ref>.supabase.co
         protocol: 'https',
         hostname: '*.supabase.co'
