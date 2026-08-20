@@ -194,6 +194,14 @@ export const GithubIcon = (p: IconProps) => (
   </Svg>
 )
 
+export const DiscordIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M15.5 8.8c-.5-.2-1-.4-1.5-.5l-.7 1.4a9 9 0 0 0-2.6 0L10 8.3c-.5.1-1 .3-1.5.5A17.4 17.4 0 0 0 6 15.2c1.3 1 2.7 1.5 4 1.8l.8-1.4a6 6 0 0 1-1.3-.6l.3-.2a9.5 9.5 0 0 0 4.4 0l.3.2c-.4.3-.8.5-1.3.6l.8 1.4c1.3-.3 2.7-.8 4-1.8a17.4 17.4 0 0 0-2.8-6.4z" />
+    <circle cx="9.5" cy="13" r="0.5" fill="currentColor" stroke="none" />
+    <circle cx="14.5" cy="13" r="0.5" fill="currentColor" stroke="none" />
+  </Svg>
+)
+
 export const ScaleIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M12 3v18M8 21h8M12 6a3 3 0 0 1 3-3 3 3 0 0 0 3 3M4 9h16M5 9l-2 6a3.5 3.5 0 0 0 7 0L8 9M16 9l-2 6a3.5 3.5 0 0 0 7 0l-2-6" />

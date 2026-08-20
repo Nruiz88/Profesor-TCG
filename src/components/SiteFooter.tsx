@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ChatIcon, GithubIcon, InstagramIcon } from '@/components/icons'
+import { ChatIcon, DiscordIcon, InstagramIcon } from '@/components/icons'
 import KofiButton from '@/components/KofiButton'
 
 export default function SiteFooter() {
@@ -71,17 +71,19 @@ export default function SiteFooter() {
             </li>
             <li>
               <a
-                href="https://github.com/Nruiz88/Profesor-TCG"
+                href="https://discord.gg/NxuWmFKPuZ"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-slate-400 transition-colors hover:text-white"
               >
-                <GithubIcon width={15} height={15} /> GitHub
+                <DiscordIcon width={15} height={15} /> Discord
               </a>
             </li>
             <li>
               <a
-                href="#"
+                href="https://www.instagram.com/tcgclaim"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-slate-400 transition-colors hover:text-white"
               >
                 <InstagramIcon width={15} height={15} /> Instagram
