@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
@@ -37,10 +38,29 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
+      <head>
+        <meta
+          name="google-site-verification"
+          content="jhN3WXBxo58r9qKNfoM0_B6PzTcW4PonkcfjkGrG9Ho"
+        />
+      </head>
       <body className="min-h-screen antialiased">
         <AppShell>{children}</AppShell>
         <Analytics />
         <SpeedInsights />
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-MWQY48W6F1"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-MWQY48W6F1');
+          `}
+        </Script>
       </body>
     </html>
   )
