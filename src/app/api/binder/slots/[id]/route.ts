@@ -316,8 +316,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
                     : '🔵 Para cambio'
               }`,
               color: data.is_for_sale ? 0x25d366 : 0x3b82f6,
-              // Imagen vertical de la carta (700 alto, proporcional) para Discord
-              image: { url: `${siteUrl}/card/${encodeURIComponent(data.card_id)}/discord-image` },
+              // Imagen vertical de la carta (700 alto, proporcional) para Discord.
+              // getCardOgData busca por el UUID del slot (data.id), no por card_id.
+              image: { url: `${siteUrl}/card/${encodeURIComponent(data.id)}/discord-image` },
               fields: [
                 {
                   name: 'Precio',
