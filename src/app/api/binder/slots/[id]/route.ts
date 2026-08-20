@@ -11,6 +11,8 @@ import { isCurrency } from '@/lib/priceGuide'
 import { effectivePrice } from '@/lib/cardStatus'
 import { notifyWantlistMatches } from '@/lib/notifications'
 import { sendDiscordWebhook } from '@/lib/discord'
+import { resolveCardImage } from '@/lib/cardImage'
+import { cardSlug } from '@/lib/catalogPages'
 
 export const dynamic = 'force-dynamic'
 
@@ -294,21 +296,42 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           sellerUsername: sellerProfile?.username ?? 'coleccionista'
         })
         const price = effectivePrice(data.market_price, data.price_override, data.price, data.manual_price)
+        const cardImage = await resolveCardImage(data.set_id, data.number, data.language ?? 'EN')
+        const languageLabel =
+          (data.language ?? 'EN').toUpperCase() === 'EN'
+            ? 'Inglés'
+            : (data.language ?? '').toUpperCase() === 'ES'
+              ? 'Español'
+              : (data.language ?? '').toUpperCase()
         await sendDiscordWebhook({
           username: 'TCG Claim · Market',
           embeds: [
             {
               title: data.card_name,
-              url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/carta/${encodeURIComponent(data.card_id)}`,
+              url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/carta/${encodeURIComponent(data.card_id)}/${cardSlug(data.card_name)}`,
               description: `**${data.set_id.toUpperCase()} · #${data.number}**\n${
                 data.is_for_sale && data.is_for_trade
-                  ? 'En venta o cambio'
+                  ? '🟢 En venta o cambio'
                   : data.is_for_sale
-                    ? 'En venta'
-                    : 'Para cambio'
-              }${price != null ? `\nPrecio: $${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}`,
+                    ? '🟢 En venta'
+                    : '🔵 Para cambio'
+              }`,
               color: data.is_for_sale ? 0x25d366 : 0x3b82f6,
+              thumbnail: { url: cardImage },
               fields: [
+                {
+                  name: 'Precio',
+                  value:
+                    price != null
+                      ? `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${data.currency ?? 'USD'}`
+                      : 'Consultar',
+                  inline: true
+                },
+                {
+                  name: 'Idioma',
+                  value: languageLabel,
+                  inline: true
+                },
                 {
                   name: 'Vendedor',
                   value: sellerProfile?.username ? `@${sellerProfile.username}` : 'coleccionista',

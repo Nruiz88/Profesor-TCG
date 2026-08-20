@@ -10,6 +10,7 @@ export interface DiscordWebhookMessage {
     description?: string
     url?: string
     color?: number
+    thumbnail?: { url: string }
     fields?: Array<{ name: string; value: string; inline?: boolean }>
     timestamp?: string
   }>
