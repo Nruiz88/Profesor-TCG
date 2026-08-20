@@ -120,7 +120,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12">
           {/* Logo */}
           <img
-            src="/brand/logo.png"
+            src="/brand/logo-invertido.png"
             alt="TCG Claim"
             className="mb-8 h-32 w-auto"
           />
@@ -155,7 +155,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Logo mobile */}
           <div className="lg:hidden flex items-center justify-center mb-8">
-            <img src="/brand/logo.png" alt="TCG Claim" className="h-12 w-auto mr-3" />
+            <img src="/brand/logo-invertido.png" alt="TCG Claim" className="h-12 w-auto mr-3" />
             <span className="text-xl font-bold text-white">TCG Claim</span>
           </div>
 

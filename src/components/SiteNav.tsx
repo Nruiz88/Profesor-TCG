@@ -124,7 +124,7 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-x-4 px-4 py-3.5">
         <Link href="/" className="group flex items-center gap-2.5">
           <img
-            src="/brand/logo.png"
+            src="/brand/logo-invertido.png"
             alt="TCG Claim"
             className="h-9 w-auto transition-transform group-hover:scale-105"
           />

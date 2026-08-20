@@ -8,7 +8,7 @@ export default function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
-            <img src="/brand/logo.png" alt="TCG Claim" className="h-8 w-auto" />
+            <img src="/brand/logo-invertido.png" alt="TCG Claim" className="h-8 w-auto" />
             <span className="text-lg font-bold tracking-tight text-white">TCG Claim</span>
           </div>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-500">

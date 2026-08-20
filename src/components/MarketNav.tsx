@@ -28,7 +28,7 @@ export default function MarketNav({ user, profile }: MarketNavProps) {
       <div className="mx-auto flex max-w-7xl items-center gap-1 px-4 py-3">
         {/* Logo */}
         <Link href="/" className="mr-4 flex items-center gap-2">
-          <img src="/brand/logo.png" alt="TCG Claim" className="h-8 w-auto" />
+          <img src="/brand/logo-invertido.png" alt="TCG Claim" className="h-8 w-auto" />
           <span className="hidden text-lg font-bold tracking-tight text-white sm:inline">
             TCG Claim
           </span>

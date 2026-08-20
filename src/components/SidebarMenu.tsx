@@ -127,7 +127,7 @@ export default function SidebarMenu(props: SidebarMenuProps) {
         <div className="flex h-16 shrink-0 items-center gap-2.5 border-b border-slate-800/60 px-5">
           <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
             <img
-              src="/brand/logo.png"
+              src="/brand/logo-invertido.png"
               alt="TCG Claim"
               className="h-9 w-auto"
             />
