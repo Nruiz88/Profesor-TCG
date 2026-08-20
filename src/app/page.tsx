@@ -148,18 +148,18 @@ export default async function LandingPage() {
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-binder-accent/30 bg-binder-accent/10 px-3 py-1 text-xs font-semibold text-binder-accent">
               <SparklesIcon width={13} height={13} />
-              Gratis · Español · 17.000+ cartas
+              Mercado P2P de cartas TCG · Gratis · Sin comisiones
             </span>
             <h1 className="mt-5 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.4rem] lg:leading-[1.1]">
-              Tu Colección TCG en 3D.{' '}
+              Comprá, vendé y cambiá cartas TCG{' '}
               <span className="bg-gradient-to-r from-binder-accent to-amber-400 bg-clip-text text-transparent">
-                Tu Mercado en WhatsApp.
+                directo por WhatsApp.
               </span>
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-400">
-              Digitalizá tu álbum físico en minutos: precios de mercado en tiempo real, cartas con
-              efecto holo, y la comunidad para{' '}
-              <span className="text-slate-200">vender, cambiar y cerrar el trato directo por WhatsApp</span>.
+              TCGClaim es el mercado P2P de cartas coleccionables: digitalizá tu Binder 3D, publicá
+              tus cartas con precio de mercado en vivo y cerrá el trato{' '}
+              <span className="text-slate-200">sin comisiones ni intermediarios</span>.
             </p>
             <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-sm font-medium text-emerald-300">
               <ChatIcon width={15} height={15} />

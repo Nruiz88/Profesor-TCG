@@ -270,9 +270,18 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-slate-800/50">
-            <Link 
+            <div className="flex items-center justify-center gap-4 text-xs text-slate-600">
+              <Link href="/terminos" className="hover:text-slate-400 transition-colors">
+                Términos de uso
+              </Link>
+              <span>·</span>
+              <Link href="/privacidad" className="hover:text-slate-400 transition-colors">
+                Política de privacidad
+              </Link>
+            </div>
+            <Link
               href="/"
-              className="flex items-center justify-center text-sm text-slate-600 hover:text-slate-400 transition-colors"
+              className="mt-4 flex items-center justify-center text-sm text-slate-600 hover:text-slate-400 transition-colors"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

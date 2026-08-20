@@ -33,7 +33,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isLogin = pathname === '/login'
   const isOwnBinder = pathname === '/binder'
   const isMarket = pathname === '/explore' || pathname === '/buscados'
-  const showSidebar = !isHome && !isLogin && !isOwnBinder && !isMarket
+  const isLegal = pathname === '/terminos' || pathname === '/privacidad'
+  const showSidebar = !isHome && !isLogin && !isOwnBinder && !isMarket && !isLegal
 
   // Cargar sesión y perfil/binders del usuario.
   useEffect(() => {
