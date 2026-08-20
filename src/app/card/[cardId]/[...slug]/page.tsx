@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { getCardOgData } from '@/lib/og'
 import PublicCardView from './card-view'
 
@@ -20,6 +21,15 @@ export async function generateMetadata({
   const owner = data.username ? `por @${data.username}` : 'en Profesor TCG'
   const title = `${data.name} · Profesor TCG`
   const description = `${data.set_name} · #${data.number} ${owner}. ${fmt(data.price, data.currency)}${data.isReserved ? ' · Reservada 24h' : ''} — coordiná directo por WhatsApp.`
+
+  // URL absoluta del og:image: los crawlers de redes (WhatsApp, etc.) necesitan
+  // una URL completa, no relativa, para generar el preview de la carta.
+  const headerStore = await headers()
+  const proto = headerStore.get('x-forwarded-proto') ?? 'https'
+  const host = headerStore.get('host') ?? 'profesor-tcg.vercel.app'
+  const origin = `${proto}://${host}`
+  const ogImageUrl = `${origin}/card/${cardId}/opengraph-image`
+
   return {
     title,
     description,
@@ -30,7 +40,7 @@ export async function generateMetadata({
       // opengraph-image.tsx del segmento padre [cardId], así que lo
       // referenciamos explícitamente (la ruta /card/[cardId]/opengraph-image
       // sí existe y se genera al vuelo con @vercel/og).
-      images: [{ url: `/card/${cardId}/opengraph-image`, width: 1200, height: 630, alt: 'Carta en Profesor TCG' }]
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Carta en Profesor TCG' }]
     }
   }
 }

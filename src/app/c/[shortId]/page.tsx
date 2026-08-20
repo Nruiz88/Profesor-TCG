@@ -19,13 +19,21 @@ export default async function Page({ params }: { params: Promise<{ shortId: stri
   }
   const admin = createAdminClient(url, serviceKey)
 
+  // La columna id es uuid y PostgREST no permite LIKE sobre uuid. Como el
+  // volumen de cartas publicadas es bajo, traemos las cartas en venta/cambio
+  // y resolvemos el prefijo del UUID corto en memoria.
   const { data } = await admin
     .from('binder_cards')
     .select('id, card_name, is_for_sale, is_for_trade')
-    .like('id', `${shortId.toLowerCase()}%`)
-    .limit(1)
+    .or('is_for_sale.eq.true,is_for_trade.eq.true')
+    .limit(2000)
 
-  const card = Array.isArray(data) ? data[0] : undefined
+  const rows = Array.isArray(data) ? data : []
+  const prefix = shortId.toLowerCase()
+  const card = rows.find((r: { id: string }) =>
+    r.id.replace(/-/g, '').toLowerCase().startsWith(prefix)
+  )
+
   if (!card || (!card.is_for_sale && !card.is_for_trade)) {
     notFound()
   }
