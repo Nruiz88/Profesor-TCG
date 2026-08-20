@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import ResponsiveNav from '@/components/ResponsiveNav'
 import MarketNav from '@/components/MarketNav'
 import SiteFooter from '@/components/SiteFooter'
+import DonationFooter from '@/components/DonationFooter'
 import { createClient } from '@/lib/supabase/client'
 import { getUserBinders } from '@/lib/binders'
 import type { Profile } from '@/lib/profile'
@@ -102,7 +103,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-screen flex-col">
         <main className="flex-1">{children}</main>
-        <SiteFooter />
+        {isOwnBinder ? <DonationFooter /> : <SiteFooter />}
       </div>
     )
   }
@@ -128,7 +129,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
-      <SiteFooter />
+      <DonationFooter />
     </div>
   )
 }
