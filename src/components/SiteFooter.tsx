@@ -4,7 +4,7 @@ import KofiButton from '@/components/KofiButton'
 
 export default function SiteFooter() {
   return (
-    <footer className="relative z-50 border-t border-slate-800/60 bg-slate-950">
+    <footer className="relative z-30 border-t border-slate-800/60 bg-slate-950">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
