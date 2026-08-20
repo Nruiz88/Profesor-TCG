@@ -126,6 +126,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1 pb-20 lg:pb-0 lg:ml-64">
         {children}
       </main>
+      <SiteFooter />
     </div>
   )
 }
