@@ -260,7 +260,7 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
   return (
     <>
       {/* ─── DESKTOP: barra vertical a la izquierda (en el flujo del contenido) ─── */}
-      <aside className="relative z-40 hidden w-64 shrink-0 flex-col border-r border-slate-800/60 bg-[#0a0c10] lg:flex">
+      <aside className="relative z-40 hidden w-64 shrink-0 flex-col border-r border-slate-800/40 bg-[#090d16] lg:flex">
         <SidebarMenu {...menuProps} />
       </aside>
 

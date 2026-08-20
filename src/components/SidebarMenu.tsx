@@ -47,8 +47,8 @@ const SECTION_TOGGLE =
 const NAV_ITEM =
   'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150'
 const NAV_ACTIVE =
-  'bg-gradient-to-r from-rose-500/25 via-rose-500/10 to-transparent text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_2px_8px_rgba(244,63,94,0.18)] ring-1 ring-inset ring-rose-500/30'
-const NAV_IDLE = 'text-slate-400 hover:bg-gray-800 hover:text-white'
+  'bg-white/5 text-white ring-1 ring-inset ring-white/10'
+const NAV_IDLE = 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
 
 export function SidebarSection({
   icon,
