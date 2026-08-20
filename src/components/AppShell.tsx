@@ -109,23 +109,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-200">
-      <ResponsiveNav
-        profile={profile}
-        user={user}
-        binders={binders}
-        activeBinderId={null}
-        onSelectBinder={(id) => router.push(`/binder?binderId=${id}`)}
-        onCreateBinder={() => router.push('/binder')}
-        onShowProfile={() => {
-          if (profile?.username) {
-            router.push(`/profile/${encodeURIComponent(profile.username)}?tab=settings`)
-          }
-        }}
-        onShowClaims={() => router.push('/claims')}
-      />
-      <main className="flex-1 pb-20 lg:pb-0 lg:ml-64">
-        {children}
-      </main>
+      <div className="flex flex-1">
+        <ResponsiveNav
+          profile={profile}
+          user={user}
+          binders={binders}
+          activeBinderId={null}
+          onSelectBinder={(id) => router.push(`/binder?binderId=${id}`)}
+          onCreateBinder={() => router.push('/binder')}
+          onShowProfile={() => {
+            if (profile?.username) {
+              router.push(`/profile/${encodeURIComponent(profile.username)}?tab=settings`)
+            }
+          }}
+          onShowClaims={() => router.push('/claims')}
+        />
+        <main className="min-w-0 flex-1 pb-20 lg:pb-0">
+          {children}
+        </main>
+      </div>
       <SiteFooter />
     </div>
   )

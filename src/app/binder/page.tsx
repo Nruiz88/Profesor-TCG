@@ -664,26 +664,26 @@ export default function BinderPage() {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-200">
-      <ResponsiveNav
-        profile={profile}
-        user={user}
-        binders={binders}
-        activeBinderId={activeBinderId}
-        onSelectBinder={selectBinder}
-        onCreateBinder={() => setSettingsModal('create')}
-        onShowProfile={async () => {
-          const p = profile ?? (await loadProfile())
-          if (p?.username) {
-            router.push(`/profile/${encodeURIComponent(p.username)}?tab=settings`)
-          } else {
-            setMessage('No se pudo abrir tu perfil. Intentalo de nuevo.')
-          }
-        }}
-        onShowClaims={() => router.push('/claims')}
-      />
+      <div className="flex">
+        <ResponsiveNav
+          profile={profile}
+          user={user}
+          binders={binders}
+          activeBinderId={activeBinderId}
+          onSelectBinder={selectBinder}
+          onCreateBinder={() => setSettingsModal('create')}
+          onShowProfile={async () => {
+            const p = profile ?? (await loadProfile())
+            if (p?.username) {
+              router.push(`/profile/${encodeURIComponent(p.username)}?tab=settings`)
+            } else {
+              setMessage('No se pudo abrir tu perfil. Intentalo de nuevo.')
+            }
+          }}
+          onShowClaims={() => router.push('/claims')}
+        />
 
-      <div className="pb-20 lg:pb-0 lg:pl-64">
-        <main className="mx-auto w-full max-w-7xl px-4 py-4 lg:py-8">
+        <main className="min-w-0 flex-1 pb-20 lg:pb-0">
             {/* Header compacto: título + stats inline + acciones */}
             <div className="relative z-40 mb-5 rounded-2xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
