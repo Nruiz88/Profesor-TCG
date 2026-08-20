@@ -24,8 +24,11 @@ import {
   CURRENCIES
 } from '@/lib/priceGuide'
 import LanguagePills from './LanguagePills'
-import ClaimKitModal from './ClaimKitModal'
 import PokemonCard from './PokemonCard'
+import {
+  generateCardShareImage,
+  cardShareText
+} from '@/lib/cardShareImage'
 
 interface EditCardModalProps {
   card: SlotCard
@@ -63,10 +66,11 @@ export default function EditCardModal({
   const [condition, setCondition] = useState<string>(card.condition ?? '')
   const [language, setLanguage] = useState<CardLanguage>(() => normalizeLanguage(card.language))
   const [variant, setVariant] = useState<string>(card.variant ?? 'normal')
-  const [showKit, setShowKit] = useState(false)
   const [showRefs, setShowRefs] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sharing, setSharing] = useState<'wa' | 'copy' | null>(null)
+  const [shareError, setShareError] = useState<string | null>(null)
 
   const withSale = availability === 'solo_venta' || availability === 'venta_o_cambio'
   const withTrade = availability === 'solo_cambio' || availability === 'venta_o_cambio'
@@ -112,6 +116,61 @@ export default function EditCardModal({
 
   function updateQuantity(delta: number) {
     setQuantity((prev) => Math.max(1, prev + delta))
+  }
+
+  // Genera la imagen de la carta (800x800) y la comparte con el link.
+  async function shareViaWhatsApp() {
+    if (sharing) return
+    setSharing('wa')
+    setShareError(null)
+    try {
+      const text = cardShareText(card, parsePrice())
+      const imageUrl = await generateCardShareImage({
+        card,
+        price: parsePrice(),
+        availability,
+        username: profile?.username ?? null
+      })
+      if (imageUrl && navigator.share && navigator.canShare?.({ files: [new File(['x'], 'x.png', { type: 'image/png' })] })) {
+        const res = await fetch(imageUrl)
+        const blob = await res.blob()
+        const safe = `${card.card_name}-${card.set_id}-${card.number}`.toLowerCase().replace(/[^a-z0-9-]+/g, '-')
+        const file = new File([blob], `${safe}.png`, { type: 'image/png' })
+        try {
+          await navigator.share({ title: `${card.card_name} — ${card.set_id.toUpperCase()} #${card.number}`, text, files: [file] })
+          return
+        } catch {
+          // cancelado o sin soporte
+        }
+      }
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+    } catch {
+      setShareError('No se pudo generar la imagen. Compartí el link directo.')
+      const text = cardShareText(card, parsePrice())
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+    } finally {
+      setSharing(null)
+    }
+  }
+
+  async function copyLinkWithImage() {
+    if (sharing) return
+    setSharing('copy')
+    setShareError(null)
+    try {
+      await generateCardShareImage({
+        card,
+        price: parsePrice(),
+        availability,
+        username: profile?.username ?? null
+      })
+      const text = cardShareText(card, parsePrice())
+      await navigator.clipboard.writeText(text)
+    } catch {
+      setShareError('No se pudo generar la imagen.')
+    } finally {
+      setSharing(null)
+    }
   }
 
   async function handleSave() {
@@ -406,14 +465,40 @@ export default function EditCardModal({
           </div>
         )}
 
-        {/* Kit de Claim — link sutil */}
+        {/* Compartir carta en venta: WhatsApp + copiar (genera la imagen) */}
         {(withSale || withTrade) && (
-          <button
-            onClick={() => setShowKit(true)}
-            className="mt-4 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-xs font-semibold text-slate-400 transition-colors hover:border-rose-500/30 hover:text-rose-300"
-          >
-            📦 Generar Kit de Claim
-          </button>
+          <div className="mt-4">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              Compartir esta carta
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                onClick={shareViaWhatsApp}
+                disabled={sharing !== null}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-950/40 transition-colors hover:bg-emerald-500 disabled:opacity-60"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.613.613l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.37 0-4.567-.814-6.293-2.172l-.44-.358-2.634.883.883-2.634-.358-.44A9.965 9.965 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z" />
+                </svg>
+                {sharing === 'wa' ? 'Generando…' : 'WhatsApp'}
+              </button>
+              <button
+                onClick={copyLinkWithImage}
+                disabled={sharing !== null}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-xs font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:text-white disabled:opacity-60"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {sharing === 'copy' ? 'Generando…' : 'Copiar link'}
+              </button>
+            </div>
+            {shareError && (
+              <p className="mt-2 text-[11px] text-amber-400">{shareError}</p>
+            )}
+          </div>
         )}
 
         {/* Error */}
@@ -440,15 +525,6 @@ export default function EditCardModal({
           </button>
         </div>
       </div>
-
-      {showKit && (
-        <ClaimKitModal
-          card={card}
-          username={profile?.username}
-          price={withSale && !Number.isNaN(parsePrice()) ? parsePrice() : undefined}
-          onClose={() => setShowKit(false)}
-        />
-      )}
     </div>
   )
 }
