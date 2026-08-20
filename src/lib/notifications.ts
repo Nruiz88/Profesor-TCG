@@ -6,6 +6,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 // terceros, no el que publica).
 
 export const NOTIFICATION_TYPE_WANTLIST = 'wantlist'
+export const NOTIFICATION_TYPE_CLAIM = 'claim'
 
 export interface WantlistPublishEvent {
   binderCardId: string
@@ -80,5 +81,43 @@ export async function notifyWantlistMatches(event: WantlistPublishEvent): Promis
     await admin.from('notifications').insert(rows)
   } catch {
     // silencioso: el aviso es best-effort
+  }
+}
+
+export interface ClaimEvent {
+  sellerId: string
+  buyerUsername: string
+  binderCardId: string
+  cardName: string
+  setId: string
+  number: string
+}
+
+/**
+ * Crea una notificación in-app al vendedor cuando un comprador le hace un
+ * CLAIM sobre una de sus cartas (reserva 24h). Los inserts usan service role
+ * porque el receptor es un tercero. Nunca lanza: el aviso no debe romper el
+ * claim.
+ */
+export async function notifySellerOfClaim(event: ClaimEvent): Promise<void> {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!serviceKey || !url) return
+  const admin = createAdminClient(url, serviceKey)
+
+  try {
+    await admin.from('notifications').insert({
+      user_id: event.sellerId,
+      type: NOTIFICATION_TYPE_CLAIM,
+      payload: {
+        binder_card_id: event.binderCardId,
+        card_name: event.cardName,
+        set_id: event.setId,
+        number: event.number,
+        buyer_username: event.buyerUsername
+      }
+    })
+  } catch {
+    // silencioso
   }
 }

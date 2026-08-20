@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { CLAIM_WINDOW_MS, revertExpiredReservations } from '@/lib/claim'
+import { notifySellerOfClaim } from '@/lib/notifications'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
     // binder público: basta con que la carta esté listada.
     const { data: card, error: cardError } = await admin
       .from('binder_cards')
-      .select('id, binder_id, status, is_for_sale, is_for_trade, reserved_until')
+      .select('id, binder_id, status, is_for_sale, is_for_trade, reserved_until, card_name, set_id, number')
       .eq('id', cardId)
       .maybeSingle()
     if (cardError) throw cardError
@@ -178,6 +179,25 @@ export async function POST(req: Request) {
         })
         .eq('id', cardId)
       throw claimError
+    }
+
+    // Avisar al vendedor por notificación in-app (best-effort, no rompe el claim)
+    try {
+      const { data: buyerProfile } = await admin
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .maybeSingle()
+      await notifySellerOfClaim({
+        sellerId: binder.user_id,
+        buyerUsername: buyerProfile?.username ?? 'coleccionista',
+        binderCardId: cardId,
+        cardName: card.card_name ?? 'una carta',
+        setId: card.set_id ?? '',
+        number: card.number ?? ''
+      })
+    } catch {
+      // silencioso
     }
 
     return NextResponse.json({

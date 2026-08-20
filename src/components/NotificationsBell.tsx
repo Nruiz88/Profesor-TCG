@@ -33,10 +33,14 @@ function notificationTitle(n: AppNotification): string {
     number?: string
     price?: number | null
     seller_username?: string
+    buyer_username?: string
   }
   if (n.type === 'wantlist') {
     const price = p.price != null ? ` a ${formatPrice(p.price, 'USD')}` : ''
     return `🔔 “${p.card_name ?? 'Una carta'}” (${(p.set_id ?? '').toUpperCase()} ${p.number ?? ''}) está en el marketplace${price} — de @${p.seller_username ?? 'coleccionista'}.`
+  }
+  if (n.type === 'claim') {
+    return `📥 @${p.buyer_username ?? 'Alguien'} hizo un claim sobre “${p.card_name ?? 'una carta'}” (${(p.set_id ?? '').toUpperCase()} ${p.number ?? ''}). Quedó reservada 24h — coordiná por WhatsApp.`
   }
   return 'Nueva notificación'
 }
