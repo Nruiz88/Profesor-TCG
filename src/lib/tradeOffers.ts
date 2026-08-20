@@ -85,6 +85,14 @@ export interface OfferCardView {
   number: string
   image: string
   price: number | null
+  currency?: string
+  rarity?: string | null
+  supertype?: string | null
+  subtypes?: string[] | null
+  types?: string[] | null
+  language?: string | null
+  condition?: string | null
+  variant?: string
 }
 
 export interface OfferUserView {

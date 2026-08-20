@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { resolveCardImage } from '@/lib/cardImage'
 import { normalizeLanguage } from '@/lib/cardLanguage'
 import { effectivePrice } from '@/lib/cardStatus'
+import { getCardMetadataMap } from '@/lib/catalog'
 import {
   normalizeOfferStatus,
   type CardSnapshot,
@@ -29,14 +30,28 @@ function userView(s: UserSnapshot | null): OfferUserView {
   }
 }
 
-function cardView(s: CardSnapshot, image: string): OfferCardView {
+function cardView(
+  s: CardSnapshot,
+  image: string,
+  meta: Map<string, { rarity?: string | null; supertype?: string | null; subtypes?: string[] | null; types?: string[] | null }>,
+  slot?: { condition?: string | null; variant?: string | null }
+): OfferCardView {
+  const m = meta.get(`${s.set_id}-${s.number}`)
   return {
     id: s.id,
     card_name: s.card_name,
     set_id: s.set_id,
     number: s.number,
     image,
-    price: effectivePrice(s.market_price, s.price_override, s.price, s.manual_price)
+    price: effectivePrice(s.market_price, s.price_override, s.price, s.manual_price),
+    currency: 'USD',
+    rarity: m?.rarity ?? null,
+    supertype: m?.supertype ?? null,
+    subtypes: m?.subtypes ?? null,
+    types: m?.types ?? null,
+    language: s.language ?? null,
+    condition: slot?.condition ?? null,
+    variant: slot?.variant ?? 'normal'
   }
 }
 
@@ -74,14 +89,36 @@ export async function GET(req: Request) {
 
     const rows = (data || []) as unknown as TradeOfferRow[]
 
+    // Recopilar todos los ids de cartas (requested + offered) para resolver
+    // condition/variant desde binder_cards y la metadata del catálogo.
+    const cardIds = new Set<string>()
+    for (const r of rows) {
+      if (r.requested_card_id) cardIds.add(r.requested_card_id)
+      for (const id of r.offered_card_ids || []) cardIds.add(id)
+    }
+
+    const [slotRows, meta] = await Promise.all([
+      cardIds.size > 0
+        ? supabase.from('binder_cards').select('id, condition, variant').in('id', [...cardIds])
+        : Promise.resolve({ data: [] }),
+      getCardMetadataMap()
+    ])
+    const slotById = new Map((slotRows.data || []).map((s) => [s.id, s]))
+
     // Resolver imágenes (con caché) de todas las cartas involucradas
     const offers: TradeOfferView[] = await Promise.all(
       rows.map(async (r) => {
         const requestedSnap = r.requested_snapshot
         const offeredSnaps = r.offered_snapshot ?? []
+        const requestedSlot = requestedSnap ? slotById.get(requestedSnap.id) ?? undefined : undefined
 
         const requested: OfferCardView = requestedSnap
-          ? cardView(requestedSnap, await resolveCardImage(requestedSnap.set_id, requestedSnap.number, normalizeLanguage(requestedSnap.language)))
+          ? cardView(
+              requestedSnap,
+              await resolveCardImage(requestedSnap.set_id, requestedSnap.number, normalizeLanguage(requestedSnap.language)),
+              meta,
+              requestedSlot
+            )
           : {
               id: r.requested_card_id,
               card_name: 'Carta eliminada',
@@ -92,7 +129,14 @@ export async function GET(req: Request) {
             }
 
         const offered: OfferCardView[] = await Promise.all(
-          offeredSnaps.map(async (s) => cardView(s, await resolveCardImage(s.set_id, s.number, normalizeLanguage(s.language))))
+          offeredSnaps.map(async (s) =>
+            cardView(
+              s,
+              await resolveCardImage(s.set_id, s.number, normalizeLanguage(s.language)),
+              meta,
+              slotById.get(s.id) ?? undefined
+            )
+          )
         )
 
         const totalRequested = requested.price ?? 0
