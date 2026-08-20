@@ -123,11 +123,13 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
     <header className="sticky top-0 z-50 hidden border-b border-slate-800/60 bg-[#090d16]/80 backdrop-blur-xl lg:block">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-x-4 px-4 py-3.5">
         <Link href="/" className="group flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-rose-600 to-rose-400 text-sm font-bold text-white shadow-lg shadow-rose-900/40 transition-transform group-hover:scale-105">
-            P
-          </span>
+          <img
+            src="/brand/logo.png"
+            alt="TCG Claim"
+            className="h-9 w-auto transition-transform group-hover:scale-105"
+          />
           <span className="text-lg font-bold tracking-tight text-white">
-            Profesor TCG
+            TCG Claim
             {label && (
               <span className="bg-gradient-to-r from-rose-400 to-rose-500 bg-clip-text font-semibold text-transparent">
                 {' '}· {label}

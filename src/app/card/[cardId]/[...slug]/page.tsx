@@ -16,10 +16,10 @@ export async function generateMetadata({
   const { cardId } = await params
   const data = await getCardOgData(cardId)
   if (!data) {
-    return { title: 'Carta no encontrada · Profesor TCG' }
+    return { title: 'Carta no encontrada · TCG Claim' }
   }
-  const owner = data.username ? `por @${data.username}` : 'en Profesor TCG'
-  const title = `${data.name} · Profesor TCG`
+  const owner = data.username ? `por @${data.username}` : 'en TCG Claim'
+  const title = `${data.name} · TCG Claim`
   const description = `${data.set_name} · #${data.number} ${owner}. ${fmt(data.price, data.currency)}${data.isReserved ? ' · Reservada 24h' : ''} — coordiná directo por WhatsApp.`
 
   // URL absoluta del og:image: los crawlers de redes (WhatsApp, etc.) necesitan
@@ -40,7 +40,7 @@ export async function generateMetadata({
       // opengraph-image.tsx del segmento padre [cardId], así que lo
       // referenciamos explícitamente (la ruta /card/[cardId]/opengraph-image
       // sí existe y se genera al vuelo con @vercel/og).
-      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Carta en Profesor TCG' }]
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Carta en TCG Claim' }]
     }
   }
 }

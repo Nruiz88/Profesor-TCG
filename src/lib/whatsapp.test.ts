@@ -18,7 +18,7 @@ const baseParams = {
   price: 45,
   currency: 'USD',
   condition: 'Near Mint',
-  slotUrl: 'https://profesortcg.app/binder/nacho_tcg?card=abc'
+  slotUrl: 'https://tcgclaim.app/binder/nacho_tcg?card=abc'
 } as const
 
 describe('sanitizeWhatsAppText', () => {

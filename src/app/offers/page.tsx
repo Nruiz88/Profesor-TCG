@@ -106,7 +106,7 @@ export default function OffersPage() {
     return (
       `https://wa.me/${(sender.whatsapp_number ?? '').replace(/\D/g, '')}` +
       `?text=${encodeURIComponent(
-        `Hola @${sender.username}! Acepté tu oferta por "${offer.requested.card_name}" en Profesor TCG. Coordinemos la entrega del intercambio.`
+        `Hola @${sender.username}! Acepté tu oferta por "${offer.requested.card_name}" en TCG Claim. Coordinemos la entrega del intercambio.`
       )}`
     )
   }

@@ -112,7 +112,7 @@ export async function notifySellerOfClaim(event: ClaimEvent): Promise<void> {
     const phone = String(event.buyerPhone ?? '').replace(/\D/g, '')
     const message = [
       `¡Hola @${event.buyerUsername || 'coleccionista'}!`,
-      `Soy el vendedor de *${event.cardName}* (#${event.setId.toUpperCase()} ${event.number}) en Profesor TCG.`,
+      `Soy el vendedor de *${event.cardName}* (#${event.setId.toUpperCase()} ${event.number}) en TCG Claim.`,
       'Te confirmé el claim, coordinemos el pago y el envío. 🚀'
     ].join('\n')
     const whatsappUrl =

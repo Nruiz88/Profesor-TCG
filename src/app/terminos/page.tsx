@@ -18,7 +18,7 @@ export default async function TerminosPage() {
           <section>
             <h2 className="text-lg font-semibold text-white">1. Aceptación de los términos</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              Al acceder o utilizar Profesor TCG («el servicio», «la plataforma») aceptás estos
+              Al acceder o utilizar TCG Claim («el servicio», «la plataforma») aceptás estos
               términos y condiciones. Si no estás de acuerdo con alguna parte de ellos, te pedimos
               que no uses el servicio. Al crear una cuenta, confirmás que tenés la edad mínima
               requerida y que aceptás cumplir estos términos.
@@ -28,7 +28,7 @@ export default async function TerminosPage() {
           <section>
             <h2 className="text-lg font-semibold text-white">2. El servicio</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              Profesor TCG es una plataforma para gestionar colecciones de cartas Pokémon TCG en un
+              TCG Claim es una plataforma para gestionar colecciones de cartas Pokémon TCG en un
               binder virtual: búsqueda del catálogo, precios de mercado en vivo (vía TCGdex,
               TCGplayer y Cardmarket), publicación de cartas en venta o para intercambio,
               reclamos («claim») y trueques 1 a 1, con cierre de las operaciones coordinado entre
@@ -88,7 +88,7 @@ export default async function TerminosPage() {
           <section>
             <h2 className="text-lg font-semibold text-white">6. Operaciones entre usuarios</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              Profesor TCG es una herramienta de publicación y contacto: no participa en las
+              TCG Claim es una herramienta de publicación y contacto: no participa en las
               transacciones, no maneja pagos ni envíos, y no cobra comisiones. La venta, el trueque
               y la entrega se coordinan directamente entre los usuarios (por ejemplo, por
               WhatsApp). La plataforma no garantiza la concreción, la calidad ni la legalidad de las
@@ -100,7 +100,7 @@ export default async function TerminosPage() {
           <section>
             <h2 className="text-lg font-semibold text-white">7. Propiedad intelectual</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              El diseño, el código y la marca «Profesor TCG» pertenecen a sus creadores. Pokémon y
+              El diseño, el código y la marca «TCG Claim» pertenecen a sus creadores. Pokémon y
               Pokémon TCG son marcas de The Pokémon Company; los datos y nombres de las cartas se
               muestran con fines informativos y provienen de fuentes públicas como TCGdex. Al
               publicar contenido en la plataforma (perfil, binder, publicaciones), nos otorgás una
@@ -112,7 +112,7 @@ export default async function TerminosPage() {
             <h2 className="text-lg font-semibold text-white">8. Limitación de responsabilidad</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
               No garantizamos que el servicio esté disponible sin interrupciones ni errores. En la
-              máxima medida permitida por la ley, Profesor TCG no será responsable por daños
+              máxima medida permitida por la ley, TCG Claim no será responsable por daños
               directos o indirectos derivados del uso del servicio o de las operaciones realizadas
               entre usuarios.
             </p>

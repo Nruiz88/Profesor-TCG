@@ -160,7 +160,7 @@ export default function PublicBinderPage({ param }: { param: string }) {
       <div className="min-h-screen text-slate-200">
         <div className="mx-auto max-w-5xl px-4 py-8">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-10 text-center">
-            <h1 className="text-xl font-bold text-white">Profesor TCG</h1>
+            <h1 className="text-xl font-bold text-white">TCG Claim</h1>
             <p className="mt-2 text-sm text-slate-400">{error}</p>
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function PublicBinderPage({ param }: { param: string }) {
       <div className="mx-auto max-w-5xl px-4 py-8">
       <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Profesor TCG</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">TCG Claim</h1>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
             <span className="font-medium text-slate-400">{binder?.title ?? 'Cargando…'}</span>
             <span className="text-slate-700">•</span>

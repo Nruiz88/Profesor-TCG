@@ -194,7 +194,7 @@ function drawBinderImage(
   ctx.fillStyle = 'rgba(148, 163, 184, 0.7)'
   ctx.font = '600 24px system-ui, sans-serif'
   ctx.fillText(
-    opts.username ? `Profesor TCG · @${opts.username}` : 'Profesor TCG',
+    opts.username ? `TCG Claim · @${opts.username}` : 'TCG Claim',
     W / 2,
     H - 30
   )

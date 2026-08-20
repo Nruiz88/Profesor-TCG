@@ -82,7 +82,7 @@ export function sanitizeWhatsAppPhone(value: unknown): string {
 export interface WhatsAppMessageParams {
   /** Número de WhatsApp del vendedor (con o sin código de país / '+' / espacios). */
   sellerPhone: string
-  /** Username del vendedor en Profesor TCG (se antepone '@' en el saludo). */
+  /** Username del vendedor en TCG Claim (se antepone '@' en el saludo). */
   sellerUsername: string
   /** Nombre de la carta que se quiere reclamar/intercambiar. */
   cardName: string
@@ -120,7 +120,7 @@ export function formatWhatsAppMessage(params: WhatsAppMessageParams): string {
   const slotUrl = sanitizeWhatsAppText(params.slotUrl)
   const languageLabel = WHATSAPP_LANGUAGE_LABEL[normalizeWhatsAppLanguage(params.language)]
 
-  const greeting = `¡Hola @${seller || 'coleccionista'}! Vengo de tu Binder en Profesor TCG.`
+  const greeting = `¡Hola @${seller || 'coleccionista'}! Vengo de tu Binder en TCG Claim.`
 
   const cardLine = `🃏 *${cardName}*`
   const setLine = `📚 Set: ${setName}${cardNumber ? ` · #${cardNumber}` : ''}`
@@ -200,7 +200,7 @@ export function claimMessage(p: ClaimParams): string {
     ? ` (Idioma: ${CARD_LANGUAGE_META[normalizeLanguage(p.language)].label})`
     : ''
   return [
-    `¡Hola ${seller}! Vengo de tu Binder en Profesor TCG.`,
+    `¡Hola ${seller}! Vengo de tu Binder en TCG Claim.`,
     `Hice el CLAIM de la carta *${p.cardName}* (#${p.setId.toUpperCase()} ${p.number})${cond}${lang} por ${fmtPrice(p.price, p.currency)}.`,
     `🔗 Publicación de la carta: ${p.cardUrl}`,
     '¿Cómo coordinamos el pago y el envío? 🚀'
@@ -211,7 +211,7 @@ export function claimMessage(p: ClaimParams): string {
 // Incluye nombre, set/número, precio, condición y el link único al slot.
 export function sellerKitText(p: ClaimParams): string {
   const lines = [
-    '📦 *EN VENTA* · Profesor TCG',
+    '📦 *EN VENTA* · TCG Claim',
     '━━━━━━━━━━━━━━━━━━━━'
   ]
   lines.push(`🃏 *${p.cardName}*`)

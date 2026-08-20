@@ -14,10 +14,10 @@ import AppShell from '@/components/AppShell'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
-  title: 'Profesor TCG — Virtual Binder',
+  title: 'TCG Claim — Virtual Binder',
   description: 'Gestor de colecciones de Pokémon TCG con precios de mercado',
   openGraph: {
-    siteName: 'Profesor TCG',
+    siteName: 'TCG Claim',
     type: 'website',
     locale: 'es_AR'
   }

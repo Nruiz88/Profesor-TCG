@@ -27,7 +27,7 @@ export default function CardOgImage({ data }: { data: OgCardData | null }) {
           fontFamily: 'sans-serif'
         }}
       >
-        <p style={{ fontSize: 64, fontWeight: 800, margin: 0 }}>Profesor TCG</p>
+        <p style={{ fontSize: 64, fontWeight: 800, margin: 0 }}>TCG Claim</p>
         <p style={{ fontSize: 26, color: '#94a3b8', margin: '18px 0 0' }}>
           Tu colección en 3D · tu mercado en WhatsApp
         </p>

@@ -85,7 +85,7 @@ export default function PublicBinderByUsernamePage({
       <div className="min-h-screen text-slate-200">
         <div className="mx-auto max-w-5xl px-4 py-8">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-10 text-center">
-            <h1 className="text-xl font-bold text-white">Profesor TCG</h1>
+            <h1 className="text-xl font-bold text-white">TCG Claim</h1>
             <p className="mt-2 text-sm text-slate-400">{error}</p>
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function PublicBinderByUsernamePage({
           <p className="mt-10 text-center text-xs text-slate-600">
             Álbum creado con{' '}
             <Link href="/" className="font-semibold text-rose-400/80 transition-colors hover:text-rose-300">
-              Profesor TCG
+              TCG Claim
             </Link>{' '}
             · Vende y cambia tus cartas por WhatsApp
           </p>

@@ -30,7 +30,7 @@ const fmtUsd = (n: number) =>
 
 // Mensaje exacto que vería el vendedor en su chat (template del Claim)
 const CLAIM_MESSAGE =
-  '¡Hola! 🎴 Hice el CLAIM de tu *Charizard ex* (#SV3PT5 199) por *$115.50 USD* desde tu Binder 3D en Profesor TCG. ¿Cómo coordinamos el pago y envío?'
+  '¡Hola! 🎴 Hice el CLAIM de tu *Charizard ex* (#SV3PT5 199) por *$115.50 USD* desde tu Binder 3D en TCG Claim. ¿Cómo coordinamos el pago y envío?'
 
 type Phase = 'idle' | 'typing' | 'sent'
 

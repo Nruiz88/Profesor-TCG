@@ -12,7 +12,7 @@ import { ArrowRightIcon, ChatIcon } from '@/components/icons'
 // Mensaje pre-armado del claim (mismo formato que MarketGrid/ClaimModal)
 function claimHref(card: ExploreCard): string {
   const text = encodeURIComponent(
-    `Hola @${card.username}! Vi tu carta "${card.card_name}" (${card.set_id.toUpperCase()} ${card.number}) en Profesor TCG. ¿Sigue disponible? Quiero hacer un claim.`
+    `Hola @${card.username}! Vi tu carta "${card.card_name}" (${card.set_id.toUpperCase()} ${card.number}) en TCG Claim. ¿Sigue disponible? Quiero hacer un claim.`
   )
   return `${whatsAppLink(card.whatsapp_number ?? '')}?text=${text}`
 }

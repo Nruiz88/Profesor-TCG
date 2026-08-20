@@ -24,9 +24,9 @@ export async function generateMetadata({
   const { username } = await params
   const data = await getProfileOgData(username)
   if (!data) {
-    return { title: 'Perfil · Profesor TCG' }
+    return { title: 'Perfil · TCG Claim' }
   }
-  const title = `@${data.username} · Profesor TCG`
+  const title = `@${data.username} · TCG Claim`
   const stats = [
     data.ratingAvg != null ? `★ ${data.ratingAvg.toFixed(1)} (${data.reviewCount})` : 'Sin reseñas',
     `${data.completedClaims} transacciones`,
@@ -36,7 +36,7 @@ export async function generateMetadata({
     data.wantlistCount > 0
       ? ` Busca ${data.wantlistCount} carta${data.wantlistCount !== 1 ? 's' : ''}.`
       : ''
-  const description = `${stats}.${wants} ${data.city || data.country ? `Ubicado en ${[data.city, data.country].filter(Boolean).join(', ')}. ` : ''}Coleccionista de Profesor TCG — conocé su colección y coordina por WhatsApp.`
+  const description = `${stats}.${wants} ${data.city || data.country ? `Ubicado en ${[data.city, data.country].filter(Boolean).join(', ')}. ` : ''}Coleccionista de TCG Claim — conocé su colección y coordina por WhatsApp.`
   return {
     title,
     description,

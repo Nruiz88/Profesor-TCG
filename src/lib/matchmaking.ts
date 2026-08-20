@@ -100,7 +100,7 @@ export function buildSwapOfferUrl(params: SwapOfferParams): string {
 
   const cardLine = `*${cardName}*${number ? ` (#${number})` : ''}`
   const message = [
-    `¡Hola @${seller}! Vi en tu Wantlist de Profesor TCG que buscas ${cardLine} (${setName}).`,
+    `¡Hola @${seller}! Vi en tu Wantlist de TCG Claim que buscas ${cardLine} (${setName}).`,
     `Yo la tengo disponible en mi Binder (${slotUrl}).`,
     '¿Te interesa coordinar un Swap? 🚀'
   ].join('\n')

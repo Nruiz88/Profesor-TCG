@@ -4,7 +4,7 @@ import CardOgImage from '@/components/og/CardOgImage'
 
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
-export const alt = 'Carta en Profesor TCG'
+export const alt = 'Carta en TCG Claim'
 
 // Imagen de preview (WhatsApp/redes) de una carta publicada: carta real,
 // nombre, set y precio. Es la imagen que referencia el kit de claim y el

@@ -10,7 +10,7 @@ import { AlertIcon, ArrowRightIcon } from '@/components/icons'
 function claimHref(card: ExploreCard): string {
   const seller = `@${card.username}`
   const text = encodeURIComponent(
-    `Hola ${seller}! Vi tu carta "${card.card_name}" (${card.set_id.toUpperCase()} ${card.number}) en Profesor TCG. ¿Sigue disponible? Quiero hacer un claim.`
+    `Hola ${seller}! Vi tu carta "${card.card_name}" (${card.set_id.toUpperCase()} ${card.number}) en TCG Claim. ¿Sigue disponible? Quiero hacer un claim.`
   )
   return `${whatsAppLink(card.whatsapp_number ?? '')}?text=${text}`
 }
@@ -275,7 +275,7 @@ export function BindersGrid({
             </div>
             <a
               href={`${whatsAppLink(b.whatsapp_number ?? '')}?text=${encodeURIComponent(
-                `Hola @${b.username}! Vi tu binder "${b.title}" en Profesor TCG. ¿Tenés disponible alguna de tus cartas en venta o intercambio?`
+                `Hola @${b.username}! Vi tu binder "${b.title}" en TCG Claim. ¿Tenés disponible alguna de tus cartas en venta o intercambio?`
               )}`}
               target="_blank"
               rel="noopener noreferrer"

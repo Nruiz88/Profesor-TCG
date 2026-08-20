@@ -79,7 +79,7 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
   // Título SEO-friendly una vez cargada la carta
   useEffect(() => {
     if (data?.card.card_name) {
-      document.title = `${data.card.card_name} · Profesor TCG`
+      document.title = `${data.card.card_name} · TCG Claim`
     }
   }, [data])
 
@@ -96,7 +96,7 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
       <div className="min-h-screen text-slate-200">
         <div className="mx-auto max-w-3xl px-4 py-12">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-14 text-center">
-            <h1 className="text-xl font-bold text-white">Profesor TCG</h1>
+            <h1 className="text-xl font-bold text-white">TCG Claim</h1>
             <p className="mt-2 text-sm text-slate-400">{error || 'Carta no encontrada'}</p>
             <Link
               href="/explore"

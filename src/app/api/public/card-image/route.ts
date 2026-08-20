@@ -33,7 +33,7 @@ export async function GET(req: Request) {
   try {
     const res = await fetch(url.toString(), {
       signal: AbortSignal.timeout(10000),
-      headers: { 'User-Agent': 'ProfesorTCG/1.0' }
+      headers: { 'User-Agent': 'TCGClaim/1.0' }
     })
 
     if (!res.ok) {

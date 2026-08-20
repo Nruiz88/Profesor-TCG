@@ -243,7 +243,7 @@ export async function pokeWalletSearch(opts: {
     const res = await fetch(`${POKEWALLET_BASE}/search?q=${encodeURIComponent(q)}&limit=10`, {
       headers: {
         'X-API-Key': key,
-        'User-Agent': 'profesortcg/1.0'
+        'User-Agent': 'tcgclaim/1.0'
       },
       cache: 'no-store'
     })
@@ -290,7 +290,7 @@ export async function pokeWalletTest(): Promise<{
   try {
     await consumeBudget()
     const res = await fetch(`${POKEWALLET_BASE}/search?q=pikachu&limit=1`, {
-      headers: { 'X-API-Key': key, 'User-Agent': 'profesortcg/1.0' },
+      headers: { 'X-API-Key': key, 'User-Agent': 'tcgclaim/1.0' },
       cache: 'no-store'
     })
     const after = pokeWalletBudget()

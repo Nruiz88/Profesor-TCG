@@ -182,7 +182,7 @@ function drawKit(
   ctx.fillStyle = 'rgba(148, 163, 184, 0.75)'
   ctx.font = '600 30px system-ui, sans-serif'
   ctx.fillText(
-    opts.username ? `Profesor TCG · @${opts.username}` : 'Profesor TCG',
+    opts.username ? `TCG Claim · @${opts.username}` : 'TCG Claim',
     W / 2,
     H - 48
   )

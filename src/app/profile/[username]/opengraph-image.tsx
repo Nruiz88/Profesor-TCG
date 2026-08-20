@@ -4,7 +4,7 @@ import ProfileOgImage from '@/components/og/ProfileOgImage'
 
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
-export const alt = 'Perfil en Profesor TCG'
+export const alt = 'Perfil en TCG Claim'
 
 // Imagen de preview (WhatsApp/redes) de /profile/[username]: avatar,
 // reputación, transacciones y colección. Generada al vuelo con @vercel/og.

@@ -18,7 +18,7 @@ export default async function PrivacidadPage() {
           <section>
             <h2 className="text-lg font-semibold text-white">1. Responsable del tratamiento</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              Profesor TCG es una plataforma comunitaria para coleccionistas de Pokémon TCG. Esta
+              TCG Claim es una plataforma comunitaria para coleccionistas de Pokémon TCG. Esta
               política explica qué datos personales recopilamos, para qué los usamos y qué derechos
               tenés sobre ellos.
             </p>

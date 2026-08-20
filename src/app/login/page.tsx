@@ -118,18 +118,15 @@ export default function LoginPage() {
         
         {/* Contenido central */}
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12">
-          {/* Pokeball estilizada */}
-          <div className="relative mb-8">
-            <div className="w-32 h-32 rounded-full border-4 border-slate-700/50 bg-gradient-to-b from-red-500/20 to-red-600/10 flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full border-4 border-slate-600/50 bg-slate-800/80 flex items-center justify-center">
-                <div className="w-6 h-6 rounded-full bg-white/90 shadow-lg shadow-white/20" />
-              </div>
-            </div>
-            <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-700/50 -translate-y-1/2" />
-          </div>
+          {/* Logo */}
+          <img
+            src="/brand/logo.png"
+            alt="TCG Claim"
+            className="mb-8 h-32 w-auto"
+          />
           
           <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">
-            Profesor TCG
+            TCG Claim
           </h2>
           <p className="text-slate-400 text-center max-w-sm leading-relaxed">
             Tu binder digital de Pokémon. Coleccioná, intercambiá y vendé cartas con efectos holográficos reales.
@@ -158,12 +155,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Logo mobile */}
           <div className="lg:hidden flex items-center justify-center mb-8">
-            <div className="w-12 h-12 rounded-full border-2 border-slate-700/50 bg-gradient-to-b from-red-500/20 to-red-600/10 flex items-center justify-center mr-3">
-              <div className="w-6 h-6 rounded-full border-2 border-slate-600/50 bg-slate-800/80 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-white/90" />
-              </div>
-            </div>
-            <span className="text-xl font-bold text-white">Profesor TCG</span>
+            <img src="/brand/logo.png" alt="TCG Claim" className="h-12 w-auto mr-3" />
+            <span className="text-xl font-bold text-white">TCG Claim</span>
           </div>
 
           {/* Título */}

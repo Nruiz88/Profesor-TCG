@@ -126,10 +126,12 @@ export default function SidebarMenu(props: SidebarMenuProps) {
       {showHeader && (
         <div className="flex h-16 shrink-0 items-center gap-2.5 border-b border-slate-800/60 px-5">
           <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-rose-600 to-rose-400 text-sm font-bold text-white shadow-lg shadow-rose-900/40">
-              P
-            </span>
-            <span className="text-lg font-bold tracking-tight text-white">Profesor TCG</span>
+            <img
+              src="/brand/logo.png"
+              alt="TCG Claim"
+              className="h-9 w-auto"
+            />
+            <span className="text-lg font-bold tracking-tight text-white">TCG Claim</span>
           </Link>
         </div>
       )}

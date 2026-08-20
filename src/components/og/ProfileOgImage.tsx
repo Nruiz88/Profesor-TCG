@@ -19,7 +19,7 @@ export default function ProfileOgImage({ data }: { data: OgProfileData | null })
           fontFamily: 'sans-serif'
         }}
       >
-        <p style={{ fontSize: 64, fontWeight: 800, margin: 0 }}>Profesor TCG</p>
+        <p style={{ fontSize: 64, fontWeight: 800, margin: 0 }}>TCG Claim</p>
         <p style={{ fontSize: 26, color: '#94a3b8', margin: '18px 0 0' }}>
           Tu colección en 3D · tu mercado en WhatsApp
         </p>
@@ -158,7 +158,7 @@ export default function ProfileOgImage({ data }: { data: OgProfileData | null })
         <p style={{ fontSize: 20, color: '#64748b', margin: '32px 0 0' }}>
           {data.activeListings > 0
             ? `Coleccionista · ${data.activeListings} carta${data.activeListings !== 1 ? 's' : ''} en venta · mercado por WhatsApp`
-            : 'Coleccionista de Profesor TCG · Binder y mercado por WhatsApp'}
+            : 'Coleccionista de TCG Claim · Binder y mercado por WhatsApp'}
         </p>
       </div>
     </div>

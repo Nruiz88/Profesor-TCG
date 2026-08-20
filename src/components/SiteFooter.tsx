@@ -8,10 +8,8 @@ export default function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-binder-accent text-sm font-bold text-white">
-              P
-            </span>
-            <span className="text-lg font-bold tracking-tight text-white">Profesor TCG</span>
+            <img src="/brand/logo.png" alt="TCG Claim" className="h-8 w-auto" />
+            <span className="text-lg font-bold tracking-tight text-white">TCG Claim</span>
           </div>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-500">
             Tu colección TCG en 3D, tu mercado en WhatsApp. Digitalizá, publicá y comerciá con
@@ -95,7 +93,7 @@ export default function SiteFooter() {
       <div className="border-t border-slate-800/60 bg-slate-900/50 py-8">
         <div className="mx-auto max-w-6xl px-4 text-center">
           <p className="mx-auto max-w-lg text-sm leading-relaxed text-slate-400">
-            Profesor TCG es y seguirá siendo <span className="font-semibold text-white">100% gratuito</span>{' '}
+            TCG Claim es y seguirá siendo <span className="font-semibold text-white">100% gratuito</span>{' '}
             sin comisiones. Si querés ayudarnos a mantener los servidores activos y seguir sumando
             funciones, podés invitarnos un café:
           </p>
@@ -106,7 +104,7 @@ export default function SiteFooter() {
       </div>
       <div className="border-t border-slate-800/60 py-6">
         <div className="mx-auto max-w-6xl px-4 text-center text-xs text-slate-600">
-          © {new Date().getFullYear()} Profesor TCG · Hecho con ❤️ para coleccionistas
+          © {new Date().getFullYear()} TCG Claim · Hecho con ❤️ para coleccionistas
         </div>
       </div>
     </footer>
