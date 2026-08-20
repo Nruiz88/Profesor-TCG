@@ -26,7 +26,7 @@ export async function generateMetadata({
   // una URL completa, no relativa, para generar el preview de la carta.
   const headerStore = await headers()
   const proto = headerStore.get('x-forwarded-proto') ?? 'https'
-  const host = headerStore.get('host') ?? 'profesor-tcg.vercel.app'
+  const host = headerStore.get('host') ?? 'tcgclaim.online'
   const origin = `${proto}://${host}`
   const ogImageUrl = `${origin}/card/${cardId}/opengraph-image`
 
@@ -55,7 +55,7 @@ export default async function Page({ params }: { params: Promise<{ cardId: strin
   if (data) {
     const headerStore = await headers()
     const proto = headerStore.get('x-forwarded-proto') ?? 'https'
-    const host = headerStore.get('host') ?? 'profesor-tcg.vercel.app'
+    const host = headerStore.get('host') ?? 'tcgclaim.online'
     const origin = `${proto}://${host}`
     const canonicalUrl = `${origin}/card/${cardId}/${data.name.split(' ').join('-').toLowerCase()}`
     jsonLd = {
