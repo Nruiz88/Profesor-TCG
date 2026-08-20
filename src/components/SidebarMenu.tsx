@@ -37,7 +37,6 @@ export interface SidebarMenuProps {
   onSelectBinder: (id: string) => void
   onCreateBinder: () => void
   onShowProfile: () => void
-  onShowClaims: () => void
   onClose: () => void
   /** Muestra el encabezado de logo (se omite en el Bottom Sheet móvil). */
   showHeader?: boolean
@@ -105,7 +104,6 @@ export default function SidebarMenu(props: SidebarMenuProps) {
     onSelectBinder,
     onCreateBinder,
     onShowProfile,
-    onShowClaims,
     onClose,
     showHeader = true
   } = props
@@ -276,16 +274,14 @@ export default function SidebarMenu(props: SidebarMenuProps) {
             </Link>
           )}
           {user && (
-            <button
-              onClick={() => {
-                onShowClaims()
-                onClose()
-              }}
+            <Link
+              href="/claims"
+              onClick={onClose}
               className={`${NAV_ITEM} ${NAV_IDLE}`}
             >
               <SwapIcon className="h-5 w-5 text-sky-400" />
               Mis Claims
-            </button>
+            </Link>
           )}
         </SidebarSection>
 

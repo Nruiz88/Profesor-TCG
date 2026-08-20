@@ -15,7 +15,6 @@ import BinderToolbar from '@/components/BinderToolbar'
 import BinderTabs, { type BinderTab } from '@/components/binder/BinderTabs'
 import WantlistSlot from '@/components/binder/WantlistSlot'
 import dynamic from 'next/dynamic'
-import ClaimsPanel from '@/components/ClaimsPanel'
 import ReservedClaimsBanner from '@/components/ReservedClaimsBanner'
 import SellerReputationCard from '@/components/SellerReputationCard'
 import {
@@ -88,7 +87,6 @@ export default function BinderPage() {
   const [tradeOnly, setTradeOnly] = useState(false)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [settingsModal, setSettingsModal] = useState<'create' | 'edit' | null>(null)
-  const [showClaims, setShowClaims] = useState(false)
   const [tab, setTab] = useState<BinderTab>('collection')
   const [wantlist, setWantlist] = useState<WantlistCard[]>([])
   const [wantlistLoading, setWantlistLoading] = useState(false)
@@ -681,7 +679,7 @@ export default function BinderPage() {
             setMessage('No se pudo abrir tu perfil. Intentalo de nuevo.')
           }
         }}
-        onShowClaims={() => setShowClaims(true)}
+        onShowClaims={() => router.push('/claims')}
       />
 
       <div className="pb-20 lg:pb-0 lg:pl-64">
@@ -855,7 +853,7 @@ export default function BinderPage() {
 
 
       {/* Reservas activas: cartas del binder tomadas por claims (soft lock 24h) */}
-      <ReservedClaimsBanner cards={cards} onShowClaims={() => setShowClaims(true)} />
+      <ReservedClaimsBanner cards={cards} onShowClaims={() => router.push('/claims')} />
 
       {/* Aviso sutil: binder privado con cartas publicadas */}
       {binder && !binder.is_public && cards.some((c) => c.is_for_sale || c.is_for_trade) && (
@@ -1117,8 +1115,6 @@ export default function BinderPage() {
           </button>
         </div>
       )}
-
-      {showClaims && <ClaimsPanel onClose={() => setShowClaims(false)} />}
 
       {showShareImage && profile?.username && binder && (
         <BinderShareModal

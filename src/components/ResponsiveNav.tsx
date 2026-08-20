@@ -166,7 +166,6 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
     onSelectBinder: props.onSelectBinder,
     onCreateBinder: props.onCreateBinder,
     onShowProfile: props.onShowProfile,
-    onShowClaims: props.onShowClaims,
     onClose: () => {},
     showHeader: true
   }
@@ -225,7 +224,7 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
           ? [
               { label: 'Ofertas', href: '/offers', badge: pendingOffers },
               {
-                label: 'Mis Transacciones',
+                label: 'Mis Claims',
                 onClick: () => {
                   setOpenPopover(null)
                   props.onShowClaims()
