@@ -18,7 +18,6 @@ import { cookies } from 'next/headers'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next')
 
   if (code) {
     const cookieStore = await cookies()
@@ -45,13 +44,17 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // El destino original se guardó en la cookie oauth_next antes de ir a
+      // Google (ver login/page.tsx handleGoogle). Leerlo de la cookie evita
+      // incrustar query params en el redirectTo de Supabase.
+      const rawNext = cookieStore.get('oauth_next')?.value
+      const next = rawNext ? decodeURIComponent(rawNext) : null
+      const redirectTo = next && next.startsWith('/') && !next.startsWith('//')
+        ? next
+        : '/binder'
+
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
-      const redirectTo = next
-        ? next.startsWith('/') && !next.startsWith('//')
-          ? next
-          : '/binder'
-        : '/binder'
       const target = isLocalEnv
         ? `${origin}${redirectTo}`
         : forwardedHost

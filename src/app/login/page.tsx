@@ -40,11 +40,17 @@ export default function LoginPage() {
     let dest = afterLoginPath()
     if (claimId) dest = appendQuery(dest, 'claim=' + encodeURIComponent(claimId))
 
+    // Guarda el destino en una cookie para que el callback (/auth/callback) lo
+    // lea tras el OAuth. El redirectTo de Supabase debe ser una URL limpia:
+    // no puede llevar query params propios o no matchea la lista blanca de
+    // Redirect URLs del dashboard.
+    document.cookie = `oauth_next=${encodeURIComponent(dest)}; path=/; max-age=600; SameSite=Lax`
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(dest)}`
+          redirectTo: `${window.location.origin}/auth/callback`
         }
       })
       if (error) throw error
