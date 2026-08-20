@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { listNotas } from '@/lib/notas'
 
 export const metadata: Metadata = {
-  title: 'Notas — TCG Claim'
+  title: 'Notas de desarrollo'
 }
 
 export default async function NotasPage() {

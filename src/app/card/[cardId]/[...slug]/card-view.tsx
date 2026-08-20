@@ -190,6 +190,12 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
               {card.set_id.toUpperCase()} · #{card.number}
               {card.condition && <span className="ml-2 text-slate-500">· {formatCondition(card.condition)}</span>}
             </p>
+            <Link
+              href={`/carta/${encodeURIComponent(card.card_id)}/${slugify(card.card_name)}`}
+              className="mt-2 inline-block text-xs font-medium text-slate-500 transition-colors hover:text-rose-300"
+            >
+              📋 Ver ficha completa de {card.card_name} en el catálogo →
+            </Link>
 
             {/* Precio */}
             <div className="relative mt-5 overflow-hidden rounded-2xl border border-emerald-500/25 bg-slate-900 p-4">

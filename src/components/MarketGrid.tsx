@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import type { ExploreBinder, ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
 import { slugify } from '@/lib/utils'
@@ -70,7 +71,7 @@ export default function MarketGrid({
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-      {cards.map((card) => {
+      {cards.map((card, idx) => {
         const isSale = card.status === 'for_sale' && card.price != null
         const location = formatLocation(card.city, card.country)
         return (
@@ -89,11 +90,13 @@ export default function MarketGrid({
                 className="relative block aspect-[63/88]"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={card.image}
                   alt={card.card_name}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                  fill
+                  priority={idx === 0}
+                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </Link>
@@ -233,7 +236,7 @@ export function BindersGrid({
 
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-      {binders.map((b) => (
+      {binders.map((b, idx) => (
         <div
           key={b.id}
           className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/40 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-rose-500/40 hover:shadow-[0_18px_44px_-12px_rgba(0,0,0,0.65)]"
@@ -245,11 +248,13 @@ export function BindersGrid({
           >
             {b.coverImage && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={b.coverImage}
                 alt={`Portada de ${b.title}`}
-                loading="lazy"
-                className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
+                fill
+                priority={idx === 0}
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 to-transparent" />

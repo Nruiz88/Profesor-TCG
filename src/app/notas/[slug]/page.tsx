@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: NotaPageProps): Promise<Metad
   const { slug } = await params
   const nota = await getNota(slug)
   return {
-    title: nota ? `${nota.title} — TCG Claim` : 'Nota no encontrada — TCG Claim'
+    title: nota ? nota.title : 'Nota no encontrada'
   }
 }
 

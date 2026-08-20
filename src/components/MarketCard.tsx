@@ -224,6 +224,14 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
             {isSale ? 'En venta' : 'Acepta cambios'}
           </span>
         </div>
+
+        {/* Ficha de catálogo (SEO + enlaces internos) */}
+        <Link
+          href={`/carta/${encodeURIComponent(card.card_id)}/${slugify(card.card_name)}`}
+          className="block border-t border-slate-800 px-3 py-2 text-[11px] font-medium text-slate-500 transition-colors hover:bg-slate-800/50 hover:text-slate-300"
+        >
+          📋 Ficha de {card.card_name} en el catálogo →
+        </Link>
       </div>
     </div>
   )

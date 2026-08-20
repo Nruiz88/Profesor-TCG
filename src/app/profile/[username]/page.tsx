@@ -24,9 +24,9 @@ export async function generateMetadata({
   const { username } = await params
   const data = await getProfileOgData(username)
   if (!data) {
-    return { title: 'Perfil · TCG Claim' }
+    return { title: 'Perfil' }
   }
-  const title = `@${data.username} · TCG Claim`
+  const title = `@${data.username}`
   const stats = [
     data.ratingAvg != null ? `★ ${data.ratingAvg.toFixed(1)} (${data.reviewCount})` : 'Sin reseñas',
     `${data.completedClaims} transacciones`,

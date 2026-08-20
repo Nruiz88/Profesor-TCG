@@ -14,12 +14,19 @@ import AppShell from '@/components/AppShell'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
-  title: 'TCG Claim — Virtual Binder',
-  description: 'Gestor de colecciones de Pokémon TCG con precios de mercado',
+  title: {
+    default: 'TCG Claim — Vende y Cambia Cartas Pokémon TCG',
+    template: '%s · TCG Claim'
+  },
+  description:
+    'Vende y cambia cartas Pokémon TCG por WhatsApp. Creá tu binder 3D gratis, seguí precios de mercado en vivo y cerrá el trato directo con coleccionistas, sin comisiones.',
   openGraph: {
     siteName: 'TCG Claim',
     type: 'website',
-    locale: 'es_AR'
+    locale: 'es_AR',
+    title: 'TCG Claim — Vende y Cambia Cartas Pokémon TCG',
+    description:
+      'Vende y cambia cartas Pokémon TCG por WhatsApp. Binder 3D gratis, precios de mercado en vivo y trato directo sin comisiones.'
   }
 }
 

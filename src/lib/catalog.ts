@@ -26,6 +26,7 @@ export interface CardData {
   types?: string[]
   number: string
   rarity?: string
+  hp?: string
   images?: { small: string; large: string }
 }
 
@@ -36,6 +37,7 @@ export interface SetData {
   printedTotal: number
   total: number
   releaseDate?: string
+  images?: { symbol?: string; logo?: string }
 }
 
 const CACHE_DIR = path.join(process.cwd(), 'src', 'content')

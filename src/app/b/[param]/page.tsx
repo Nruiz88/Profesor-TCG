@@ -15,10 +15,10 @@ export async function generateMetadata({
   const { param } = await params
   const data = await getBinderOgData({ binderKey: param })
   if (!data) {
-    return { title: 'Binder no encontrado · TCG Claim' }
+    return { title: 'Binder no encontrado' }
   }
   const owner = data.username ? `@${data.username}` : 'TCG Claim'
-  const title = `${data.title} · TCG Claim`
+  const title = data.title
   const wants =
     data.wantlistCount > 0
       ? ` Busca ${data.wantlistCount} carta${data.wantlistCount !== 1 ? 's' : ''}.`
