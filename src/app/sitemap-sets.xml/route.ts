@@ -3,7 +3,7 @@ import { urlsetXml, xmlResponse } from '@/lib/sitemapXml'
 
 export const dynamic = 'force-dynamic'
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? '').trim().replace(/\/+$/, '')
 
 // Todas las expansiones del catálogo (/expansion/<setId>).
 export async function GET() {

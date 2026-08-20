@@ -3,7 +3,7 @@ import { sitemapIndexXml, xmlResponse, CARDS_PER_SITEMAP } from '@/lib/sitemapXm
 
 export const dynamic = 'force-dynamic'
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? '').trim().replace(/\/+$/, '')
 
 // Sitemap index: apunta a los sub-sitemaps. El número de chunks de cartas se
 // calcula con el tamaño real del catálogo (37k+ / 10k por archivo).

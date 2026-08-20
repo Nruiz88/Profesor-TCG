@@ -13,7 +13,7 @@ import '../components/activity.css'
 import AppShell from '@/components/AppShell'
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   title: {
     default: 'TCG Claim — Vende y Cambia Cartas Pokémon TCG',
     template: '%s · TCG Claim'

@@ -8,7 +8,7 @@ import { formatPrice } from '@/lib/priceGuide'
 export const dynamicParams = true
 export const revalidate = 86400
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
 
 // Pre-renderiza las especies más buscadas; el resto se genera on-demand y se
 // cachea con ISR (revalidate = 86400s).

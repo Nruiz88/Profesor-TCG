@@ -8,7 +8,7 @@ import { formatPrice } from '@/lib/priceGuide'
 export const dynamicParams = true
 export const revalidate = 86400
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
 
 const STATIC_SET_IDS = ['base1', 'base2', 'sv1', 'sv3pt5']
 

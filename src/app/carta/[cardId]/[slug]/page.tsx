@@ -19,7 +19,7 @@ import {
 export const dynamicParams = true
 export const revalidate = 3600
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
 
 // Pre-renderiza las cartas con actividad en el marketplace; el resto se
 // genera on-demand y se cachea con ISR (revalidate = 3600s).

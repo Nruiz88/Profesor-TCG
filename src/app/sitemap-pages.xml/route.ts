@@ -3,7 +3,7 @@ import { urlsetXml, xmlResponse } from '@/lib/sitemapXml'
 
 export const dynamic = 'force-dynamic'
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? '').trim().replace(/\/+$/, '')
 
 // Páginas estáticas + binders públicos. Los binders se generan con los
 // usernames reales y se limitan para no explotar el tamaño.
