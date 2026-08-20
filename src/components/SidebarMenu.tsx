@@ -284,7 +284,7 @@ export default function SidebarMenu(props: SidebarMenuProps) {
               className={`${NAV_ITEM} ${NAV_IDLE}`}
             >
               <SwapIcon className="h-5 w-5 text-sky-400" />
-              Mis transacciones
+              Mis Claims
             </button>
           )}
         </SidebarSection>

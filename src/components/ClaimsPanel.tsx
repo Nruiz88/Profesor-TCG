@@ -44,12 +44,14 @@ function formatDate(iso: string) {
   }
 }
 
-// Panel "Mis transacciones": claims donde el usuario participó (como comprador
-// o vendedor), con la acción "Confirmar transacción" que abre el ReviewModal.
+// Panel "Mis Claims": claims donde el usuario participó (como comprador o
+// vendedor), separados en Enviados / Recibidos con su estatus, y la acción
+// "Confirmar transacción" que abre el ReviewModal.
 export default function ClaimsPanel({ onClose }: ClaimsPanelProps) {
   const [claims, setClaims] = useState<MyClaim[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<MyClaim | null>(null)
+  const [view, setView] = useState<'sent' | 'received'>('received')
 
   const load = useCallback(async () => {
     setError(null)
@@ -88,13 +90,17 @@ export default function ClaimsPanel({ onClose }: ClaimsPanelProps) {
   )
   const actionCount = pending.length + unreviewed.length
 
+  const sent = (claims ?? []).filter((c) => c.role === 'buyer')
+  const received = (claims ?? []).filter((c) => c.role === 'seller')
+  const visible = view === 'sent' ? sent : received
+
   return (
     <div
       className="modal-overlay z-[60]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Mis transacciones"
+      aria-label="Mis Claims"
     >
       <div
         className="modal-card modal-card--panel"
@@ -103,15 +109,51 @@ export default function ClaimsPanel({ onClose }: ClaimsPanelProps) {
         <div className="modal-header modal-header--bordered">
           <div className="flex items-center gap-2">
             <SwapIcon className="h-4 w-4 text-sky-400" />
-            <h2 className="modal-title">Mis transacciones</h2>
+            <h2 className="modal-title">Mis Claims</h2>
           </div>
           <button onClick={onClose} className="modal-close">
             Cerrar
           </button>
         </div>
 
+        {/* Tabs Enviados / Recibidos */}
+        <div className="flex gap-1 border-b border-slate-800 px-4 pt-3">
+          <button
+            type="button"
+            onClick={() => setView('received')}
+            className={`flex items-center gap-1.5 rounded-t-lg px-3 py-2 text-xs font-bold transition-colors ${
+              view === 'received'
+                ? 'border border-b-0 border-slate-800 bg-slate-950 text-white'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            📥 Recibidos
+            {received.length > 0 && (
+              <span className="rounded-full bg-slate-800 px-1.5 text-[9px] text-slate-400">
+                {received.length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('sent')}
+            className={`flex items-center gap-1.5 rounded-t-lg px-3 py-2 text-xs font-bold transition-colors ${
+              view === 'sent'
+                ? 'border border-b-0 border-slate-800 bg-slate-950 text-white'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            📤 Enviados
+            {sent.length > 0 && (
+              <span className="rounded-full bg-slate-800 px-1.5 text-[9px] text-slate-400">
+                {sent.length}
+              </span>
+            )}
+          </button>
+        </div>
+
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
-          {actionCount > 0 && (
+          {actionCount > 0 && view === 'received' && (
             <p className="mb-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-200/80">
               Tenés <strong>{actionCount}</strong> transacción
               {actionCount !== 1 ? 'es' : ''} por confirmar o calificar tras coordinarla por
@@ -127,17 +169,23 @@ export default function ClaimsPanel({ onClose }: ClaimsPanelProps) {
             <p className="py-10 text-center text-sm text-slate-500">Cargando…</p>
           )}
 
-          {claims && claims.length === 0 && (
+          {claims && visible.length === 0 && (
             <div className="py-10 text-center">
-              <p className="text-sm text-slate-400">Todavía no tenés transacciones.</p>
+              <p className="text-sm text-slate-400">
+                {view === 'sent'
+                  ? 'Todavía no hiciste ningún claim.'
+                  : 'Todavía no recibiste ningún claim.'}
+              </p>
               <p className="mt-1 text-xs text-slate-600">
-                Cuando hagas un claim con sesión iniciada, aparece acá para confirmarlo.
+                {view === 'sent'
+                  ? 'Cuando hagas un claim con sesión iniciada, aparece acá.'
+                  : 'Cuando alguien reclame una de tus cartas, aparece acá.'}
               </p>
             </div>
           )}
 
           <ul className="space-y-3">
-            {claims?.map((c) => {
+            {visible.map((c) => {
               const meta = STATUS_META[c.status] ?? STATUS_META.pending
               return (
                 <li

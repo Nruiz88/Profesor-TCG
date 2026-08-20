@@ -7,6 +7,7 @@ import MarketNav from '@/components/MarketNav'
 import SiteFooter from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/client'
 import { getUserBinders } from '@/lib/binders'
+import ClaimsPanel from '@/components/ClaimsPanel'
 import type { Profile } from '@/lib/profile'
 
 interface ShellBinder {
@@ -27,6 +28,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [binders, setBinders] = useState<ShellBinder[]>([])
+  const [showClaims, setShowClaims] = useState(false)
 
   const isHome = pathname === '/'
   const isLogin = pathname === '/login'
@@ -121,11 +123,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             router.push(`/profile/${encodeURIComponent(profile.username)}?tab=settings`)
           }
         }}
-        onShowClaims={() => router.push('/binder')}
+        onShowClaims={() => setShowClaims(true)}
       />
       <main className="flex-1 pb-20 lg:pb-0 lg:ml-64">
         {children}
       </main>
+
+      {showClaims && <ClaimsPanel onClose={() => setShowClaims(false)} />}
     </div>
   )
 }
