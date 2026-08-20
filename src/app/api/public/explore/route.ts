@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getCardMetadataMap, getSets } from '@/lib/catalog'
-import { resolveCardImage } from '@/lib/cardImage'
+import { resolveCardImage, NO_IMAGE_PLACEHOLDER } from '@/lib/cardImage'
 import { effectivePrice } from '@/lib/cardStatus'
 import { isCardLanguage, normalizeLanguage } from '@/lib/cardLanguage'
 import { speciesFromCardName } from '@/lib/pokedex'
@@ -384,7 +384,19 @@ async function getCards(
     }
   }
 
-  const enriched: ExploreCard[] = []
+  // Primera pasada: aplicar filtros y armar la lista de claves de imagen.
+  // La resolución de imágenes (resolveCardImage) se hace en PARALELO después
+  // para no bloquear el request en cientos de verificaciones secuenciales a
+  // CDNs externos.
+  interface Candidate {
+    row: ExploreCardRow
+    rarity: string | null
+    status: 'for_sale' | 'for_trade'
+    price: number | null
+    seller: (typeof profiles extends Map<unknown, infer V> ? V : never) | null
+    imageKey: string
+  }
+  const candidates: Candidate[] = []
   for (const r of rows) {
     const m = meta.get(r.card_id)
     const seller = r.binders?.user_id ? profiles.get(r.binders.user_id) ?? null : null
@@ -401,6 +413,28 @@ async function getCards(
     if (opts.maxPrice > 0 && (price ?? 0) > opts.maxPrice) continue
     if (opts.minPrice > 0 && (price ?? 0) < opts.minPrice) continue
 
+    candidates.push({
+      row: r,
+      rarity,
+      status,
+      price,
+      seller,
+      imageKey: `${r.set_id}::${r.number}::${normalizeLanguage(r.language)}`
+    })
+  }
+
+  // Resolver todas las imágenes en paralelo.
+  const imageMap = new Map<string, string>()
+  await Promise.all(
+    candidates.map(async (c) => {
+      const img = await resolveCardImage(c.row.set_id, c.row.number, normalizeLanguage(c.row.language))
+      imageMap.set(c.imageKey, img)
+    })
+  )
+
+  const enriched: ExploreCard[] = []
+  for (const c of candidates) {
+    const r = c.row
     enriched.push({
       id: r.id,
       binder_id: r.binder_id,
@@ -409,23 +443,23 @@ async function getCards(
       set_id: r.set_id,
       set_name: setNameById.get(r.set_id) ?? r.set_id,
       number: r.number,
-      rarity,
+      rarity: c.rarity,
       variant: r.variant ?? 'normal',
       language: r.language ?? null,
       currency: r.currency ?? 'USD',
       is_user_reported: r.is_user_reported ?? false,
-      status,
-      price,
-      image: await resolveCardImage(r.set_id, r.number, normalizeLanguage(r.language)),
-      username: seller?.username ?? 'coleccionista',
-      city: seller?.city ?? null,
-      country: seller?.country ?? null,
-      whatsapp_number: seller?.whatsapp_number ?? null,
+      status: c.status,
+      price: c.price,
+      image: imageMap.get(c.imageKey) ?? NO_IMAGE_PLACEHOLDER,
+      username: c.seller?.username ?? 'coleccionista',
+      city: c.seller?.city ?? null,
+      country: c.seller?.country ?? null,
+      whatsapp_number: c.seller?.whatsapp_number ?? null,
       ratingAvg: (reviewCounts.get(r.binders?.user_id ?? '') ?? 0) > 0
-        ? Number(seller?.rating_avg ?? null)
+        ? Number(c.seller?.rating_avg ?? null)
         : null,
       reviewCount: reviewCounts.get(r.binders?.user_id ?? '') ?? 0,
-      isVerified: !!seller?.is_verified,
+      isVerified: !!c.seller?.is_verified,
       binder_public: !!r.binders?.is_public,
       // 🔔 Wantlist: solo si el visitante la busca y no es su propia carta
       onWantlist:

@@ -17,10 +17,70 @@
  */
 
 import type { CardLanguage } from '@/lib/cardLanguage'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { tryPokemontcg } from './pokemontcg'
 import { scrydexUrl, unpadNumber, scrydexUrlExists } from './scrydex'
 import { tryTcgdex } from './tcgdex'
 import { NO_IMAGE_PLACEHOLDER, imageCache, cacheImage } from './utils'
+
+// Cache persistente en Supabase (card_image_cache): evita repetir la cadena
+// de verificaciones a CDNs externos cuando la instancia serverless se recicla
+// (el cache en memoria `imageCache` se pierde entre requests en Vercel).
+const DB_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000
+
+function adminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  return url && key ? createAdminClient(url, key) : null
+}
+
+function cacheKey(setId: string, number: string, language: string): string {
+  return `${setId}:${number}:${language}`
+}
+
+async function fromDbCache(
+  key: string
+): Promise<string | null> {
+  const [setId, number, language] = key.split(':')
+  const client = adminClient()
+  if (!client) return null
+  try {
+    const { data, error } = await client
+      .from('card_image_cache')
+      .select('url, updated_at')
+      .eq('set_id', setId)
+      .eq('number', number)
+      .eq('language', language)
+      .maybeSingle()
+    if (error) throw error
+    if (!data) return null
+    const fresh = Date.now() - new Date(data.updated_at).getTime() < DB_CACHE_TTL_MS
+    if (!fresh) return null
+    return data.url as string
+  } catch {
+    return null
+  }
+}
+
+async function saveToDbCache(key: string, url: string): Promise<void> {
+  const [setId, number, language] = key.split(':')
+  const client = adminClient()
+  if (!client) return
+  try {
+    await client.from('card_image_cache').upsert(
+      {
+        set_id: setId,
+        number,
+        language,
+        url,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: 'set_id,number,language' }
+    )
+  } catch {
+    // Best-effort: sin service key o tabla ausente, seguimos sin cache persistente.
+  }
+}
 
 // Re-exportar para uso externo
 export { NO_IMAGE_PLACEHOLDER } from './utils'
@@ -76,9 +136,16 @@ export async function resolveCardImage(
   number: string,
   language: CardLanguage = 'EN'
 ): Promise<string> {
-  const cacheKey = `${setId}:${number}:${language}`
-  const cached = imageCache.get(cacheKey)
+  const key = cacheKey(setId, number, language)
+  const cached = imageCache.get(key)
   if (cached) return cached
+
+  // Cache persistente (Supabase): evita contactar CDNs en cada request.
+  const dbCached = await fromDbCache(key)
+  if (dbCached) {
+    cacheImage(key, dbCached)
+    return dbCached
+  }
 
   let url: string | null = null
 
@@ -137,6 +204,7 @@ export async function resolveCardImage(
   }
 
   const result = url ?? NO_IMAGE_PLACEHOLDER
-  cacheImage(cacheKey, result)
+  cacheImage(key, result)
+  await saveToDbCache(key, result)
   return result
 }

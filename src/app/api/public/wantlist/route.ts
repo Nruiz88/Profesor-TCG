@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCardMetadataMap } from '@/lib/catalog'
-import { resolveCardImage } from '@/lib/cardImage'
+import { resolveCardImage, NO_IMAGE_PLACEHOLDER } from '@/lib/cardImage'
 import { validate, extractParams } from '@/lib/validate'
 import { wantlistSchema } from '@/lib/schemas'
 
@@ -126,15 +126,35 @@ export async function GET(req: Request) {
     ])
 
     // Enriquecer + filtrar en memoria (búsqueda por nombre, tipo de energía y ciudad)
-    const enriched: PublicWantlistEntry[] = []
-    const setMap = new Map<string, string>()
+    // Primera pasada: filtrar y armar candidatos. La resolución de imágenes se
+    // hace en PARALELO después para no bloquear en verificaciones secuenciales.
+    const candidates: Array<{
+      w: WantlistRow
+      seeker: SeekerProfile | null
+      meta: NonNullable<ReturnType<typeof meta.get>>
+    }> = []
     for (const w of rows) {
       if (q && !w.card_name.toLowerCase().includes(q.toLowerCase())) continue
       const m = meta.get(w.card_id)
       if (typeFilter && !(m?.types ?? []).includes(typeFilter)) continue
       const seeker = profiles.get(w.user_id) ?? null
       if (cityFilter && seeker?.city !== cityFilter) continue
+      candidates.push({ w, seeker, meta: m! })
+    }
 
+    const imageMap = new Map<string, string>()
+    await Promise.all(
+      candidates.map(async (c) => {
+        const img = await resolveCardImage(c.w.set_id, c.w.number)
+        imageMap.set(`${c.w.set_id}::${c.w.number}`, img)
+      })
+    )
+
+    const enriched: PublicWantlistEntry[] = []
+    const setMap = new Map<string, string>()
+    for (const c of candidates) {
+      const w = c.w
+      const m = c.meta
       const entry: PublicWantlistEntry = {
         id: w.id,
         user_id: w.user_id,
@@ -149,11 +169,11 @@ export async function GET(req: Request) {
         supertype: m?.supertype ?? null,
         subtypes: m?.subtypes ?? null,
         types: m?.types ?? null,
-        image: await resolveCardImage(w.set_id, w.number),
-        username: seeker?.username ?? 'coleccionista',
-        city: seeker?.city ?? null,
-        country: seeker?.country ?? null,
-        whatsapp_number: seeker?.whatsapp_number ?? null,
+        image: imageMap.get(`${w.set_id}::${w.number}`) ?? NO_IMAGE_PLACEHOLDER,
+        username: c.seeker?.username ?? 'coleccionista',
+        city: c.seeker?.city ?? null,
+        country: c.seeker?.country ?? null,
+        whatsapp_number: c.seeker?.whatsapp_number ?? null,
         created_at: w.created_at
       }
       enriched.push(entry)
