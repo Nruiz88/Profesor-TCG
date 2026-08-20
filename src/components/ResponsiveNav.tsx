@@ -266,19 +266,30 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
 
       {/* ─── MOBILE: barra horizontal fija abajo + popovers ─── */}
       <div className="lg:hidden">
-        {/* Popover de sub-opciones hacia arriba */}
+        {/* Popover de sub-opciones pegado a la barra inferior */}
         {openPopover && (
-          <div ref={popoverRef} className="fixed inset-x-0 bottom-20 z-50 px-3">
+          <div ref={popoverRef} className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-50 px-2 pb-1">
             {mobileCategories
               .filter((c) => c.id === openPopover)
               .map((cat) => (
                 <div
                   key={cat.id}
-                  className="mb-2 overflow-hidden rounded-2xl border border-slate-800 bg-[#0a0c10] shadow-2xl"
+                  className="overflow-hidden rounded-2xl border border-slate-700/70 bg-[#11151d] shadow-2xl shadow-black/60"
                 >
-                  <p className="border-b border-slate-800/60 px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-emerald-500">
-                    {cat.label}
-                  </p>
+                  <div className="flex items-center justify-between border-b border-slate-700/50 px-4 py-2.5">
+                    <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-emerald-400">
+                      <span className="text-base">{cat.icon}</span>
+                      {cat.label}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setOpenPopover(null)}
+                      className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-semibold text-slate-400 hover:text-white"
+                      aria-label="Cerrar menú"
+                    >
+                      ✕
+                    </button>
+                  </div>
                   <div className="flex flex-col p-1.5">
                     {(cat.items ?? []).map((item) => (
                       <ItemLink
@@ -346,7 +357,7 @@ function ItemLink({
   onDone: () => void
 }) {
   const className =
-    'flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5 hover:text-white'
+    'flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800 hover:text-white'
   if (item.onClick) {
     return (
       <button type="button" onClick={item.onClick} className={`${className} text-left`}>

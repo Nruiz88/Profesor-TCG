@@ -1,22 +1,16 @@
 import KofiButton from '@/components/KofiButton'
 
 // Footer reducido para las páginas internas de la app (perfil, binder, claims,
-// ofertas, admin, etc.): solo el bloque de donaciones + copyright.
+// ofertas, admin, etc.): solo el bloque de donaciones compacto.
 export default function DonationFooter() {
   return (
-    <footer className="border-t border-slate-800/60 bg-slate-950 py-6">
-      <div className="mx-auto max-w-6xl px-4 text-center">
-        <p className="mx-auto max-w-lg text-sm leading-relaxed text-slate-400">
+    <footer className="border-t border-slate-800/60 bg-slate-950 py-3">
+      <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 text-center sm:flex-row sm:justify-center sm:gap-4">
+        <p className="max-w-xl text-xs leading-snug text-slate-400">
           TCG Claim es y seguirá siendo <span className="font-semibold text-white">100% gratuito</span>{' '}
-          sin comisiones. Si querés ayudarnos a mantener los servidores activos y seguir sumando
-          funciones, podés invitarnos un café:
+          sin comisiones. Si querés ayudarnos, podés invitarnos un café:
         </p>
-        <div className="mt-4 flex justify-center">
-          <KofiButton />
-        </div>
-        <p className="mt-6 text-xs text-slate-600">
-          © {new Date().getFullYear()} TCG Claim · Hecho con ❤️ para coleccionistas
-        </p>
+        <KofiButton />
       </div>
     </footer>
   )

@@ -1006,11 +1006,13 @@ export default function BinderPage() {
                 })}
               </div>
 
-              <SheetPagination
-                current={currentSheet}
-                sheetCount={sheets.length}
-                onChange={setCurrentSheet}
-              />
+              <div className="mb-8">
+                <SheetPagination
+                  current={currentSheet}
+                  sheetCount={sheets.length}
+                  onChange={setCurrentSheet}
+                />
+              </div>
             </>
           )}
         </>
