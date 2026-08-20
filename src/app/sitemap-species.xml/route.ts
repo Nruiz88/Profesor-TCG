@@ -5,7 +5,7 @@ import { urlsetXml, xmlResponse } from '@/lib/sitemapXml'
 
 export const dynamic = 'force-dynamic'
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
 
 // Todas las especies de Pokémon del catálogo (/especie/<slug>), deduplicadas.
 export async function GET() {

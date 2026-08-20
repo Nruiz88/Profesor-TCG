@@ -4,7 +4,7 @@ import { urlsetXml, xmlResponse, CARDS_PER_SITEMAP } from '@/lib/sitemapXml'
 
 export const dynamic = 'force-dynamic'
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
 
 // Sitemap de cartas por chunks (/sitemap-cards/1, /sitemap-cards/2, …).
 // El índice (/sitemap.xml) calcula cuántos chunks hay según el tamaño real del
