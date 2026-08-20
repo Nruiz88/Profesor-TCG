@@ -87,6 +87,7 @@ export async function notifyWantlistMatches(event: WantlistPublishEvent): Promis
 export interface ClaimEvent {
   sellerId: string
   buyerUsername: string
+  buyerPhone: string
   binderCardId: string
   cardName: string
   setId: string
@@ -106,6 +107,19 @@ export async function notifySellerOfClaim(event: ClaimEvent): Promise<void> {
   const admin = createAdminClient(url, serviceKey)
 
   try {
+    // Deep link de WhatsApp dirigido al comprador: si el vendedor toca la
+    // notificación, se le abre WhatsApp con el mensaje prefillado.
+    const phone = String(event.buyerPhone ?? '').replace(/\D/g, '')
+    const message = [
+      `¡Hola @${event.buyerUsername || 'coleccionista'}!`,
+      `Soy el vendedor de *${event.cardName}* (#${event.setId.toUpperCase()} ${event.number}) en Profesor TCG.`,
+      'Te confirmé el claim, coordinemos el pago y el envío. 🚀'
+    ].join('\n')
+    const whatsappUrl =
+      phone.length > 0
+        ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+        : null
+
     await admin.from('notifications').insert({
       user_id: event.sellerId,
       type: NOTIFICATION_TYPE_CLAIM,
@@ -114,7 +128,8 @@ export async function notifySellerOfClaim(event: ClaimEvent): Promise<void> {
         card_name: event.cardName,
         set_id: event.setId,
         number: event.number,
-        buyer_username: event.buyerUsername
+        buyer_username: event.buyerUsername,
+        whatsapp_url: whatsappUrl
       }
     })
   } catch {

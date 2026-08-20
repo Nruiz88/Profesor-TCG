@@ -123,21 +123,40 @@ export default function NotificationsBell() {
             </p>
           ) : (
             <div className="max-h-80 overflow-y-auto">
-              {notifications.map((n) => (
-                <Link
-                  key={n.id}
-                  href={notificationHref(n)}
-                  onClick={() => setOpen(false)}
-                  className={`block rounded-xl px-3 py-2.5 text-xs leading-relaxed transition-colors hover:bg-white/5 ${
-                    n.read ? 'text-slate-400' : 'text-slate-100'
-                  }`}
-                >
-                  {notificationTitle(n)}
-                  <span className="mt-0.5 block text-[10px] text-slate-600">
-                    {timeAgo(n.created_at)}
-                  </span>
-                </Link>
-              ))}
+              {notifications.map((n) => {
+                const p = n.payload as { whatsapp_url?: string | null }
+                const waUrl = n.type === 'claim' ? p.whatsapp_url ?? null : null
+                return (
+                  <div
+                    key={n.id}
+                    className={`block rounded-xl px-3 py-2.5 text-xs leading-relaxed transition-colors ${
+                      n.read ? 'text-slate-400' : 'text-slate-100'
+                    }`}
+                  >
+                    <Link
+                      href={notificationHref(n)}
+                      onClick={() => setOpen(false)}
+                      className="block transition-colors hover:text-white"
+                    >
+                      {notificationTitle(n)}
+                    </Link>
+                    <div className="mt-1.5 flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-slate-600">{timeAgo(n.created_at)}</span>
+                      {waUrl && (
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600/90 px-2 py-1 text-[10px] font-bold text-white transition-colors hover:bg-emerald-500"
+                        >
+                          💬 WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

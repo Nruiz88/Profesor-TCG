@@ -185,12 +185,13 @@ export async function POST(req: Request) {
     try {
       const { data: buyerProfile } = await admin
         .from('profiles')
-        .select('username')
+        .select('username, whatsapp_number')
         .eq('id', user.id)
         .maybeSingle()
       await notifySellerOfClaim({
         sellerId: binder.user_id,
         buyerUsername: buyerProfile?.username ?? 'coleccionista',
+        buyerPhone: buyerProfile?.whatsapp_number ?? '',
         binderCardId: cardId,
         cardName: card.card_name ?? 'una carta',
         setId: card.set_id ?? '',
