@@ -1,8 +1,6 @@
 import { ImageResponse } from '@vercel/og'
 import { getCardOgData } from '@/lib/og'
 
-export const runtime = 'edge'
-
 // Imagen vertical (700 de alto, ancho proporcional a la carta 63:88) para el
 // webhook de Discord. Muestra la carta grande centrada con nombre, set y precio.
 const HEIGHT = 700
@@ -13,11 +11,10 @@ const fmt = (n: number | null, currency: string) =>
     ? `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`
     : 'Consultar precio'
 
-export default async function Image({
-  params
-}: {
-  params: Promise<{ cardId: string }>
-}) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ cardId: string }> }
+): Promise<Response> {
   const { cardId } = await params
   const data = await getCardOgData(cardId)
 
@@ -103,7 +100,7 @@ export default async function Image({
             color: data.isReserved ? '#fbbf24' : '#34d399'
           }}
         >
-          {data.isReserved ? 'RESERVADA · 24H' : data.username ? 'EN TCG CLAIM' : 'EN TCG CLAIM'}
+          {data.isReserved ? 'RESERVADA · 24H' : 'EN TCG CLAIM'}
         </p>
         <p style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 0' }}>
           {fmt(data.price, data.currency)}
