@@ -11,7 +11,7 @@ import {
 } from '@/lib/cardStatus'
 import { isProfileComplete, type Profile } from '@/lib/profile'
 import { normalizeLanguage, type CardLanguage } from '@/lib/cardLanguage'
-import { normalizeCurrency, type Currency } from '@/lib/priceGuide'
+import { normalizeCurrency, formatPrice, type Currency } from '@/lib/priceGuide'
 import {
   CARD_CONDITIONS,
   formatCondition,
@@ -71,6 +71,7 @@ export default function EditCardModal({
   const [error, setError] = useState<string | null>(null)
   const [sharing, setSharing] = useState<'wa' | 'copy' | null>(null)
   const [shareError, setShareError] = useState<string | null>(null)
+  const [viewTab, setViewTab] = useState<'view' | 'edit'>('view')
 
   const withSale = availability === 'solo_venta' || availability === 'venta_o_cambio'
   const withTrade = availability === 'solo_cambio' || availability === 'venta_o_cambio'
@@ -228,37 +229,65 @@ export default function EditCardModal({
         aria-label={`Editar ${card.card_name}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-rose-300">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4a8 8 0 010 16 8 8 0 010-16zm-5 8a5 5 0 1110 0 5 5 0 01-10 0z" />
-            </svg>
-            Carta destacada
-          </span>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-black tracking-tight text-white">
+              {card.card_name}
+            </h2>
+            <p className="truncate text-xs text-slate-500">
+              {card.set_id.toUpperCase()} · #{card.number}
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="shrink-0 rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
           >
-            ✕ Cerrar
+            ✕
           </button>
         </div>
 
-        {/* Layout dos columnas: carta gigante | controles */}
-        <div className="mt-4 flex flex-col gap-5 lg:flex-row">
-          {/* Columna izquierda: carta gigante */}
-          <div className="flex shrink-0 flex-col items-center gap-3 lg:w-64">
-            <div className="w-52 drop-shadow-[0_18px_35px_rgba(0,0,0,0.6)] sm:w-60 lg:w-full">
+        {/* Tabs: Ver / Editar */}
+        <div className="mt-4 flex gap-1 rounded-xl bg-slate-950 p-1">
+          {(
+            [
+              ['view', '👁️ Ver'],
+              ['edit', '✏️ Editar']
+            ] as const
+          ).map(([t, label]) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setViewTab(t)}
+              className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                viewTab === t ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {viewTab === 'view' ? (
+          /* ============ PESTAÑA VER: limpia, centrada en la carta ============ */
+          <div className="mt-5 flex flex-col items-center">
+            <div className="w-56 drop-shadow-[0_18px_35px_rgba(0,0,0,0.6)] sm:w-64">
               <PokemonCard card={card} />
             </div>
-            <h2 className="text-center text-lg font-black tracking-tight text-white">
-              {card.card_name}
-            </h2>
-            <p className="text-center text-xs text-slate-500">
-              {card.set_id.toUpperCase()} · #{card.number}
-            </p>
+
+            {/* Precio destacado */}
+            <div className="mt-5 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Precio
+              </p>
+              <p className="mt-1 text-3xl font-black text-yellow-400">
+                {effectivePrice(card.market_price, card.price_override, card.price, card.manual_price) != null
+                  ? formatPrice(effectivePrice(card.market_price, card.price_override, card.price, card.manual_price)!, card.currency)
+                  : 'Consultar'}
+              </p>
+            </div>
 
             {/* Disponibilidad — solo iconos */}
-            <div className="mt-1 flex items-center gap-2">
+            <div className="mt-4 flex items-center gap-2">
               {AVAILABILITIES.map((a) => {
                 const active = availability === a
                 return (
@@ -278,10 +307,43 @@ export default function EditCardModal({
                 )
               })}
             </div>
-          </div>
 
-          {/* Columna derecha: controles */}
-          <div className="min-w-0 flex-1 space-y-4">
+            {/* Acciones P2P */}
+            {(withSale || withTrade) && (
+              <div className="mt-6 w-full">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={shareViaWhatsApp}
+                    disabled={sharing !== null}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-3 py-3.5 text-sm font-black text-[#05331a] shadow-lg shadow-emerald-950/50 transition-all hover:brightness-110 disabled:opacity-60"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.613.613l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.37 0-4.567-.814-6.293-2.172l-.44-.358-2.634.883.883-2.634-.358-.44A9.965 9.965 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z" />
+                    </svg>
+                    {sharing === 'wa' ? 'Generando…' : 'Comprar vía WhatsApp'}
+                  </button>
+                  <button
+                    onClick={copyLinkWithImage}
+                    disabled={sharing !== null}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-3.5 text-sm font-bold text-slate-200 transition-colors hover:border-slate-500 hover:text-white disabled:opacity-60"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {sharing === 'copy' ? 'Generando…' : 'Copiar Link'}
+                  </button>
+                </div>
+                {shareError && (
+                  <p className="mt-2 text-center text-[11px] text-amber-400">{shareError}</p>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ============ PESTAÑA EDITAR: todos los campos ============ */
+          <div className="mt-5 space-y-4">
             {/* Precio */}
             <div>
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-slate-500">
@@ -320,12 +382,31 @@ export default function EditCardModal({
               </div>
             </div>
 
-            {/* Idioma */}
+            {/* Disponibilidad — solo iconos */}
             <div>
               <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                Idioma
+                Disponibilidad
               </p>
-              <LanguagePills value={language} onChange={setLanguage} />
+              <div className="flex items-center gap-2">
+                {AVAILABILITIES.map((a) => {
+                  const active = availability === a
+                  return (
+                    <button
+                      key={a}
+                      type="button"
+                      title={AVAILABILITY_META[a].label}
+                      onClick={() => setAvailability(a)}
+                      className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-lg transition-all ${
+                        active
+                          ? 'border-rose-500 bg-rose-500/20 shadow-[0_0_18px_rgba(244,63,94,0.35)]'
+                          : 'border-slate-700 bg-slate-950 text-slate-500 hover:border-slate-500 hover:text-slate-300'
+                      }`}
+                    >
+                      {AVAIL_ICONS[a]}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             {/* Unidades */}
@@ -355,6 +436,14 @@ export default function EditCardModal({
                   +
                 </button>
               </div>
+            </div>
+
+            {/* Idioma */}
+            <div>
+              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Idioma
+              </p>
+              <LanguagePills value={language} onChange={setLanguage} />
             </div>
 
             {/* Variante */}
@@ -467,37 +556,6 @@ export default function EditCardModal({
                   ))}
                 </select>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Acciones P2P: WhatsApp + copiar */}
-        {(withSale || withTrade) && (
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <button
-              onClick={shareViaWhatsApp}
-              disabled={sharing !== null}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-3 py-3.5 text-sm font-black text-[#05331a] shadow-lg shadow-emerald-950/50 transition-all hover:brightness-110 disabled:opacity-60"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.613.613l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.37 0-4.567-.814-6.293-2.172l-.44-.358-2.634.883.883-2.634-.358-.44A9.965 9.965 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z" />
-              </svg>
-              {sharing === 'wa' ? 'Generando…' : 'Comprar vía WhatsApp'}
-            </button>
-            <button
-              onClick={copyLinkWithImage}
-              disabled={sharing !== null}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-3.5 text-sm font-bold text-slate-200 transition-colors hover:border-slate-500 hover:text-white disabled:opacity-60"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {sharing === 'copy' ? 'Generando…' : 'Copiar Link'}
-            </button>
-            {shareError && (
-              <p className="col-span-2 mt-1 text-center text-[11px] text-amber-400">{shareError}</p>
             )}
           </div>
         )}
