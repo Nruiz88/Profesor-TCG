@@ -50,6 +50,7 @@ export default function EditCardModal({
   onSaved,
   onClose
 }: EditCardModalProps) {
+  const [quantity, setQuantity] = useState<number>(card.quantity ?? 1)
   const [availability, setAvailability] = useState<Availability>(() =>
     availabilityFromFlags(card.is_for_sale, card.is_for_trade)
   )
@@ -109,6 +110,10 @@ export default function EditCardModal({
     return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN
   }
 
+  function updateQuantity(delta: number) {
+    setQuantity((prev) => Math.max(1, prev + delta))
+  }
+
   async function handleSave() {
     setError(null)
 
@@ -137,6 +142,7 @@ export default function EditCardModal({
       body.trade_notes = tradeNotes.trim() === '' ? null : tradeNotes.trim()
       body.condition = condition.trim() === '' ? null : condition.trim()
       body.variant = variant
+      body.quantity = quantity
 
       const res = await fetch(`/api/binder/slots/${card.id}`, {
         method: 'PATCH',
@@ -178,126 +184,159 @@ export default function EditCardModal({
           </button>
         </div>
 
-        {/* Carta */}
-        <div className="mx-auto mt-4 w-44 sm:w-52">
-          <PokemonCard card={card} />
-        </div>
-
-        {/* Idioma — pills compactos */}
-        <div className="mt-4">
-          <LanguagePills value={language} onChange={setLanguage} />
-        </div>
-
-        {/* Variante de la carta */}
-        <div className="mt-3">
-          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            Variante
-          </p>
-          <div className="flex flex-wrap gap-1.5">              {[
-              { id: 'normal', label: 'Normal', icon: '🃏' },
-              { id: 'holo', label: 'Holo', icon: '✨' },
-              { id: 'reverse_holo', label: 'R.Holo', icon: '🔄' },
-              { id: 'v', label: 'Pokémon V', icon: '⚡' },
-              { id: 'v_full_art', label: 'V Full Art', icon: '🖼️' },
-              { id: 'v_alternate_art', label: 'V Alt Art', icon: '🎨' },
-              { id: 'vmax', label: 'VMAX', icon: '💥' },
-              { id: 'vmax_alternate', label: 'VMAX Alt', icon: '🌈' },
-              { id: 'vstar', label: 'VSTAR', icon: '⭐' },
-              { id: 'trainer_full_art', label: 'Trainer FA', icon: '🧑‍🏫' },
-              { id: 'rainbow_rare', label: 'Rainbow', icon: '🌈' },
-              { id: 'secret_rare_gold', label: 'Gold SR', icon: '🥇' }
-            ].map((v) => (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => setVariant(v.id)}
-                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                  variant === v.id
-                    ? 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/40'
-                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {v.icon} {v.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Precio + moneda — fila compacta */}
-        <div className="mt-4 flex items-end gap-2">
-          <div className="flex-1">
-            <label className="block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-              Precio
-            </label>
-            <div className="relative mt-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
-                $
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={priceInput}
-                onChange={(e) => setPriceInput(e.target.value)}
-                placeholder={
-                  card.market_price != null && card.market_price > 0
-                    ? `Mercado: ${card.market_price.toFixed(2)}`
-                    : '0.00'
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 py-2.5 pl-7 pr-3 text-sm text-white placeholder-slate-600 focus:border-rose-500 focus:outline-none"
-              />
+        {/* Carta + unidades */}
+        <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+          <div className="w-40 shrink-0 sm:w-44">
+            <PokemonCard card={card} />
+            {/* Cantidad de copias */}
+            <div className="mt-3">
+              <p className="mb-1.5 text-center text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Unidades
+              </p>
+              <div className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-950 p-1.5">
+                <button
+                  type="button"
+                  onClick={() => updateQuantity(-1)}
+                  disabled={quantity <= 1}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 text-lg font-bold text-slate-300 transition-colors hover:border-rose-500/50 hover:text-rose-400 disabled:opacity-40"
+                  aria-label="Quitar una unidad"
+                >
+                  −
+                </button>
+                <span className="min-w-11 text-center text-xl font-bold text-white">
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => updateQuantity(1)}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 text-lg font-bold text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-400"
+                  aria-label="Agregar una unidad"
+                >
+                  +
+                </button>
+              </div>
             </div>
           </div>
-          <select
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value as Currency)}
-            className="shrink-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-rose-500 focus:outline-none"
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.symbol} {c.id}
-              </option>
-            ))}
-          </select>
-        </div>
 
-        {/* Referencias externas — colapsable */}
-        <button
-          type="button"
-          onClick={() => setShowRefs(!showRefs)}
-          className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500 transition-colors hover:text-slate-300"
-        >
-          <span className={`transition-transform ${showRefs ? 'rotate-90' : ''}`}>▸</span>
-          Ver precios de referencia
-        </button>
-        {showRefs && (
-          <div className="mt-2 grid grid-cols-3 gap-1.5">
-            <a
-              href={guideUrls.priceCharting}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-sky-500/40 hover:text-sky-300"
+          {/* Controles a la derecha */}
+          <div className="min-w-0 flex-1 space-y-4">
+            {/* Idioma — pills compactos */}
+            <div>
+              <LanguagePills value={language} onChange={setLanguage} />
+            </div>
+
+            {/* Variante de la carta */}
+            <div>
+              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Variante
+              </p>
+              <div className="flex flex-wrap gap-1.5">              {[
+                { id: 'normal', label: 'Normal', icon: '🃏' },
+                { id: 'holo', label: 'Holo', icon: '✨' },
+                { id: 'reverse_holo', label: 'R.Holo', icon: '🔄' },
+                { id: 'v', label: 'Pokémon V', icon: '⚡' },
+                { id: 'v_full_art', label: 'V Full Art', icon: '🖼️' },
+                { id: 'v_alternate_art', label: 'V Alt Art', icon: '🎨' },
+                { id: 'vmax', label: 'VMAX', icon: '💥' },
+                { id: 'vmax_alternate', label: 'VMAX Alt', icon: '🌈' },
+                { id: 'vstar', label: 'VSTAR', icon: '⭐' },
+                { id: 'trainer_full_art', label: 'Trainer FA', icon: '🧑‍🏫' },
+                { id: 'rainbow_rare', label: 'Rainbow', icon: '🌈' },
+                { id: 'secret_rare_gold', label: 'Gold SR', icon: '🥇' }
+              ].map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => setVariant(v.id)}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    variant === v.id
+                      ? 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/40'
+                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {v.icon} {v.label}
+                </button>
+              ))}
+              </div>
+            </div>
+
+            {/* Precio + moneda — fila compacta */}
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <label className="block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Precio
+                </label>
+                <div className="relative mt-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={priceInput}
+                    onChange={(e) => setPriceInput(e.target.value)}
+                    placeholder={
+                      card.market_price != null && card.market_price > 0
+                        ? `Mercado: ${card.market_price.toFixed(2)}`
+                        : '0.00'
+                    }
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 py-2.5 pl-7 pr-3 text-sm text-white placeholder-slate-600 focus:border-rose-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as Currency)}
+                className="shrink-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-rose-500 focus:outline-none"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.symbol} {c.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Referencias externas — colapsable */}
+            <button
+              type="button"
+              onClick={() => setShowRefs(!showRefs)}
+              className="flex items-center gap-1.5 text-[11px] text-slate-500 transition-colors hover:text-slate-300"
             >
-              🔍 PriceCharting ↗
-            </a>
-            <a
-              href={guideUrls.ebay}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-emerald-500/40 hover:text-emerald-300"
-            >
-              🛒 eBay ↗
-            </a>
-            <a
-              href={guideUrls.cardmarket}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-300"
-            >
-              🏷️ Cardmarket ↗
-            </a>
+              <span className={`transition-transform ${showRefs ? 'rotate-90' : ''}`}>▸</span>
+              Ver precios de referencia
+            </button>
+            {showRefs && (
+              <div className="grid grid-cols-3 gap-1.5">
+                <a
+                  href={guideUrls.priceCharting}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-sky-500/40 hover:text-sky-300"
+                >
+                  🔍 PriceCharting ↗
+                </a>
+                <a
+                  href={guideUrls.ebay}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-emerald-500/40 hover:text-emerald-300"
+                >
+                  🛒 eBay ↗
+                </a>
+                <a
+                  href={guideUrls.cardmarket}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-300"
+                >
+                  🏷️ Cardmarket ↗
+                </a>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Modalidad — grid compacto 2x2 */}
         <div className="mt-5">
