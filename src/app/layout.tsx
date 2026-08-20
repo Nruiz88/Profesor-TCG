@@ -16,16 +16,16 @@ import AppShell from '@/components/AppShell'
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   title: {
-    default: 'TCGClaim | Mercado P2P de Cartas TCG',
-    template: '%s · TCGClaim'
+    default: 'TCG Claim | Mercado P2P de Cartas TCG',
+    template: '%s · TCG Claim'
   },
   description:
     'Comprá, vendé y permutá cartas TCG sin comisiones. Conectá tu Binder en 3D directo a WhatsApp.',
   openGraph: {
-    siteName: 'TCGClaim',
+    siteName: 'TCG Claim',
     type: 'website',
     locale: 'es_AR',
-    title: 'TCGClaim | Mercado P2P & Binders 3D',
+    title: 'TCG Claim | Mercado P2P & Binders 3D',
     description:
       'Comprá, vendé y permutá cartas TCG sin comisiones. Conectá tu Binder en 3D directo a WhatsApp.'
   }

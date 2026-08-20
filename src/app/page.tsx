@@ -157,7 +157,7 @@ export default async function LandingPage() {
               </span>
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-400">
-              TCGClaim es el mercado P2P de cartas coleccionables: digitalizá tu Binder 3D, publicá
+              TCG Claim es el mercado P2P de cartas coleccionables: digitalizá tu Binder 3D, publicá
               tus cartas con precio de mercado en vivo y cerrá el trato{' '}
               <span className="text-slate-200">sin comisiones ni intermediarios</span>.
             </p>
