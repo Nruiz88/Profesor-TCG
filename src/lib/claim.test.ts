@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { formatCountdown, formatReservedUntil } from './claim'
+
+const FIXED_NOW = new Date('2026-01-01T12:00:00Z')
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 describe('formatCountdown', () => {
   it('devuelve minutos cuando falta menos de una hora', () => {
@@ -32,16 +38,18 @@ describe('formatReservedUntil', () => {
   })
 
   it('dice "hoy" cuando vence el mismo día', () => {
-    const now = new Date()
-    const later = new Date(now.getTime() + 3 * 3600 * 1000)
+    vi.useFakeTimers()
+    vi.setSystemTime(FIXED_NOW)
+    const later = new Date(FIXED_NOW.getTime() + 3 * 3600 * 1000)
     const out = formatReservedUntil(later.toISOString())
     expect(out).toMatch(/^hoy \d{2}:\d{2}$/)
   })
 
   it('dice "mañana" cuando vence al día siguiente', () => {
-    const now = new Date()
-    const tomorrow = new Date(now)
-    tomorrow.setDate(now.getDate() + 1)
+    vi.useFakeTimers()
+    vi.setSystemTime(FIXED_NOW)
+    const tomorrow = new Date(FIXED_NOW)
+    tomorrow.setDate(FIXED_NOW.getDate() + 1)
     tomorrow.setHours(12, 0, 0, 0)
     expect(formatReservedUntil(tomorrow.toISOString())).toMatch(/^mañana 12:00$/)
   })
