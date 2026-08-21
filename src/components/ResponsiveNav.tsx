@@ -10,7 +10,6 @@ import {
   GearIcon,
   HomeIcon,
   LogoutIcon,
-  PokeballIcon,
   UserIcon
 } from '@/components/icons'
 import { createClient } from '@/lib/supabase/client'
@@ -226,12 +225,9 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
       id: 'mercado',
       label: 'Mercado',
       icon: <CompassIcon className="h-5 w-5" />,
-      items: [
-        { label: 'Explorar', href: '/explore' },
-        { label: 'Buscados', href: '/buscados' },
-        ...(user
-          ? [
-              { label: 'Ofertas', href: '/offers', badge: pendingOffers },
+      items: user
+        ? [
+            { label: 'Ofertas', href: '/offers', badge: pendingOffers },
               {
                 label: 'Mis Claims',
                 onClick: () => {
@@ -240,8 +236,7 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
                 }
               }
             ]
-          : [])
-      ]
+          : []
     },
     {
       id: 'herramientas',

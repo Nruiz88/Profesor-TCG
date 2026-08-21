@@ -12,7 +12,6 @@ import {
   HomeIcon,
   LogoutIcon,
   PlusIcon,
-  PokeballIcon,
   ShieldIcon,
   SwapIcon,
   UserIcon
@@ -232,30 +231,6 @@ export default function SidebarMenu(props: SidebarMenuProps) {
 
         {/* MERCADO */}
         <SidebarSection icon={<CompassIcon className="h-5 w-5" />} title="Mercado">
-          <Link
-            href="/explore"
-            onClick={onClose}
-            className={`${NAV_ITEM} ${isActive('/explore') ? NAV_ACTIVE : NAV_IDLE}`}
-          >
-            <CompassIcon
-              className={`h-5 w-5 ${
-                isActive('/explore') ? 'text-rose-300' : 'text-slate-500'
-              }`}
-            />
-            Explorar
-          </Link>
-          <Link
-            href="/buscados"
-            onClick={onClose}
-            className={`${NAV_ITEM} ${isActive('/buscados') ? NAV_ACTIVE : NAV_IDLE}`}
-          >
-            <PokeballIcon
-              className={`h-5 w-5 ${
-                isActive('/buscados') ? 'text-rose-300' : 'text-slate-500'
-              }`}
-            />
-            Buscados
-          </Link>
           {user && (
             <Link
               href="/offers"
