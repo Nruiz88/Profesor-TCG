@@ -40,7 +40,14 @@ export async function generateMetadata({
   const data = await getCatalogCardPageData(cardId)
   if (!data) return { title: 'Carta no encontrada' }
 
-const title = `${data.name} #${data.number} — Precios y Claims`
+// Title con el set para distribuir keywords (nombre + set). El template de
+// la app agrega " · TCG Claim", así que si queda muy largo volvemos al
+// formato corto con solo el nombre.
+  const titleWithSet = `${data.name} #${data.number} · ${data.set_name} — Precios y Claims`
+  const title =
+    titleWithSet.length <= 55
+      ? titleWithSet
+      : `${data.name} #${data.number} — Precios y Claims`
   const priceText =
     data.minPrice != null ? formatPrice(data.minPrice, data.currency) : null
   const description = `Encontrá ${data.name} del set ${data.set_name} en TCG Claim. Comprá, vendé y permutá directo por WhatsApp en Latam sin comisiones.${data.listingCount > 0 && priceText ? ` Hay ${data.listingCount} publicación${data.listingCount !== 1 ? 'es' : ''} desde ${priceText}.` : ''}`
@@ -50,7 +57,7 @@ const title = `${data.name} #${data.number} — Precios y Claims`
     description,
     alternates: { canonical: catalogUrl(data) },
     openGraph: {
-      title: `${data.name} #${data.number} — Precios y Claims`,
+      title,
       description,
       type: 'website',
       url: catalogUrl(data),
