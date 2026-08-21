@@ -66,7 +66,7 @@ export default function AppOgImage({ logo }: AppOgImageProps) {
         }}
       >
         <p style={{ fontSize: 22, fontWeight: 700, letterSpacing: 6, color: '#fb7185', margin: 0 }}>
-          PROFESOR TCG
+          TCG CLAIM
         </p>
         <p style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.1, margin: '14px 0 0' }}>
           TCG Claim

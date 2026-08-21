@@ -82,7 +82,7 @@ export default function ProfileOgImage({ data }: { data: OgProfileData | null })
         }}
       >
         <p style={{ fontSize: 22, fontWeight: 700, letterSpacing: 6, color: '#fb7185', margin: 0 }}>
-          PROFESOR TCG · PERFIL
+          TCG CLAIM · PERFIL
         </p>
         <p style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.15, margin: '12px 0 0' }}>
           @{data.username}

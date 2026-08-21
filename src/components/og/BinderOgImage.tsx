@@ -76,7 +76,7 @@ export default function BinderOgImage({ data }: { data: OgBinderData | null }) {
         }}
       >
         <p style={{ fontSize: 22, fontWeight: 700, letterSpacing: 6, color: '#fb7185', margin: 0 }}>
-          PROFESOR TCG
+          TCG CLAIM
         </p>
         <p style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.15, margin: '14px 0 0' }}>
           {data.title}
