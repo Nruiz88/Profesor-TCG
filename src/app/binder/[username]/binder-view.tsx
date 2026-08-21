@@ -6,7 +6,13 @@ import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
 import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
 import SellerReputationCard from '@/components/SellerReputationCard'
-import { PokeballIcon } from '@/components/icons'
+import PokemonCard from '@/components/PokemonCard'
+import { ChatIcon, PokeballIcon } from '@/components/icons'
+import { effectivePrice } from '@/lib/cardStatus'
+import { formatPrice } from '@/lib/priceGuide'
+import { formatCondition } from '@/lib/cardCondition'
+import { normalizeLanguage, CARD_LANGUAGE_META } from '@/lib/cardLanguage'
+import { whatsAppLink } from '@/lib/profile'
 import {
   computeTotalValue,
   groupIntoSheets,
@@ -80,6 +86,14 @@ export default function PublicBinderByUsernamePage({
   const sheets = groupIntoSheets(cards)
   if (sheets.length === 0) sheets.push([])
 
+  // Carta destacada por deep-link (?card=<id>): presentación de compra.
+  const featuredCard = highlightCardId
+    ? cards.find((c) => c.id === highlightCardId) ?? null
+    : null
+  const featuredPrice = featuredCard
+    ? effectivePrice(featuredCard.market_price, featuredCard.price_override, featuredCard.price, featuredCard.manual_price)
+    : null
+
   if (error) {
     return (
       <div className="min-h-screen text-slate-200">
@@ -151,6 +165,91 @@ export default function PublicBinderByUsernamePage({
           </div>
         </div>
       </header>
+
+      {/* Panel destacado: carta individual por deep-link (?card=) */}
+      {featuredCard && (
+        <div className="mb-8 overflow-hidden rounded-3xl border border-rose-500/30 bg-gradient-to-b from-slate-900 to-[#100f1c] shadow-[0_20px_60px_-20px_rgba(244,63,94,0.25)]">
+          <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center">
+            {/* Glows */}
+            <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-rose-500/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -right-16 h-56 w-56 rounded-full bg-amber-400/10 blur-3xl" />
+
+            {/* Carta en grande */}
+            <div className="relative mx-auto w-48 shrink-0 drop-shadow-[0_18px_35px_rgba(0,0,0,0.6)] sm:w-56 lg:mx-0">
+              <PokemonCard card={featuredCard} />
+            </div>
+
+            {/* Info de compra */}
+            <div className="relative min-w-0 flex-1">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-400/40 bg-rose-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-rose-300">
+                <PokeballIcon width={13} height={13} />
+                {featuredCard.is_for_sale && featuredCard.is_for_trade
+                  ? 'En venta o cambio'
+                  : featuredCard.is_for_sale
+                    ? 'En venta'
+                    : 'Acepta cambios'}
+              </span>
+
+              <h2 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                {featuredCard.card_name}
+              </h2>
+              <p className="mt-1 text-sm text-slate-400">
+                {featuredCard.set_id.toUpperCase()} · #{featuredCard.number}
+              </p>
+
+              {/* Precio destacado */}
+              <div className="mt-4">
+                {featuredPrice != null ? (
+                  <p className="text-3xl font-black text-yellow-400">
+                    {formatPrice(featuredPrice, featuredCard.currency)}
+                    <span className="ml-1.5 text-sm font-semibold text-yellow-400/60">USD</span>
+                  </p>
+                ) : (
+                  <p className="text-2xl font-black text-slate-300">Consultar precio</p>
+                )}
+              </div>
+
+              {/* Detalles del ejemplar */}
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                {featuredCard.condition && (
+                  <span className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 font-semibold text-slate-300">
+                    {formatCondition(featuredCard.condition) ?? featuredCard.condition}
+                  </span>
+                )}
+                {(() => {
+                  const meta = CARD_LANGUAGE_META[normalizeLanguage(featuredCard.language)]
+                  return (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-950 px-3 py-1 font-semibold text-slate-300">
+                      <span aria-hidden="true">{meta.flag}</span>
+                      {meta.label}
+                    </span>
+                  )
+                })()}
+                {(featuredCard.quantity ?? 1) > 1 && (
+                  <span className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 font-semibold text-slate-300">
+                    x{featuredCard.quantity}
+                  </span>
+                )}
+              </div>
+
+              {/* Botón de compra por WhatsApp */}
+              {seller?.whatsapp_number && (
+                <a
+                  href={`${whatsAppLink(seller.whatsapp_number)}?text=${encodeURIComponent(
+                    `¡Hola @${seller.username ?? 'coleccionista'}! Vi tu carta "${featuredCard.card_name}" (${featuredCard.set_id.toUpperCase()} ${featuredCard.number}) en TCG Claim. ¿Sigue disponible? Quiero hacer un claim.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-3 text-sm font-black text-[#05331a] shadow-lg shadow-emerald-950/50 transition-all hover:brightness-110"
+                >
+                  <ChatIcon width={17} height={17} />
+                  Comprar por WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-8 space-y-4">
         <SellerInfoBadge seller={seller} />

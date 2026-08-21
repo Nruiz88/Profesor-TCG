@@ -2,6 +2,7 @@
 
 import { useRef } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import type { ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
@@ -41,8 +42,14 @@ export function isRareCard(card: ExploreCard): boolean {
  * glare se escriben directo al DOM vía refs para no re-renderizar por frame.
  */
 export default function MarketCard({ card }: { card: ExploreCard }) {
+  const router = useRouter()
   const tiltRef = useRef<HTMLDivElement>(null)
   const glareRef = useRef<HTMLDivElement>(null)
+
+  // Click en la carta → ir a la ficha de catálogo (mismo destino que el market).
+  const openCard = () => {
+    router.push(`/carta/${encodeURIComponent(card.card_id)}/${slugify(card.card_name)}`)
+  }
 
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = tiltRef.current
@@ -79,9 +86,10 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
       style={{ transitionProperty: 'transform, opacity' }}
     >
       <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.45)] transition-shadow duration-300 group-hover:border-slate-600">
-        {/* Imagen con marco + brillo de rareza */}
+        {/* Imagen con marco + brillo de rareza — click va a la ficha */}
         <div
-          className="relative aspect-[63/88] overflow-hidden bg-slate-950"
+          onClick={openCard}
+          className="relative aspect-[63/88] cursor-pointer overflow-hidden bg-slate-950"
           style={{
             boxShadow: `inset 0 0 0 1px ${glow}, 0 12px 34px -12px ${glow}`
           }}
@@ -137,6 +145,7 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
                 href={claimHref(card)}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-900/40 transition-colors hover:bg-emerald-400"
               >
                 <ChatIcon width={14} height={14} />
@@ -145,6 +154,7 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
             )}
             <Link
               href={`/card/${card.id}/${slugify(card.card_name)}`}
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center justify-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20"
             >
               Ver carta 3D
