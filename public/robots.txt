@@ -1,4 +1,25 @@
+# TCG Claim — robots.txt
+# Bloques las rutas privadas o sin valor de búsqueda para ahorrar crawl budget
+# y evitar que Google indexe contenido interno.
+
 User-agent: *
 Allow: /
+
+# APIs y callbacks de auth: sin valor en resultados de búsqueda
+Disallow: /api/
+Disallow: /auth/
+
+# Áreas privadas (detrás de login: el middleware redirige a /login sin sesión)
+Disallow: /login
+Disallow: /offers
+Disallow: /claims
+Disallow: /admin
+
+# Binder propio (/binder es privado). El `?` limita el match solo a la ruta
+# exacta: /binder/… y /b/<slug> (binders públicos) siguen indexables.
+Disallow: /binder?
+
+# Bitácora y documentación interna de desarrollo
+Disallow: /notas
 
 Sitemap: https://tcgclaim.online/sitemap.xml
