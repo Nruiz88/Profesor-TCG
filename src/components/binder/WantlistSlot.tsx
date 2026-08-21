@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import PokemonCard from '@/components/PokemonCard'
 import { ChatIcon, TrashIcon } from '@/components/icons'
 import { CURRENCIES, formatPrice, type Currency } from '@/lib/priceGuide'
 import { toSlotCard, type SlotCard } from '@/lib/sheets'
+import { slugify } from '@/lib/utils'
 import type { WantlistCard } from '@/types/wantlist'
 
 interface WantlistSlotProps {
@@ -71,20 +73,30 @@ export default function WantlistSlot({
 
   return (
     <div className="group relative rounded-xl border border-fuchsia-500/50 bg-slate-950 shadow-[0_0_15px_rgba(217,70,239,0.2)] transition-shadow hover:shadow-[0_0_20px_rgba(217,70,239,0.35)]">
-      {/* Carta con efecto holo (mismo PokemonCard que el binder) */}
-      <div className="relative aspect-[63/88] rounded-xl">
+      {/* Carta con efecto holo (mismo PokemonCard que el binder) — click va a la ficha */}
+      <Link
+        href={`/carta/${encodeURIComponent(entry.card_id)}/${slugify(entry.card_name)}`}
+        className="relative block aspect-[63/88] rounded-xl"
+      >
         {/* Badge flotante superior */}
         <span className="absolute left-2 top-2 z-10 rounded-md bg-fuchsia-500/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white shadow">
           Buscada
         </span>
         <PokemonCard card={slotCard} />
-      </div>
+      </Link>
 
       <div className="border-t border-fuchsia-500/30 p-2.5">
-        <p className="truncate text-xs font-semibold text-white">{entry.card_name}</p>
-        <p className="mt-0.5 truncate text-[10px] text-slate-400">
-          {entry.set_name || entry.set_id} · {entry.number}
-        </p>
+        <Link
+          href={`/carta/${encodeURIComponent(entry.card_id)}/${slugify(entry.card_name)}`}
+          className="block"
+        >
+          <p className="truncate text-xs font-semibold text-white transition-colors group-hover:text-fuchsia-300">
+            {entry.card_name}
+          </p>
+          <p className="mt-0.5 truncate text-[10px] text-slate-400">
+            {entry.set_name || entry.set_id} · {entry.number}
+          </p>
+        </Link>
 
         {entry.max_budget != null && (
           <span className="mt-2 inline-block rounded-md border border-fuchsia-500/40 bg-fuchsia-500/10 px-2 py-1 text-[10px] font-bold text-fuchsia-300">
