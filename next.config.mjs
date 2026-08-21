@@ -56,6 +56,11 @@ const nextConfig = {
     '/**/*': ['./src/content/en/**', './src/content/ja/**', './notas/**']
   },
   images: {
+    // Desactivada la optimización de imágenes de Vercel: el plan free tiene un
+    // límite de 1000 imágenes optimizadas por mes. Las cartas vienen de CDNs
+    // (pokemontcg.io, scrydex, tcgdex) que ya sirven WebP/AVIF optimizados, así
+    // que servir la imagen original no afecta la carga y no consume la cuota.
+    unoptimized: true,
     // Conversión automática de imágenes a formatos de última generación.
     // Next.js usa `sharp` (instalado vía overrides) como motor de
     // optimización cuando está presente en node_modules.
