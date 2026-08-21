@@ -29,10 +29,12 @@ export async function generateMetadata({
       ? ` Busca ${data.wantlistCount} carta${data.wantlistCount !== 1 ? 's' : ''}.`
       : ''
   const description = `${data.cardCount} carta${data.cardCount !== 1 ? 's' : ''} · ${fmt(data.totalValue)} USD en el binder de ${owner}.${wants} Vende y cambia directo por WhatsApp.`
+  const url = binderId ? `/binder/${username}?binderId=${binderId}` : `/binder/${username}`
   return {
     title,
     description,
-    openGraph: { title, description }
+    alternates: { canonical: url },
+    openGraph: { title, description, url }
   }
 }
 

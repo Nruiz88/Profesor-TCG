@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import SiteNav from '@/components/SiteNav'
 import FeaturesStatsBar from '@/components/FeaturesStatsBar'
 import HeroBinderDemo from '@/components/HeroBinderDemo'
@@ -126,6 +127,14 @@ const STEPS = [
     cta: 'Ver un ejemplo'
   }
 ]
+
+export const metadata: Metadata = {
+  title: 'TCG Claim | Mercado P2P de Cartas TCG & Binder en 3D',
+  description:
+    'Comprá, vendé y permutá cartas TCG sin comisiones. Digitalizá tu binder en 3D, publicá tus cartas y coordiná por WhatsApp.',
+  alternates: { canonical: '/' },
+  openGraph: { url: '/' }
+}
 
 export default async function LandingPage() {
   const supabase = await createClient()

@@ -1,6 +1,15 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import SiteNav from '@/components/SiteNav'
 import GhostPokemon from '@/components/GhostPokemon'
+
+export const metadata: Metadata = {
+  title: 'Política de privacidad',
+  description:
+    'Política de privacidad de TCG Claim: qué datos recopilamos y cómo los usamos.',
+  alternates: { canonical: '/privacidad' },
+  openGraph: { url: '/privacidad' }
+}
 
 export default async function PrivacidadPage() {
   return (

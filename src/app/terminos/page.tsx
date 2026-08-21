@@ -1,6 +1,15 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import SiteNav from '@/components/SiteNav'
 import GhostPokemon from '@/components/GhostPokemon'
+
+export const metadata: Metadata = {
+  title: 'Términos y condiciones',
+  description:
+    'Términos y condiciones de uso de TCG Claim, el mercado P2P de cartas TCG.',
+  alternates: { canonical: '/terminos' },
+  openGraph: { url: '/terminos' }
+}
 
 export default async function TerminosPage() {
   return (

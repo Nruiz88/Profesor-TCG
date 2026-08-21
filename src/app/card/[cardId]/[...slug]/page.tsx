@@ -29,13 +29,16 @@ export async function generateMetadata({
   const host = headerStore.get('host') ?? 'tcgclaim.online'
   const origin = `${proto}://${host}`
   const ogImageUrl = `${origin}/card/${cardId}/opengraph-image`
+  const canonicalUrl = `${origin}/card/${cardId}/${data.name.split(' ').join('-').toLowerCase()}`
 
   return {
     title,
     description,
+    alternates: { canonical: canonicalUrl },
     openGraph: {
       title,
       description,
+      url: canonicalUrl,
       // La página vive en un catch-all ([...slug]) y Next.js no hereda el
       // opengraph-image.tsx del segmento padre [cardId], así que lo
       // referenciamos explícitamente (la ruta /card/[cardId]/opengraph-image
