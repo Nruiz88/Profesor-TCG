@@ -1,9 +1,12 @@
-const APP_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
+interface AppOgImageProps {
+  /** URL data: del logo (base64) ya cargado; si falta, se usa wordmark de texto. */
+  logo: string | null
+}
 
 // Imagen Open Graph genérica (1200x630) de la app: logo + marca + tagline.
 // La usa la home y todas las páginas sin imagen propia (explore, buscados,
 // terminos, privacidad, binder propio, cartas del catálogo, etc.).
-export default function AppOgImage() {
+export default function AppOgImage({ logo }: AppOgImageProps) {
   return (
     <div
       style={{
@@ -15,7 +18,7 @@ export default function AppOgImage() {
         fontFamily: 'sans-serif'
       }}
     >
-      {/* Logo */}
+      {/* Logo / wordmark */}
       <div
         style={{
           display: 'flex',
@@ -37,14 +40,18 @@ export default function AppOgImage() {
             boxShadow: '0 40px 80px rgba(0,0,0,0.55)'
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`${APP_URL}/brand/logo-invertido.png`}
-            alt="TCG Claim"
-            width={260}
-            height={260}
-            style={{ borderRadius: 24 }}
-          />
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logo}
+              alt="TCG Claim"
+              width={260}
+              height={260}
+              style={{ borderRadius: 24 }}
+            />
+          ) : (
+            <p style={{ fontSize: 84, fontWeight: 800, margin: 0 }}>TCG</p>
+          )}
         </div>
       </div>
 

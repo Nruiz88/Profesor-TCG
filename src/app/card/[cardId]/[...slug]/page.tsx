@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { getCardOgData } from '@/lib/og'
+import { cardSlug } from '@/lib/catalogPages'
 import PublicCardView from './card-view'
 
 const fmt = (n: number | null, currency: string) =>
@@ -29,7 +30,10 @@ export async function generateMetadata({
   const host = headerStore.get('host') ?? 'tcgclaim.online'
   const origin = `${proto}://${host}`
   const ogImageUrl = `${origin}/card/${cardId}/opengraph-image`
-  const canonicalUrl = `${origin}/card/${cardId}/${data.name.split(' ').join('-').toLowerCase()}`
+  // El listado vive en /card/<listingId>, pero la ficha canónica de la carta
+  // es /carta/<cardId>/<slug> (la que indexa el sitemap). Apuntamos el
+  // canonical ahí para no duplicar contenido en Google.
+  const canonicalUrl = `${origin}/carta/${encodeURIComponent(data.cardId)}/${cardSlug(data.name)}`
 
   return {
     title,
@@ -60,7 +64,7 @@ export default async function Page({ params }: { params: Promise<{ cardId: strin
     const proto = headerStore.get('x-forwarded-proto') ?? 'https'
     const host = headerStore.get('host') ?? 'tcgclaim.online'
     const origin = `${proto}://${host}`
-    const canonicalUrl = `${origin}/card/${cardId}/${data.name.split(' ').join('-').toLowerCase()}`
+    const canonicalUrl = `${origin}/carta/${encodeURIComponent(data.cardId)}/${cardSlug(data.name)}`
     jsonLd = {
       '@context': 'https://schema.org',
       '@type': 'Product',

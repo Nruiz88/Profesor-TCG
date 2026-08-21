@@ -28,6 +28,8 @@ export interface OgBinderData {
 }
 
 export interface OgCardData {
+  /** Id de catálogo de la carta (el que usan /carta/[cardId]). */
+  cardId: string
   name: string
   setId: string
   set_name: string
@@ -263,6 +265,7 @@ export async function getCardOgData(cardId: string): Promise<OgCardData | null> 
   const set_name = sets.find((s) => s.id === card.set_id)?.name ?? card.set_id
 
   return {
+    cardId: card.card_id,
     name: card.card_name,
     setId: card.set_id,
     set_name,

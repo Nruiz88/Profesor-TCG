@@ -23,6 +23,8 @@ import {
   DiscordIcon
 } from '@/components/icons'
 
+const APP_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
+
 const FEATURES = [
   {
     icon: CardsIcon,
@@ -143,6 +145,45 @@ export default async function LandingPage() {
   } = await supabase.auth.getUser()
 
   return (
+    <>
+      {/* Datos estructurados (JSON-LD) de la marca y del sitio: habilita el
+          sitelinks searchbox y la marca en resultados de Google. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'Organization',
+                '@id': `${APP_URL}/#organization`,
+                name: 'TCG Claim',
+                url: `${APP_URL}/`,
+                logo: `${APP_URL}/brand/logo-invertido.png`,
+                sameAs: [
+                  'https://discord.gg/NxuWmFKPuZ',
+                  'https://www.instagram.com/tcgclaim'
+                ]
+              },
+              {
+                '@type': 'WebSite',
+                '@id': `${APP_URL}/#website`,
+                url: `${APP_URL}/`,
+                name: 'TCG Claim',
+                publisher: { '@id': `${APP_URL}/#organization` },
+                potentialAction: {
+                  '@type': 'SearchAction',
+                  target: {
+                    '@type': 'EntryPoint',
+                    urlTemplate: `${APP_URL}/explore?q={search_term_string}`
+                  },
+                  'query-input': 'required name=search_term_string'
+                }
+              }
+            ]
+          })
+        }}
+      />
     <div className="relative min-h-screen bg-slate-950 text-slate-300">
       <GhostPokemon />
       {/* Nav */}
@@ -502,5 +543,6 @@ export default async function LandingPage() {
       </section>
 
     </div>
+    </>
   )
 }
