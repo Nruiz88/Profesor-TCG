@@ -17,6 +17,7 @@ import WantlistSlot from '@/components/binder/WantlistSlot'
 import dynamic from 'next/dynamic'
 import ReservedClaimsBanner from '@/components/ReservedClaimsBanner'
 import SellerReputationCard from '@/components/SellerReputationCard'
+import DiscordBanner from '@/components/DiscordBanner'
 import {
   ChatIcon,
   GearIcon,
@@ -684,6 +685,10 @@ export default function BinderPage() {
         />
 
         <main className="min-w-0 flex-1 pb-20 lg:pb-0">
+            <DiscordBanner
+              title="Tu colección, más visible en la comunidad"
+              className="mx-4 mb-5"
+            />
             {/* Header compacto: título + stats inline + acciones */}
             <div className="relative z-40 mb-5 rounded-2xl border border-slate-800/90 bg-slate-900/60 backdrop-blur-xl">
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">

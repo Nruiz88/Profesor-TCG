@@ -7,6 +7,7 @@ import { ENERGY_TYPES, TypeIcon } from '@/components/TypeIcon'
 import { CARD_LANGUAGES, CARD_LANGUAGE_META } from '@/lib/cardLanguage'
 import { ChevronDownIcon, SearchIcon, XIcon } from '@/components/icons'
 import GhostPokemon from '@/components/GhostPokemon'
+import DiscordBanner from '@/components/DiscordBanner'
 
 type View = 'cards' | 'binders'
 type Mode = 'all' | 'for_sale' | 'for_trade'
@@ -218,6 +219,11 @@ export default function ExplorePage() {
             </div>
           ))}
         </section>
+
+        <DiscordBanner
+          title="¿No encontrás esa carta en el mercado?"
+          className="mt-6"
+        />
 
         {/* Switch de vista (fuera de la caja de filtros) */}
         <div className="mt-8 flex w-fit gap-2">

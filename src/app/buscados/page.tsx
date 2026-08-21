@@ -8,6 +8,7 @@ import type {
 } from '@/app/api/public/wantlist/route'
 import { ENERGY_TYPES, TypeIcon } from '@/components/TypeIcon'
 import { ChevronDownIcon, SearchIcon, SparklesIcon, XIcon } from '@/components/icons'
+import DiscordBanner from '@/components/DiscordBanner'
 
 const PAGE_SIZE = 24
 const MAX_RESULTS = 120
@@ -166,6 +167,11 @@ export default function BuscadosPage() {
             </div>
           ))}
         </section>
+
+        <DiscordBanner
+          title="¿Tenés una de las buscadas?"
+          className="mt-6"
+        />
 
         {/* Caja de filtros */}
         <section className="mt-8 rounded-3xl border border-fuchsia-500/15 bg-slate-900/40 p-4 shadow-[0_16px_50px_-20px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-5">
