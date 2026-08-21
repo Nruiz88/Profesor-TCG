@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { listNotas } from '@/lib/notas'
 
 export const metadata: Metadata = {
-  title: 'Notas de desarrollo'
+  title: 'Notas de desarrollo',
+  robots: { index: false, follow: false }
 }
 
 export default async function NotasPage() {

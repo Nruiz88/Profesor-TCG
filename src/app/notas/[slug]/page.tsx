@@ -14,7 +14,9 @@ export async function generateMetadata({ params }: NotaPageProps): Promise<Metad
   const { slug } = await params
   const nota = await getNota(slug)
   return {
-    title: nota ? nota.title : 'Nota no encontrada'
+    title: nota ? nota.title : 'Nota no encontrada',
+    // Documentación interna de desarrollo: no indexar en Google.
+    robots: { index: false, follow: false }
   }
 }
 

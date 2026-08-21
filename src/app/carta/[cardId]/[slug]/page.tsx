@@ -55,15 +55,9 @@ const title = `${data.name} #${data.number} — Precios y Claims`
       type: 'website',
       url: catalogUrl(data),
       siteName: 'TCG Claim',
-      locale: 'es_AR',
-      images: [
-        {
-          url: data.image,
-          width: 734,
-          height: 1024,
-          alt: `Carta Pokémon ${data.name} de ${data.set_name}`
-        }
-      ]
+      locale: 'es_AR'
+      // og:image lo genera opengraph-image.tsx de este segmento (imagen de la
+      // carta con precio y marca), mejor que la imagen cruda de 734x1024.
     }
   }
 }
