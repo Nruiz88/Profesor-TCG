@@ -21,5 +21,10 @@ async function loadLogo(): Promise<string | null> {
 // Twitter card image: misma imagen que el OG de la app.
 export default async function Image() {
   const logo = await loadLogo()
-  return new ImageResponse(<AppOgImage logo={logo} />, { ...size })
+  const res = new ImageResponse(<AppOgImage logo={logo} />, { ...size })
+  res.headers.set(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
+  )
+  return res
 }

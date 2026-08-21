@@ -12,11 +12,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
   const supabase = await createClient()
 
   try {
-    // Revertir soft locks de 24h vencidos antes de servir (service role)
+    // Revertir soft locks de 24h vencidos (service role), throttled a 5 min
+    // por instancia para no escribir en DB con cada request.
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     if (serviceKey && url) {
-      await revertExpiredReservations(createAdminClient(url, serviceKey))
+      await revertExpiredReservations(createAdminClient(url, serviceKey), {
+        minIntervalMs: 5 * 60 * 1000
+      })
     }
 
     // RLS: solo devuelve el binder si is_public = true (para visitantes anónimos)
@@ -87,12 +90,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
       })
     )
 
-    return NextResponse.json({
-      binder: { id: binder.id, title: binder.title },
-      owner,
-      cards: enriched,
-      wantlist: wantlistEnriched
-    })
+    return NextResponse.json(
+      {
+        binder: { id: binder.id, title: binder.title },
+        owner,
+        cards: enriched,
+        wantlist: wantlistEnriched
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600'
+        }
+      }
+    )
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
     return NextResponse.json({ error: message }, { status: 500 })

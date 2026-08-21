@@ -11,5 +11,10 @@ export const alt = 'Perfil en TCG Claim'
 export default async function Image({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params
   const data = await getProfileOgData(username)
-  return new ImageResponse(<ProfileOgImage data={data} />, { ...size })
+  const res = new ImageResponse(<ProfileOgImage data={data} />, { ...size })
+  res.headers.set(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
+  )
+  return res
 }

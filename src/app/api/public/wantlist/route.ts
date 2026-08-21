@@ -192,7 +192,14 @@ export async function GET(req: Request) {
       cities
     }
 
-    return NextResponse.json({ wantlist: page, facets, hasMore })
+    return NextResponse.json(
+      { wantlist: page, facets, hasMore },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600'
+        }
+      }
+    )
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
     return NextResponse.json({ error: message }, { status: 500 })

@@ -16,5 +16,10 @@ export default async function Image({
 }) {
   const { cardId } = await params
   const data = await getCatalogCardPageData(cardId)
-  return new ImageResponse(<CatalogCardOgImage data={data} />, { ...size })
+  const res = new ImageResponse(<CatalogCardOgImage data={data} />, { ...size })
+  res.headers.set(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
+  )
+  return res
 }

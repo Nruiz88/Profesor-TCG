@@ -73,13 +73,20 @@ export async function GET() {
       // fallback al conteo limitado
     }
 
-    return NextResponse.json({
-      catalogCards: catalog.size,
-      marketValue,
-      sellers: sellers.size,
-      users,
-      activeListings
-    })
+    return NextResponse.json(
+      {
+        catalogCards: catalog.size,
+        marketValue,
+        sellers: sellers.size,
+        users,
+        activeListings
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600'
+        }
+      }
+    )
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
     return NextResponse.json({ error: message }, { status: 500 })

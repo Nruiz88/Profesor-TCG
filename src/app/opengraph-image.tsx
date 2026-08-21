@@ -24,5 +24,10 @@ async function loadLogo(): Promise<string | null> {
 // imagen propia. Generada al vuelo con @vercel/og.
 export default async function Image() {
   const logo = await loadLogo()
-  return new ImageResponse(<AppOgImage logo={logo} />, { ...size })
+  const res = new ImageResponse(<AppOgImage logo={logo} />, { ...size })
+  res.headers.set(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
+  )
+  return res
 }

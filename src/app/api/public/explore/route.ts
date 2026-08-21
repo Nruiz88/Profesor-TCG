@@ -502,7 +502,14 @@ async function getCards(
     cities
   }
 
-  return NextResponse.json({ cards, facets, hasMore })
+  return NextResponse.json(
+    { cards, facets, hasMore },
+    {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600'
+      }
+    }
+  )
 }
 
 export interface ExploreBinder {
@@ -592,5 +599,12 @@ async function getBinders(supabase: SupabaseClient) {
 
   result.sort((a, b) => b.totalActive - a.totalActive)
 
-  return NextResponse.json({ binders: result, facets: null })
+  return NextResponse.json(
+    { binders: result, facets: null },
+    {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600'
+      }
+    }
+  )
 }

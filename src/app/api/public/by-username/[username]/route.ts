@@ -13,11 +13,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
   const supabase = await createClient()
 
   try {
-    // Revertir soft locks de 24h vencidos antes de servir (service role)
+    // Revertir soft locks de 24h vencidos (service role), throttled a 5 min.
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     if (serviceKey && url) {
-      await revertExpiredReservations(createAdminClient(url, serviceKey))
+      await revertExpiredReservations(createAdminClient(url, serviceKey), {
+        minIntervalMs: 5 * 60 * 1000
+      })
     }
 
     const { data: profile } = await supabase
@@ -64,17 +66,24 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
       }))
     )
 
-    return NextResponse.json({
-      binder: { id: binder.id, title: binder.title },
-      owner: {
-        id: profile.id,
-        username: profile.username,
-        whatsapp_number: profile.whatsapp_number,
-        country: profile.country,
-        city: profile.city
+    return NextResponse.json(
+      {
+        binder: { id: binder.id, title: binder.title },
+        owner: {
+          id: profile.id,
+          username: profile.username,
+          whatsapp_number: profile.whatsapp_number,
+          country: profile.country,
+          city: profile.city
+        },
+        cards: enriched
       },
-      cards: enriched
-    })
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600'
+        }
+      }
+    )
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'
     return NextResponse.json({ error: message }, { status: 500 })

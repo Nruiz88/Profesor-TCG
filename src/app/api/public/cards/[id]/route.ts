@@ -93,6 +93,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             city: owner.city
           }
         : null
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300'
+      }
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error desconocido'

@@ -11,5 +11,10 @@ export const alt = 'Binder en TCG Claim'
 export default async function Image({ params }: { params: Promise<{ param: string }> }) {
   const { param } = await params
   const data = await getBinderOgData({ binderKey: param })
-  return new ImageResponse(<BinderOgImage data={data} />, { ...size })
+  const res = new ImageResponse(<BinderOgImage data={data} />, { ...size })
+  res.headers.set(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
+  )
+  return res
 }

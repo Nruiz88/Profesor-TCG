@@ -19,5 +19,10 @@ export default async function Image({
   const { username } = await params
   const { binderId } = await searchParams
   const data = await getBinderOgData(binderId ? { binderId } : { username })
-  return new ImageResponse(<BinderOgImage data={data} />, { ...size })
+  const res = new ImageResponse(<BinderOgImage data={data} />, { ...size })
+  res.headers.set(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
+  )
+  return res
 }

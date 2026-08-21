@@ -97,7 +97,21 @@ export function cardPublicUrl(cardId: string, cardName: string): string {
 // Es best-effort: si la columna no existe todavía (migración pendiente) o hay
 // cualquier error transitorio, se traga el problema y devuelve 0 — un revert
 // de mantenimiento nunca debe romper una lectura del binder.
-export async function revertExpiredReservations(admin: SupabaseClient): Promise<number> {
+// Throttle por instancia: la reversión de reservas expiradas se ejecuta como
+// máximo cada minIntervalMs (por defecto 0 = siempre). En el path caliente de
+// las vistas públicas de binder se pasa un intervalo para no escribir en DB
+// con cada request.
+let lastRevertAt = 0
+export async function revertExpiredReservations(
+  admin: SupabaseClient,
+  opts?: { minIntervalMs?: number }
+): Promise<number> {
+  const minInterval = opts?.minIntervalMs ?? 0
+  if (minInterval > 0) {
+    const now = Date.now()
+    if (now - lastRevertAt < minInterval) return 0
+    lastRevertAt = now
+  }
   try {
     const now = new Date().toISOString()
     const { data: expired, error } = await admin
