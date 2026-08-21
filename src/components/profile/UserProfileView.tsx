@@ -387,7 +387,7 @@ export default function UserProfileView({
         )}
 
         {/* ═══════════ 2. SECCIÓN PRINCIPAL ═══════════ */}
-        <section className="mb-6 flex flex-col gap-6 lg:grid lg:grid-cols-3 lg:gap-6">
+        <section className="mb-6 flex flex-col gap-6 lg:grid lg:grid-cols-5 lg:gap-6">
           {/* Columna izquierda (2 cols): credential + portfolio + showcase */}
           <div className="flex flex-col gap-6 lg:col-span-2">
             {/* a) Tarjeta de presentación / ID */}
@@ -406,7 +406,7 @@ export default function UserProfileView({
           </div>
 
           {/* Columna derecha: Pokédex + Trainer Score */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 lg:col-span-3">
             {pokedex && pokedex.total > 0 && (
               <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl">
                 <div className="flex flex-wrap items-center justify-between gap-3">
