@@ -10,6 +10,7 @@ import { effectivePrice, normalizeStatus } from '@/lib/cardStatus'
 import { formatPrice } from '@/lib/priceGuide'
 import LanguageBadge from './LanguageBadge'
 import ConditionBadge from './ConditionBadge'
+import { LockIcon } from '@/components/icons'
 import type { SellerInfo } from './SellerInfoBadge'
 
 interface BinderSheetProps {
@@ -122,6 +123,16 @@ export default function BinderSheet({
                     </div>
                   )
                 })()}
+
+                {/* Candado: solo en vista pública, cartas NO en venta/cambio */}
+                {!onRemoveSlot && !onEditCard && !card.is_for_sale && !card.is_for_trade && (
+                  <div
+                    title={`${card.card_name} no está en venta`}
+                    className="pointer-events-none absolute bottom-1.5 right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 shadow-md ring-1 ring-white/20"
+                  >
+                    <LockIcon className="h-3.5 w-3.5 text-slate-400" />
+                  </div>
+                )}
 
                 {/* Badge de estado según disponibilidad */}
                 <CardStatusBadge
