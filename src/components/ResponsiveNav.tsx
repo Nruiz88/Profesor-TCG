@@ -9,6 +9,7 @@ import {
   CompassIcon,
   GearIcon,
   HomeIcon,
+  LogoutIcon,
   PokeballIcon,
   UserIcon
 } from '@/components/icons'
@@ -156,6 +157,14 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
 
   const admin = !!profile?.is_admin
 
+  async function logout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    setOpenPopover(null)
+    router.push('/')
+    router.refresh()
+  }
+
   const menuProps: SidebarMenuProps = {
     profile,
     user,
@@ -249,7 +258,15 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
             },
             ...(admin
               ? [{ label: 'Panel Admin', href: '/admin' as const }]
-              : [])
+              : []),
+            {
+              label: 'Salir',
+              icon: <LogoutIcon className="h-4 w-4" />,
+              onClick: () => {
+                setOpenPopover(null)
+                void logout()
+              }
+            }
           ]
         : []
     }
