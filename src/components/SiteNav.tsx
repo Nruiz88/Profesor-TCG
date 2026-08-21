@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   CardsIcon,
   CompassIcon,
+  DiscordIcon,
   HomeIcon,
   LogoutIcon,
   MenuIcon,
@@ -176,6 +177,16 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
 
         {/* Acciones de sesión (escritorio) */}
         <div className="hidden items-center gap-2 lg:flex">
+          <a
+            href="https://discord.gg/NxuWmFKPuZ"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-xl bg-[#5865F2] px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition-colors hover:bg-[#4752c4]"
+            title="Unite a la comunidad en Discord"
+          >
+            <DiscordIcon className="h-4 w-4" />
+            <span className="hidden xl:inline">Discord</span>
+          </a>
           {user ? (
             <>
               <NotificationsBell />
@@ -268,6 +279,16 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
               </div>
 
               <div className="my-2 h-px bg-slate-800" />
+
+              <a
+                href="https://discord.gg/NxuWmFKPuZ"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-xl bg-[#5865F2] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#4752c4]"
+              >
+                <DiscordIcon className="h-4 w-4" />
+                Unirme al Discord
+              </a>
 
               {user ? (
                 <button

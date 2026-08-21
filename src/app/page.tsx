@@ -18,7 +18,8 @@ import {
   SwapIcon,
   GlobeIcon,
   ChatIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  DiscordIcon
 } from '@/components/icons'
 
 const FEATURES = [
@@ -464,6 +465,30 @@ export default async function LandingPage() {
             Crear mi Binder Gratis
             <ArrowRightIcon width={17} height={17} />
           </Link>
+        </div>
+      </section>
+
+      {/* CTA comunidad */}
+      <section className="border-t border-slate-800/60 bg-gradient-to-b from-[#5865F2]/10 to-transparent py-14">
+        <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 px-4 text-center md:flex-row md:justify-between md:text-left">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-white">
+              La comunidad ya está armada
+            </h2>
+            <p className="mt-2 max-w-xl text-slate-400">
+              Trueques, precios y novedades en tiempo real. Sumate al Discord para coordinar
+              intercambios y estar al día con la colección.
+            </p>
+          </div>
+          <a
+            href="https://discord.gg/NxuWmFKPuZ"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#5865F2] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-indigo-900/40 transition-colors hover:bg-[#4752c4]"
+          >
+            <DiscordIcon width={20} height={20} />
+            Unirme al Discord
+          </a>
         </div>
       </section>
 
