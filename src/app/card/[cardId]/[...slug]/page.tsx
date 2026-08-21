@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 import { getCardOgData } from '@/lib/og'
 import { cardSlug } from '@/lib/catalogPages'
 import PublicCardView from './card-view'
@@ -55,6 +56,8 @@ export async function generateMetadata({
 export default async function Page({ params }: { params: Promise<{ cardId: string; slug: string[] }> }) {
   const { cardId } = await params
   const data = await getCardOgData(cardId)
+  // 404 real si la carta no existe o no está publicada (venta/cambio).
+  if (!data) notFound()
 
   // Datos estructurados (JSON-LD) para SEO: schema de Product/Offer.
   // Ayuda a Google a mostrar rich snippets con el precio y la disponibilidad.

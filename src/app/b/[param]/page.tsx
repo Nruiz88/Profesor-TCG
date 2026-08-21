@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { getBinderOgData } from '@/lib/og'
 import PublicBinderPage from './binder-view'
 
@@ -34,5 +35,8 @@ export async function generateMetadata({
 
 export default async function Page({ params }: { params: Promise<{ param: string }> }) {
   const { param } = await params
+  // 404 real si el slug/uuid no resuelve a un binder público.
+  const data = await getBinderOgData({ binderKey: param })
+  if (!data) notFound()
   return <PublicBinderPage param={param} />
 }

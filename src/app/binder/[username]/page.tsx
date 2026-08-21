@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { getBinderOgData } from '@/lib/og'
 import PublicBinderByUsernameView from './binder-view'
 
@@ -47,5 +48,9 @@ export default async function Page({
 }) {
   const { username } = await params
   const { binderId } = await searchParams
+  // Si no hay binder público (o el ?binderId no es público), devolvemos 404
+  // real en el server en vez del soft 404 que veía la vista client-side.
+  const data = await getBinderOgData(binderId ? { binderId } : { username })
+  if (!data) notFound()
   return <PublicBinderByUsernameView username={username} binderId={binderId} />
 }
