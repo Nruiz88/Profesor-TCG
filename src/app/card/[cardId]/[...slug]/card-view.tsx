@@ -182,38 +182,82 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
 
           {/* Info + acciones */}
           <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight text-white">{card.card_name}</h1>
-              <LanguageBadge language={card.language} />
+            {/* Estado + rareza */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${
+                  isReserved
+                    ? 'border border-amber-500/40 bg-amber-500/10 text-amber-300'
+                    : card.is_for_sale && card.is_for_trade
+                      ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                      : card.is_for_sale
+                        ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                        : 'border border-sky-500/40 bg-sky-500/10 text-sky-300'
+                }`}
+              >
+                {isReserved
+                  ? '⏳ Reservada'
+                  : card.is_for_sale && card.is_for_trade
+                    ? 'En venta o cambio'
+                    : card.is_for_sale
+                      ? 'En venta'
+                      : 'Acepta cambios'}
+              </span>
+              {card.rarity && (
+                <span className="rounded-full border border-slate-700 bg-slate-800/60 px-3 py-1 text-[11px] font-semibold text-slate-300">
+                  {card.rarity}
+                </span>
+              )}
             </div>
+
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">
+              {card.card_name}
+            </h1>
             <p className="mt-1 text-sm text-slate-400">
-              {card.set_id.toUpperCase()} · #{card.number}
-              {card.condition && <span className="ml-2 text-slate-500">· {formatCondition(card.condition)}</span>}
+              {card.set_name} · {card.set_id.toUpperCase()} #{card.number}
             </p>
             <Link
               href={`/carta/${encodeURIComponent(card.card_id)}/${slugify(card.card_name)}`}
               className="mt-2 inline-block text-xs font-medium text-slate-500 transition-colors hover:text-rose-300"
             >
-              📋 Ver ficha completa de {card.card_name} en el catálogo →
+              📋 Ver ficha completa en el catálogo →
             </Link>
 
-            {/* Precio */}
-            <div className="relative mt-5 overflow-hidden rounded-2xl border border-emerald-500/25 bg-slate-900 p-4">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
-              <p className="text-[10px] uppercase tracking-widest text-emerald-500/60">Precio</p>
-              <p className="text-3xl font-bold text-emerald-400">
-                {card.price != null ? formatPrice(card.price, card.currency) : 'Consultar'}
+            {/* Precio destacado */}
+            <div className="relative mt-6 overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-slate-900 p-5">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/70 to-transparent" />
+              <p className="text-[10px] uppercase tracking-widest text-emerald-500/70">
+                Precio de venta
+              </p>
+              <div className="mt-1 flex flex-wrap items-end gap-2">
+                <p className="text-4xl font-black text-emerald-400">
+                  {card.price != null ? formatPrice(card.price, card.currency) : 'Consultar'}
+                </p>
                 {card.is_user_reported && (
-                  <span className="ml-2 text-xs font-semibold text-emerald-400/60">★ manual</span>
+                  <span className="mb-1 text-xs font-semibold text-emerald-400/60">★ manual</span>
                 )}
+              </div>
+              <p className="mt-1 text-xs text-slate-400">
+                Pago coordinado directo con el vendedor por WhatsApp · sin comisiones
               </p>
-              <p className="mt-1 text-xs text-slate-500">
-                {card.is_for_sale && card.is_for_trade
-                  ? 'En venta y acepta intercambios'
-                  : card.is_for_sale
-                    ? 'En venta'
-                    : 'Acepta intercambios'}
-              </p>
+            </div>
+
+            {/* Datos del ejemplar */}
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {card.condition && (
+                <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2.5">
+                  <p className="text-[10px] uppercase tracking-widest text-slate-500">Condición</p>
+                  <p className="text-sm font-semibold text-white">
+                    {formatCondition(card.condition)}
+                  </p>
+                </div>
+              )}
+              <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2.5">
+                <p className="text-[10px] uppercase tracking-widest text-slate-500">Idioma</p>
+                <p className="text-sm font-semibold text-white">
+                  <LanguageBadge language={card.language} />
+                </p>
+              </div>
             </div>
 
             {card.trade_notes && (
@@ -239,9 +283,9 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
             <div className="mt-6 flex flex-col gap-3">
               <button
                 onClick={() => setShowClaim(true)}
-                className="rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-emerald-900/40 transition-colors hover:bg-emerald-500"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-4 text-base font-black text-[#05331a] shadow-lg shadow-emerald-950/50 transition-all hover:brightness-110"
               >
-                ⚡ Hacer Claim / Reclamar
+                ⚡ Comprar por WhatsApp
               </button>
 
               {binder.is_public && owner && (
