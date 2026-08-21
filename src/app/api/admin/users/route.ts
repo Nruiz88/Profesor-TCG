@@ -4,7 +4,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-export const MAX_PAGE_SIZE = 50
+const MAX_PAGE_SIZE = 50
 
 // Listado paginado de usuarios para el panel admin: búsqueda por usuario o
 // ubicación y paginación server-side (evita cargar toda la tabla en el cliente).
