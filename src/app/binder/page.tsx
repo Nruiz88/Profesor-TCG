@@ -97,6 +97,16 @@ export default function BinderPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [pendingOrder, setPendingOrder] = useState<(SlotCard | null)[] | null>(null)
   const [showShareImage, setShowShareImage] = useState(false)
+  const [shareBinderUrl, setShareBinderUrl] = useState<string | null>(null)
+
+  // Abre el modal de compartir imagen con la URL pública del binder (la
+  // asegura primero: si está privado lo hace público, igual que copiar link).
+  async function openShareImage() {
+    const url = await ensurePublicBinder()
+    if (!url) return
+    setShareBinderUrl(url)
+    setShowShareImage(true)
+  }
 
   const loadBinder = useCallback(async (binderId?: string) => {
     try {
@@ -802,7 +812,7 @@ export default function BinderPage() {
                   {/* Imagen del binder */}
                   <div className="group relative">
                     <button
-                      onClick={() => setShowShareImage(true)}
+                      onClick={openShareImage}
                       disabled={!binder}
                       title="Imagen del binder"
                       className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-slate-950 text-slate-300 transition-colors hover:border-slate-500 hover:text-white disabled:opacity-40"
@@ -1123,12 +1133,12 @@ export default function BinderPage() {
         </div>
       )}
 
-      {showShareImage && profile?.username && binder && (
+      {showShareImage && profile?.username && binder && shareBinderUrl && (
         <BinderShareModal
           binderTitle={binder?.title ?? 'Mi Binder'}
           cards={cards}
           username={profile.username}
-          binderUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}${binder.slug ? `/b/${encodeURIComponent(binder.slug)}` : `/binder/${encodeURIComponent(profile.username)}?binderId=${encodeURIComponent(binder.id)}`}`}
+          binderUrl={shareBinderUrl}
           onClose={() => setShowShareImage(false)}
         />
       )}
