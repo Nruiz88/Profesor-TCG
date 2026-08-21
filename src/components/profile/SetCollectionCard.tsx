@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import type { WantlistCard } from '@/types/wantlist'
+import { slugify } from '@/lib/utils'
 
 interface SetCollectionCardProps {
   setId: string
@@ -119,13 +121,17 @@ export default function SetCollectionCard({
           </p>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
             {wanted.map((w) => (
-              <div key={w.id} className="relative">
-                <div className="aspect-[2.5/3.5] overflow-hidden rounded-xl border border-dashed border-fuchsia-500/30 bg-slate-800/30">
+              <Link
+                key={w.id}
+                href={`/carta/${encodeURIComponent(w.card_id)}/${slugify(w.card_name)}`}
+                className="group/card relative block"
+              >
+                <div className="aspect-[2.5/3.5] overflow-hidden rounded-xl border border-dashed border-fuchsia-500/30 bg-slate-800/30 transition-colors group-hover/card:border-fuchsia-400/60">
                   {w.image ? (
                     <img
                       src={w.image}
                       alt={w.card_name}
-                      className="h-full w-full object-cover opacity-70"
+                      className="h-full w-full object-cover opacity-70 transition-opacity group-hover/card:opacity-100"
                       loading="lazy"
                     />
                   ) : (
@@ -134,10 +140,10 @@ export default function SetCollectionCard({
                     </div>
                   )}
                 </div>
-                <p className="mt-1 truncate text-center text-[10px] text-fuchsia-400">
+                <p className="mt-1 truncate text-center text-[10px] text-fuchsia-400 transition-colors group-hover/card:text-fuchsia-300">
                   #{w.number} {w.card_name}
                 </p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
