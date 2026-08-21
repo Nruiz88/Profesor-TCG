@@ -1,0 +1,44 @@
+.wantcm-overlay {
+  z-index: 60;
+}
+
+.wantcm-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 18rem;
+  padding: 2.5rem;
+}
+
+.wantcm-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.5rem;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(217, 70, 239, 0.18), transparent 65%);
+}
+
+.wantcm-card {
+  position: relative;
+  width: 100%;
+}
+
+.wantcm-close {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  z-index: 10;
+  border-radius: 9999px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  transition: background-color 0.15s ease;
+}
+
+.wantcm-close:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}

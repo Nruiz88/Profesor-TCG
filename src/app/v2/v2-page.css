@@ -1,0 +1,12 @@
+.v2p-root {
+  position: relative;
+  min-height: 100vh;
+  background-color: #020617;
+  color: #cbd5e1;
+}
+
+.v2p-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}

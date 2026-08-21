@@ -91,6 +91,12 @@ export const wantlistSchema = z.object({
   q: safeQuery,
   type: safeQuery,
   city: safeQuery,
+  set: safeQuery,
+  rarity: safeQuery,
+  sort: z
+    .enum(['recent', 'name', 'budget_desc'])
+    .optional()
+    .default('recent'),
   limit,
   offset
 })

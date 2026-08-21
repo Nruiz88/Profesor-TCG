@@ -5,7 +5,7 @@ import Link from 'next/link'
 import WantlistSlot from '@/components/binder/WantlistSlot'
 import { buildSwapOfferUrl } from '@/lib/matchmaking'
 import { createClient } from '@/lib/supabase/client'
-import { cardPublicUrl } from '@/lib/claim'
+import WantCardModal from '@/app/v2/WantCardModal'
 import type { PublicWantlistEntry } from '@/app/api/public/wantlist/route'
 import type { WantlistCard } from '@/types/wantlist'
 
@@ -47,6 +47,7 @@ export default function WantlistGrid({
     username?: string
     slotByCardId: Record<string, string>
   } | null>(null)
+  const [selected, setSelected] = useState<PublicWantlistEntry | null>(null)
 
   // Sesión del visitante: permite armar el deep link "¡Yo la tengo!" apuntando
   // al slot exacto de su binder dentro del mensaje de WhatsApp.
@@ -112,6 +113,7 @@ export default function WantlistGrid({
   }
 
   return (
+    <>
     <div
       className={
         compact
@@ -149,16 +151,23 @@ export default function WantlistGrid({
             <WantlistSlot entry={toWantlistCard(w)} offerUrl={offerUrl ?? undefined} />
 
             {!offerUrl && (
-              <Link
-                href={cardPublicUrl(w.card_id, w.card_name)}
-                className="mt-2 block rounded-lg border border-slate-700 px-2.5 py-1.5 text-center text-xs font-bold text-slate-300 transition-colors hover:border-fuchsia-500/50 hover:text-fuchsia-300"
+              <button
+                type="button"
+                onClick={() => setSelected(w)}
+                className="mt-2 block w-full rounded-lg border border-slate-700 px-2.5 py-1.5 text-center text-xs font-bold text-slate-300 transition-colors hover:border-fuchsia-500/50 hover:text-fuchsia-300"
               >
                 Ver carta
-              </Link>
+              </button>
             )}
           </div>
         )
       })}
     </div>
+
+      {/* Modal de la carta buscada (sola, sin fondo, con efecto holo) */}
+      {selected && (
+        <WantCardModal entry={toWantlistCard(selected)} onClose={() => setSelected(null)} />
+      )}
+    </>
   )
 }

@@ -1,0 +1,289 @@
+.v2m-overlay {
+  z-index: 50;
+}
+
+.v2m-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 48rem;
+  max-height: 90vh;
+}
+
+@media (min-width: 640px) {
+  .v2m-container {
+    flex-direction: row;
+  }
+}
+
+.v2m-close {
+  position: absolute;
+  right: 0.75rem;
+  top: 0.75rem;
+  z-index: 20;
+  border-radius: 9999px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.v2m-close:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.v2m-cardcol {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .v2m-cardcol {
+    width: 58%;
+  }
+}
+
+.v2m-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(244, 63, 94, 0.14), transparent 62%);
+}
+
+.v2m-imgwrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 63 / 88;
+}
+
+@media (min-width: 640px) {
+  .v2m-imgwrap {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+  }
+}
+
+.v2m-info {
+  display: flex;
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  border-radius: 1rem;
+  border: 1px solid #1e293b;
+  background-color: #0f172a;
+  padding: 1rem;
+}
+
+.v2m-nameblock {
+  text-align: center;
+}
+
+.v2m-name {
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.25;
+  color: #fff;
+}
+
+@media (min-width: 640px) {
+  .v2m-name {
+    font-size: 1.5rem;
+  }
+}
+
+.v2m-setline {
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.v2m-setlogo {
+  height: 1.25rem;
+  max-width: 6rem;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.v2m-setname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2m-setnum {
+  flex-shrink: 0;
+}
+
+.v2m-price {
+  font-size: 1.875rem;
+  font-weight: 900;
+  color: #34d399;
+}
+
+.v2m-trade {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.v2m-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.v2m-chip {
+  border-radius: 9999px;
+  border: 1px solid #334155;
+  background-color: #020617;
+  padding: 0.25rem 0.625rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.v2m-seller {
+  border-radius: 0.75rem;
+  border: 1px solid #1e293b;
+  background-color: rgba(2, 6, 23, 0.5);
+  padding: 0.75rem;
+}
+
+.v2m-sellerrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.v2m-avatar {
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-image: linear-gradient(to bottom right, #f43f5e, #f59e0b);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.v2m-sellermeta {
+  min-width: 0;
+}
+
+.v2m-sellername {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.v2m-verified {
+  margin-left: 0.25rem;
+  color: #34d399;
+}
+
+.v2m-sellerloc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.v2m-rating {
+  margin-left: 0.25rem;
+  color: #fbbf24;
+}
+
+.v2m-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.25rem;
+}
+
+.v2m-whatsapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.v2m-whatsapp--sale {
+  background-color: #10b981;
+  color: #fff;
+  box-shadow: 0 10px 15px -3px rgb(2 44 34 / 0.4), 0 4px 6px -4px rgb(2 44 34 / 0.4);
+}
+
+.v2m-whatsapp--sale:hover {
+  background-color: #34d399;
+}
+
+.v2m-whatsapp--trade {
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  background-color: rgba(56, 189, 248, 0.1);
+  color: #7dd3fc;
+}
+
+.v2m-whatsapp--trade:hover {
+  background-color: #0ea5e9;
+  color: #fff;
+}
+
+.v2m-nocontact {
+  border-radius: 0.75rem;
+  border: 1px solid #1e293b;
+  background-color: rgba(2, 6, 23, 0.6);
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+  font-size: 11px;
+  color: #475569;
+}
+
+.v2m-binder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 0.75rem;
+  border: 1px solid #334155;
+  background-color: rgba(15, 23, 42, 0.6);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.v2m-binder:hover {
+  border-color: #64748b;
+  color: #fff;
+}

@@ -13,7 +13,7 @@ import DiscordBanner from '@/components/DiscordBanner'
 const PAGE_SIZE = 24
 const MAX_RESULTS = 120
 
-const EMPTY_FACETS: WantlistFacets = { sets: [], cities: [] }
+const EMPTY_FACETS: WantlistFacets = { sets: [], rarities: [], cities: [] }
 
 function SkeletonTile() {
   return (

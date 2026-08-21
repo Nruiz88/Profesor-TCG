@@ -5,7 +5,9 @@ import Image from 'next/image'
 import type { ExploreBinder, ExploreCard } from '@/app/api/public/explore/route'
 import { formatLocation, whatsAppLink } from '@/lib/profile'
 import { slugify } from '@/lib/utils'
+import { exploreToSlot } from '@/lib/exploreToSlot'
 import { AlertIcon, ArrowRightIcon } from '@/components/icons'
+import PokemonCard from '@/components/PokemonCard'
 
 // Mensaje pre-armado del claim (mismo formato que el resto de la app)
 function claimHref(card: ExploreCard): string {
@@ -24,7 +26,7 @@ function binderHref(card: ExploreCard): string {
 const fmtUsd = (n: number) =>
   n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-function SkeletonCard() {
+function SkeletonCard({ compact = false }: { compact?: boolean }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/40 p-3.5">
       <div className="shimmer aspect-[63/88] rounded-xl" />
@@ -38,16 +40,31 @@ function SkeletonCard() {
 
 export default function MarketGrid({
   cards,
-  loading
+  loading,
+  compact = false,
+  onCardClick,
+  holo = false
 }: {
   cards: ExploreCard[]
   loading: boolean
+  /** Modo compacto (home v2): cartas más chicas y más columnas (hasta 5). */
+  compact?: boolean
+  /** Si se pasa, el click en la carta abre un modal en vez de navegar. */
+  onCardClick?: (card: ExploreCard) => void
+  /** Renderiza la carta con efecto holo/3D (PokemonCard) en vez de la imagen plana. */
+  holo?: boolean
 }) {
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <SkeletonCard key={i} />
+      <div
+        className={
+          compact
+            ? 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+            : 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'
+        }
+      >
+        {Array.from({ length: 10 }).map((_, i) => (
+          <SkeletonCard key={i} compact={compact} />
         ))}
       </div>
     )
@@ -70,7 +87,13 @@ export default function MarketGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+    <div
+      className={
+        compact
+          ? 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+          : 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'
+      }
+    >
       {cards.map((card, idx) => {
         const isSale = card.status === 'for_sale' && card.price != null
         const location = formatLocation(card.city, card.country)
@@ -84,22 +107,50 @@ export default function MarketGrid({
             }`}
           >
             {/* Marco interno de la carta */}
-            <div className="relative overflow-hidden rounded-xl bg-slate-950/60">
-              <Link
-                href={binderHref(card)}
-                className="relative block aspect-[63/88]"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <Image
-                  src={card.image}
-                  alt={card.card_name}
-                  fill
-                  priority={idx === 0}
-                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              </Link>
+            <div className="relative rounded-xl bg-slate-950/60">
+              {onCardClick ? (
+                <button
+                  type="button"
+                  onClick={() => onCardClick(card)}
+                  className="relative block aspect-[63/88] w-full cursor-pointer text-left"
+                  aria-label={`Ver detalle de ${card.card_name}`}
+                >
+                  {holo ? (
+                    <PokemonCard card={exploreToSlot(card, { forceHolo: true })} />
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <Image
+                      src={card.image}
+                      alt={card.card_name}
+                      fill
+                      priority={idx === 0}
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                    />
+                  )}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                </button>
+              ) : (
+                <Link
+                  href={binderHref(card)}
+                  className="relative block aspect-[63/88]"
+                >
+                  {holo ? (
+                    <PokemonCard card={exploreToSlot(card, { forceHolo: true })} />
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <Image
+                      src={card.image}
+                      alt={card.card_name}
+                      fill
+                      priority={idx === 0}
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                    />
+                  )}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                </Link>
+              )}
 
               {/* Badge flotante superior izquierda: la carta está en tu wantlist */}
               {card.onWantlist && (

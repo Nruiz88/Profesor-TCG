@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { Profile } from '@/lib/profile'
+import { DiscordIcon } from '@/components/icons'
 
 interface MarketNavProps {
   user: { id: string; email?: string } | null
@@ -12,8 +13,7 @@ interface MarketNavProps {
 const NAV_LINKS = [
   { href: '/', label: 'Inicio' },
   { href: '/binder', label: 'Binder' },
-  { href: '/explore', label: 'Market' },
-  { href: '/buscados', label: 'Buscados' }
+  { href: '/acerca', label: 'Acerca' }
 ] as const
 
 export default function MarketNav({ user, profile }: MarketNavProps) {
@@ -50,7 +50,9 @@ export default function MarketNav({ user, profile }: MarketNavProps) {
             </Link>
           )}
 
-          {NAV_LINKS.map((link) => {
+          {NAV_LINKS.filter(
+            (link) => !(link.href === '/' && (pathname === '/' || pathname === '/v2'))
+          ).map((link) => {
             const active =
               link.href === '/'
                 ? pathname === '/'
@@ -71,8 +73,18 @@ export default function MarketNav({ user, profile }: MarketNavProps) {
           })}
         </div>
 
-        {/* Botón de sesión a la derecha */}
-        <div className="ml-auto">
+        {/* Acciones a la derecha */}
+        <div className="ml-auto flex items-center gap-3">
+          <a
+            href="https://discord.gg/NxuWmFKPuZ"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-lg bg-[#5865F2] px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition-colors hover:bg-[#4752c4]"
+            title="Unite a la comunidad en Discord"
+          >
+            <DiscordIcon className="h-4 w-4" />
+            <span className="hidden md:inline">Discord</span>
+          </a>
           {user ? (
             <span className="flex items-center gap-2 text-xs text-slate-500">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />

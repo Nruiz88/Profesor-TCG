@@ -26,7 +26,7 @@ interface SiteNavProps {
   /** Texto que se agrega tras el logo, ej: "Explorar" */
   label?: string
   /** Página actual para resaltar el link correspondiente */
-  active?: 'home' | 'explore' | 'buscados' | 'binder' | 'offers'
+  active?: 'home' | 'explore' | 'buscados' | 'binder' | 'offers' | 'acerca'
   /** Usuario ya resuelto en el servidor (evita el parpadeo de "Ingresar") */
   initialUser?: NavUser | null
 }
@@ -153,6 +153,9 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
             <PokeballIcon className="h-4 w-4" />
             Buscados
           </Link>
+          <Link href="/acerca" className={linkClass(active === 'acerca')}>
+            Acerca
+          </Link>
           {user && (
             <>
               <Link href="/binder" className={linkClass(active === 'binder')}>
@@ -258,6 +261,9 @@ export default function SiteNav({ label, active, initialUser = null }: SiteNavPr
                 <Link href="/buscados" className={mobileLinkClass(active === 'buscados')}>
                   <PokeballIcon className="h-4 w-4" />
                   Buscados
+                </Link>
+                <Link href="/acerca" className={mobileLinkClass(active === 'acerca')}>
+                  Acerca
                 </Link>
                 {user && (
                   <>

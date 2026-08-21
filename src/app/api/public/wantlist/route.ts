@@ -79,6 +79,7 @@ export interface PublicWantlistEntry {
 
 export interface WantlistFacets {
   sets: { id: string; name: string }[]
+  rarities: string[]
   cities: string[]
 }
 
@@ -98,7 +99,16 @@ interface WantlistRow {
 export async function GET(req: Request) {
   const params = validate(wantlistSchema, extractParams(req))
   if (params.error) return params.error
-  const { q: rawQ, type: typeFilter, city: cityFilter, limit: rawLimit, offset } = params.data
+  const {
+    q: rawQ,
+    type: typeFilter,
+    city: cityFilter,
+    set: setFilter,
+    rarity: rarityFilter,
+    sort,
+    limit: rawLimit,
+    offset
+  } = params.data
   const q = rawQ.trim()
   const limit = Math.min(rawLimit, MAX_LIMIT)
 
@@ -135,11 +145,14 @@ export async function GET(req: Request) {
     }> = []
     for (const w of rows) {
       if (q && !w.card_name.toLowerCase().includes(q.toLowerCase())) continue
+      if (setFilter && w.set_id !== setFilter) continue
       const m = meta.get(w.card_id)
-      if (typeFilter && !(m?.types ?? []).includes(typeFilter)) continue
+      if (!m) continue
+      if (rarityFilter && m.rarity !== rarityFilter) continue
+      if (typeFilter && !(m.types ?? []).includes(typeFilter)) continue
       const seeker = profiles.get(w.user_id) ?? null
       if (cityFilter && seeker?.city !== cityFilter) continue
-      candidates.push({ w, seeker, meta: m! })
+      candidates.push({ w, seeker, meta: m })
     }
 
     const imageMap = new Map<string, string>()
@@ -180,15 +193,24 @@ export async function GET(req: Request) {
       if (entry.set_name) setMap.set(w.set_id, entry.set_name)
     }
 
+    // Ordenamiento (por defecto ya viene en created_at desc desde la query)
+    if (sort === 'name') {
+      enriched.sort((a, b) => a.card_name.localeCompare(b.card_name))
+    } else if (sort === 'budget_desc') {
+      enriched.sort((a, b) => (b.max_budget ?? 0) - (a.max_budget ?? 0))
+    }
+
     const page = enriched.slice(offset, offset + limit)
     const hasMore = enriched.length > offset + limit
 
-    // Facets: sets y ciudades presentes en el resultado filtrado completo
+    // Facets: sets, rarezas y ciudades presentes en el resultado filtrado completo
     const cities = [...new Set(enriched.map((c) => c.city).filter(Boolean) as string[])].sort()
+    const rarities = [...new Set(enriched.map((c) => c.rarity).filter(Boolean) as string[])].sort()
     const facets: WantlistFacets = {
       sets: [...setMap.entries()]
         .map(([id, name]) => ({ id, name }))
         .sort((a, b) => a.name.localeCompare(b.name)),
+      rarities,
       cities
     }
 

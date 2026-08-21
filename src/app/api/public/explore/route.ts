@@ -41,6 +41,7 @@ interface ExploreCardRow {
   is_for_trade: boolean | null
   price: number | null
   trade_notes: string | null
+  condition: string | null
   language: string | null
   manual_price: number | null
   currency: string | null
@@ -110,10 +111,15 @@ export interface ExploreCard {
   card_name: string
   set_id: string
   set_name: string
+  set_logo: string | null
   number: string
   rarity: string | null
   variant: string | null
+  supertype: string | null
+  subtypes: string[] | null
+  types: string[] | null
   language: string | null
+  condition: string | null
   currency: string | null
   is_user_reported: boolean | null
   status: 'for_sale' | 'for_trade'
@@ -278,6 +284,7 @@ async function getCards(
     getProfilesByUserId(supabase, userIds)
   ])
   const setNameById = new Map(sets.map((s) => [s.id, s.name]))
+  const setLogoById = new Map(sets.map((s) => [s.id, s.images?.logo ?? null]))
 
   // Conteo de reseñas por vendedor (para mostrar ★ y (n) en las tarjetas)
   const reviewCounts = new Map<string, number>()
@@ -435,6 +442,7 @@ async function getCards(
   const enriched: ExploreCard[] = []
   for (const c of candidates) {
     const r = c.row
+    const m = meta.get(r.card_id)
     enriched.push({
       id: r.id,
       binder_id: r.binder_id,
@@ -442,10 +450,15 @@ async function getCards(
       card_name: r.card_name,
       set_id: r.set_id,
       set_name: setNameById.get(r.set_id) ?? r.set_id,
+      set_logo: setLogoById.get(r.set_id) ?? null,
       number: r.number,
       rarity: c.rarity,
       variant: r.variant ?? 'normal',
+      supertype: m?.supertype ?? null,
+      subtypes: m?.subtypes ?? null,
+      types: m?.types ?? null,
       language: r.language ?? null,
+      condition: r.condition ?? null,
       currency: r.currency ?? 'USD',
       is_user_reported: r.is_user_reported ?? false,
       status: c.status,

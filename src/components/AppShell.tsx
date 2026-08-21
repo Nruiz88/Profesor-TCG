@@ -34,7 +34,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isOwnBinder = pathname === '/binder'
   const isMarket = pathname === '/explore' || pathname === '/buscados'
   const isLegal = pathname === '/terminos' || pathname === '/privacidad'
-  const showSidebar = !isHome && !isLogin && !isOwnBinder && !isMarket && !isLegal
+  const isV2 = pathname === '/v2'
+  const isAbout = pathname === '/acerca'
+  const showSidebar =
+    !isHome &&
+    !isLogin &&
+    !isOwnBinder &&
+    !isMarket &&
+    !isLegal &&
+    !isV2 &&
+    !isAbout
 
   // Cargar sesión y perfil/binders del usuario.
   useEffect(() => {
@@ -88,6 +97,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       subscription.subscription.unsubscribe()
     }
   }, [])
+
+  // ─── Home (v2) y /v2: ancho completo, sin sidebar ni footer (la home trae su propio footer) ───
+  if (isV2 || isHome) {
+    return (
+      <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-200">
+        <main className="flex-1">{children}</main>
+      </div>
+    )
+  }
 
   // ─── Mercado y Buscados: layout de ancho completo con nav superior ───
   if (isMarket) {
