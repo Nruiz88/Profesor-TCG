@@ -433,7 +433,7 @@ export interface CatalogCardParam {
  * cachea con ISR (dynamicParams = true).
  */
 export async function getCatalogStaticParams(
-  limit = 50
+  limit = 1000
 ): Promise<CatalogCardParam[]> {
   const client = await adminClient()
   if (!client) return []
