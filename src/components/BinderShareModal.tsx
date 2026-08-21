@@ -212,6 +212,8 @@ export default function BinderShareModal({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [copyError, setCopyError] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -273,24 +275,37 @@ export default function BinderShareModal({
 
   async function share() {
     if (!imageUrl) return
-    const res = await fetch(imageUrl)
-    const blob = await res.blob()
     const safe = binderTitle.toLowerCase().replace(/[^a-z0-9-]+/g, '-')
-    const file = new File([blob], `${safe}-binder.png`, { type: 'image/png' })
     const shareText = `📚 ${binderTitle} — ${cards.length} cartas\n${binderUrl}`
 
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      try {
+    try {
+      // Compartir con archivos solo en plataformas que lo soportan (mobile)
+      const blob = await (await fetch(imageUrl)).blob()
+      const file = new File([blob], `${safe}-binder.png`, { type: 'image/png' })
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           title: binderTitle,
           text: shareText,
           files: [file]
         })
         return
-      } catch { /* cancelado */ }
+      }
+    } catch { /* compartir nativo no disponible o cancelado */ }
+
+    // Fallback: copiar el link con imagen OG para compartir por WhatsApp
+    await copyLink()
+  }
+
+  // Copia el link del binder (con su imagen OG autogenerada) para que al
+  // pegarlo en WhatsApp se muestre la miniatura del binder.
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(binderUrl)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2500)
+    } catch {
+      setCopyError(true)
     }
-    // Fallback: WhatsApp
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank')
   }
 
   return (
@@ -328,12 +343,22 @@ export default function BinderShareModal({
               />
               <div className="mt-3 flex gap-2">
                 <button onClick={share} className="btn-claim btn-claim--emerald flex-1">
-                  📤 Compartir imagen
+                  {copied ? '✓ Link copiado' : '📤 Compartir imagen'}
                 </button>
                 <button onClick={download} className="btn-claim btn-claim--accent flex-1">
                   ⬇️ Descargar
                 </button>
               </div>
+              {copied && (
+                <p className="mt-2 text-center text-xs font-semibold text-emerald-400">
+                  Link copiado al portapapeles. Pegalo en WhatsApp y verás la miniatura del binder.
+                </p>
+              )}
+              {copyError && (
+                <p className="mt-2 text-center text-xs font-semibold text-amber-400">
+                  No se pudo copiar el link. Copialo manualmente desde abajo.
+                </p>
+              )}
             </>
           )}
           {state === 'error' && (
