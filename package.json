@@ -4,13 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run fetch-catalog && npm run vendor-cards && npm run vendor-types && next build",
+    "build": "npm run fetch-catalog && npm run vendor-cards && npm run vendor-types && npm run version-sw && next build",
     "start": "next start",
     "fetch-catalog": "node scripts/fetch-catalog.mjs",
     "fetch-expansion-assets": "node scripts/fetch-expansion-assets.mjs",
     "vendor-cards": "node scripts/vendor-pokemon-cards.mjs",
     "vendor-types": "node scripts/vendor-pokemon-types.mjs",
     "precompute-images": "node scripts/precompute-images.mjs",
+    "pwa-icons": "node scripts/generate-pwa-icons.mjs",
+    "pwa-splashes": "node scripts/generate-pwa-splashes.mjs",
+    "version-sw": "node scripts/version-sw.mjs",
     "test": "vitest run"
   },
   "dependencies": {

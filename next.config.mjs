@@ -36,6 +36,8 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://images.pokemontcg.io https://images.scrydex.com https://assets.tcgdex.net https://raw.githubusercontent.com https://*.supabase.co https://storage.ko-fi.com",
       "font-src 'self'",
+      "worker-src 'self'",
+      "manifest-src 'self'",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com",
       "frame-src 'self' https://js.stripe.com https://www.youtube.com",
       "object-src 'none'",
