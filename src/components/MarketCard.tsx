@@ -95,7 +95,7 @@ export default function MarketCard({ card }: { card: ExploreCard }) {
           }}
         >
           <Image
-            src={card.image}
+            src={card.thumbImage || card.image}
             alt={card.card_name}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"

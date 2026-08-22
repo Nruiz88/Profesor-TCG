@@ -140,7 +140,7 @@ export default function MarketGrid({
                   ) : (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <Image
-                      src={card.image}
+                      src={card.thumbImage || card.image}
                       alt={card.card_name}
                       fill
                       priority={idx === 0}
@@ -297,7 +297,7 @@ export function BindersGrid({
             href={`/binder/${encodeURIComponent(b.username)}`}
             className="relative block aspect-[16/9] overflow-hidden bg-slate-950"
           >
-            {b.coverImage && (
+{b.coverImage && (
               // eslint-disable-next-line @next/next/no-img-element
               <Image
                 src={b.coverImage}

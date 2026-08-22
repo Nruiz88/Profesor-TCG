@@ -1,25 +1,19 @@
 /**
  * TCG Claim — Service Worker
  *
- * Estrategia de cache:
+ * Estrategia de cache (conservadora):
  *   - PRECACHE (install): app-shell offline, íconos y manifest web.
  *   - `/_next/static/*`  : cache-first con actualización en background (SWR).
- *   - Imágenes CDN        : SWR con tope de entradas. Se cachean también
- *                           respuestas OPACAS (CDNs sin CORS como
- *                           images.pokemontcg.io) para poder ver offline las
- *                           cartas ya visitadas. El fetch es tolerante a
- *                           errores: un fallo transitorio de red no rompe la
- *                           imagen online (vuelve a resolver por cache o cae
- *                           al onError del <img>).
  *   - Navegaciones        : network-first, cae a /offline si no hay red.
- *   - API/Supabase/auth   : network-only (no se cachea data dinámica).
+ *   - API / Supabase      : network-only.
+ *   - IMÁGENES (CDNs)     : network-only. NO se interceptan: el cache de
+ *                           respuestas opacas (sin CORS) podía servir imágenes
+ *                           rotas. Las cartas cargan directo del CDN.
  */
 
-const VERSION = 'vee05ae5'
+const VERSION = 'v03ca06f'
 const STATIC_CACHE = `tcg-claim-shell-${VERSION}`
 const RUNTIME_CACHE = `tcg-claim-runtime-${VERSION}`
-const IMAGE_CACHE = `tcg-claim-images-${VERSION}`
-const IMAGE_MAX = 400
 
 const PRECACHE_URLS = [
   '/offline',
@@ -31,44 +25,18 @@ const PRECACHE_URLS = [
   '/icons/apple-touch-icon.png'
 ]
 
-const IMAGE_HOSTS = [
-  'images.pokemontcg.io',
-  'images.scrydex.com',
-  'assets.tcgdex.net',
-  'raw.githubusercontent.com'
-]
-
-function isImageRequest(url) {
-  return IMAGE_HOSTS.some((host) => url.hostname === host || url.hostname.endsWith('.' + host))
-}
-
-function isSupabaseStorage(url) {
-  return url.hostname.endsWith('.supabase.co') && url.pathname.startsWith('/storage/v1/object/public')
-}
-
-async function trimCache(cacheName, maxEntries) {
-  const cache = await caches.open(cacheName)
-  const keys = await cache.keys()
-  if (keys.length > maxEntries) {
-    const toDelete = keys.slice(0, keys.length - maxEntries)
-    await Promise.all(toDelete.map((k) => cache.delete(k)))
-  }
-}
-
-/**
- * Cache-first con actualización en background (SWR).
- * - allowOpaque: permite cachear respuestas opacas (sin CORS) para imágenes.
- * - Si fetch falla y hay cache, sirve el cache sin romper la request.
- */
-async function cacheFirst(request, cacheName, { allowOpaque = false, maxEntries } = {}) {
+async function cacheFirst(request, cacheName) {
   const cached = await caches.match(request)
   if (cached) {
     fetch(request)
       .then((res) => {
-        if (res.ok || (allowOpaque && res.type === 'opaque')) {
-          caches.open(cacheName).then((cache) => {
-            cache.put(request, res)
-            if (maxEntries) trimCache(cacheName, maxEntries)
+        if (res.ok) {
+          caches.open(cacheName).then(async (cache) => {
+            try {
+              await cache.put(request, res)
+            } catch {
+              /* la escritura al cache no debe romper nada */
+            }
           })
         }
       })
@@ -78,10 +46,13 @@ async function cacheFirst(request, cacheName, { allowOpaque = false, maxEntries 
 
   try {
     const res = await fetch(request)
-    if (res.ok || (allowOpaque && res.type === 'opaque')) {
-      const cache = await caches.open(cacheName)
-      cache.put(request, res.clone())
-      if (maxEntries) trimCache(cacheName, maxEntries)
+    if (res.ok) {
+      try {
+        const cache = await caches.open(cacheName)
+        await cache.put(request, res.clone())
+      } catch {
+        /* el fallo de cache no corta la respuesta */
+      }
     }
     return res
   } catch (err) {
@@ -107,10 +78,7 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter(
-              (k) =>
-                k !== STATIC_CACHE && k !== RUNTIME_CACHE && k !== IMAGE_CACHE
-            )
+            .filter((k) => k !== STATIC_CACHE && k !== RUNTIME_CACHE)
             .map((k) => caches.delete(k))
         )
       )
@@ -153,11 +121,5 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Imágenes de cartas (CDNs) y avatares/upload de Supabase: SWR con tope.
-  if (isImageRequest(url) || isSupabaseStorage(url)) {
-    event.respondWith(cacheFirst(request, IMAGE_CACHE, { allowOpaque: true, maxEntries: IMAGE_MAX }))
-    return
-  }
-
-  // Todo lo demás (API, Supabase realtime, auth, HTML dinámico): network-only.
+  // Todo lo demás (imágenes CDN, API, Supabase, HTML dinámico): network-only.
 })

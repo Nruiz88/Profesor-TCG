@@ -86,6 +86,18 @@ async function saveToDbCache(key: string, url: string): Promise<void> {
 export { NO_IMAGE_PLACEHOLDER } from './utils'
 export { pokemontcgUrl } from './pokemontcg'
 
+/**
+ * Variante liviana de una imagen resuelta, para grillas/listados.
+ * pokemontcg: `_hires.png` → `.png` (~3x menos). Scrydex: `/large` → `/medium`
+ * (~7x menos). TCGdex no ofrece `medium` (404), así que se deja high.png.
+ * Si la URL no es reconocida, se devuelve igual.
+ */
+export function toThumbUrl(url: string): string {
+  if (url.includes('images.pokemontcg.io')) return url.replace(/_hires\.png$/, '.png')
+  if (url.includes('images.scrydex.com')) return url.replace(/\/large$/, '/medium')
+  return url
+}
+
 // ── Manifest pre-computado ──────────────────────────────────────────
 
 type ImageSource = 'pokemontcg' | 'scrydex' | 'scrydex-unpadded' | 'tcgdex' | 'none'

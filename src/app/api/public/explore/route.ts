@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getCardMetadataMap, getSets } from '@/lib/catalog'
-import { resolveCardImage, NO_IMAGE_PLACEHOLDER } from '@/lib/cardImage'
+import { resolveCardImage, NO_IMAGE_PLACEHOLDER, toThumbUrl } from '@/lib/cardImage'
 import { effectivePrice } from '@/lib/cardStatus'
 import { isCardLanguage, normalizeLanguage } from '@/lib/cardLanguage'
 import { speciesFromCardName } from '@/lib/pokedex'
@@ -125,6 +125,8 @@ export interface ExploreCard {
   status: 'for_sale' | 'for_trade'
   price: number | null
   image: string
+  /** Variante liviana para grillas (mismo cuadro, ~3-7x menos datos). */
+  thumbImage: string
   username: string
   city: string | null
   country: string | null
@@ -464,6 +466,7 @@ async function getCards(
       status: c.status,
       price: c.price,
       image: imageMap.get(c.imageKey) ?? NO_IMAGE_PLACEHOLDER,
+      thumbImage: toThumbUrl(imageMap.get(c.imageKey) ?? NO_IMAGE_PLACEHOLDER),
       username: c.seller?.username ?? 'coleccionista',
       city: c.seller?.city ?? null,
       country: c.seller?.country ?? null,
