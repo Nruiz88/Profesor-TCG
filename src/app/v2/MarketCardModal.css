@@ -2,6 +2,7 @@
   z-index: 50;
 }
 
+/* Sheet: en mobile se ancla abajo a lo ancho; en desktop centrado */
 .v2m-container {
   position: relative;
   display: flex;
@@ -12,9 +13,18 @@
   max-height: 90vh;
 }
 
-@media (min-width: 640px) {
+@media (max-width: 639px) {
+  .v2m-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
   .v2m-container {
-    flex-direction: row;
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 1.25rem 1.25rem 0 0;
+    background-color: #0f172a;
+    padding: 0.625rem 0.625rem 0.75rem;
   }
 }
 
@@ -36,15 +46,34 @@
   background-color: rgba(0, 0, 0, 0.8);
 }
 
+/* ── Cuerpo: SIEMPRE en fila (carta a la izquierda, info a la derecha) ──
+   En mobile también: la carta vive en una columna de ancho fijo con overflow
+   hidden, por lo que JAMÁS puede tapar el precio sin importar cómo se
+   dimensione el CSS de la carta. */
+.v2m-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+/* Columna de la carta: ancho fijo, recortada si hace falta */
 .v2m-cardcol {
   position: relative;
-  width: 100%;
   flex-shrink: 0;
+  width: 36vw;
+  max-width: 150px;
+  min-width: 88px;
+  overflow: hidden;
 }
 
 @media (min-width: 640px) {
   .v2m-cardcol {
     width: 58%;
+    max-width: none;
+    min-width: 0;
   }
 }
 
@@ -56,20 +85,59 @@
 }
 
 .v2m-imgwrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  touch-action: none;
+}
+
+/* Mobile: la carta llena el ancho de su columna (min-width:0 para que el
+   flexbox no la trabe en el ancho intrínseco de la imagen). */
+.v2m-imgwrap .card {
+  width: 100%;
+  height: auto;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .v2m-imgwrap .card {
+    width: auto;
+    height: 100%;
+    min-width: 0;
+  }
+}
+
+/* El CSS de la carta define --translate-z en .card__translater (salto en Z de
+   150px) que, con el perspective del contenedor, la agranda ~14%. Se anula
+   para que se vea el tamaño real. */
+.v2m-imgwrap .card__translater {
+  --translate-z: 0.01px;
+}
+
+/* Contenedor del tilt 3D táctil */
+.v2m-tilt {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  aspect-ratio: 63 / 88;
+  height: 100%;
+  min-width: 0;
+  touch-action: none;
+  will-change: transform;
 }
 
-@media (min-width: 640px) {
-  .v2m-imgwrap {
-    position: absolute;
-    inset: 0;
-    aspect-ratio: auto;
-  }
+/* ── Columna derecha: info scrolleable + acciones fijas al pie ── */
+.v2m-right {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  gap: 0.5rem;
 }
 
 .v2m-info {
@@ -86,12 +154,18 @@
   padding: 1rem;
 }
 
+@media (max-width: 639px) {
+  .v2m-info {
+    padding: 0.75rem;
+  }
+}
+
 .v2m-nameblock {
   text-align: center;
 }
 
 .v2m-name {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 900;
   line-height: 1.25;
   color: #fff;
@@ -131,9 +205,15 @@
 }
 
 .v2m-price {
-  font-size: 1.875rem;
+  font-size: 1.5rem;
   font-weight: 900;
   color: #34d399;
+}
+
+@media (min-width: 640px) {
+  .v2m-price {
+    font-size: 1.875rem;
+  }
 }
 
 .v2m-trade {
@@ -217,12 +297,12 @@
   color: #fbbf24;
 }
 
+/* Acciones: fuera del área scrolleable, siempre visibles */
 .v2m-actions {
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: auto;
-  padding-top: 0.25rem;
 }
 
 .v2m-whatsapp {
@@ -231,8 +311,8 @@
   justify-content: center;
   gap: 0.375rem;
   border-radius: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
