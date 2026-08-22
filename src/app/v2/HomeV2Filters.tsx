@@ -134,7 +134,7 @@ export default function HomeV2Filters({
         </div>
 
         {/* Acordeón de filtros (solo mobile) */}
-        <div className="v2f-toggle-row lg:hidden">
+        <div className="v2f-toggle-row">
           <button
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
@@ -158,7 +158,7 @@ export default function HomeV2Filters({
 
         {/* Campos de filtro: plegados en mobile, siempre visibles en desktop */}
         <div id="v2f-fields" className={`${mobileOpen ? '' : 'hidden'} lg:block`}>
-        <div className="v2f-head hidden lg:flex">
+        <div className="v2f-head">
           <h2
             className={`v2f-head-title ${
               isMarket ? 'v2f-head-title--market' : 'v2f-head-title--wantlist'

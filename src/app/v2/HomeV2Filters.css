@@ -101,6 +101,25 @@
   margin-bottom: 1rem;
 }
 
+/* En desktop el panel es una columna fija: el acordeón mobile se oculta y el
+   título "Filtros" del head es el único que se muestra. Las media queries
+   (y no las utilidades de Tailwind) controlan esto para no depender del
+   orden de las hojas de estilo. */
+@media (max-width: 1023px) {
+  .v2f-head {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .v2f-toggle-row {
+    display: none;
+  }
+  .v2f-head {
+    display: flex;
+  }
+}
+
 .v2f-head-title {
   font-size: 0.75rem;
   font-weight: 700;
