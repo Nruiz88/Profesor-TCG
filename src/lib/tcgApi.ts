@@ -1,5 +1,6 @@
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getApiKey } from './apiKeys'
+import { cardNumberMatches, setMatches } from './priceMatch'
 
 // ============================================================================
 // Integración TCGAPI (https://tcgapi.dev) — precios universales de 89+ juegos.
@@ -206,6 +207,7 @@ export interface TcgApiSearchResult {
 export async function tcgApiSearch(opts: {
   cardName: string
   number?: string
+  set?: string | null
   game?: string
 }): Promise<TcgApiPrice | null> {
   const params: Record<string, string> = {
@@ -223,23 +225,19 @@ export async function tcgApiSearch(opts: {
 
   let cards = result.data.data
 
-  // Si hay número, filtrar por coincidencia exacta o parcial
+  // Solo aceptar cartas que coincidan con el número buscado. Si no hay
+  // impresión exacta, no tomar el precio de una carta homónima de otro set
+  // (p. ej. una Victini cara de otro set para una promo 05/15).
   if (opts.number) {
-    const normalizedNumber = opts.number.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
-    const exactMatch = cards.find((c) => {
-      const cardNum = (c.number ?? '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
-      return cardNum === normalizedNumber
-    })
-    if (exactMatch) {
-      cards = [exactMatch]
-    } else {
-      // Fallback: tomar la primera carta del set más cercano
-      cards = cards.filter((c) => {
-        const cardNum = (c.number ?? '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
-        return cardNum.includes(normalizedNumber) || normalizedNumber.includes(cardNum)
-      })
-    }
-    if (cards.length === 0) cards = result.data.data
+    const byNumber = cards.filter((c) => cardNumberMatches(opts.number, c.number))
+    if (byNumber.length === 0) return null
+    cards = byNumber
+  }
+
+  // Preferir resultados del set buscado cuando el proveedor lo informa.
+  if (opts.set) {
+    const bySet = cards.filter((c) => setMatches(opts.set, { code: c.set, name: c.set_name }))
+    if (bySet.length > 0) cards = bySet
   }
 
   const best = cards[0]

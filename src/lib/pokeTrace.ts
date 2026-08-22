@@ -1,5 +1,6 @@
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getApiKey } from './apiKeys'
+import { cardNumberMatches, setMatches } from './priceMatch'
 
 // ============================================================================
 // Integración PokéTrace (https://poketrace.com) — precios de TCGPlayer, eBay
@@ -300,6 +301,7 @@ export function bestPokeTracePrice(card: PokeTraceCard): PokeTracePriceResult | 
 export async function pokeTraceSearch(opts: {
   cardName: string
   number?: string
+  set?: string | null
   market?: string
 }): Promise<PokeTracePriceResult | null> {
   const params: Record<string, string> = {
@@ -317,16 +319,21 @@ export async function pokeTraceSearch(opts: {
 
   let cards = result.data.data
 
-  // Si hay número, intentar filtrar por coincidencia exacta o parcial
+  // Solo aceptar cartas que coincidan con el número buscado. Si el proveedor
+  // no tiene esa impresión exacta, no tomar el precio de una carta homónima
+  // de otro set (p. ej. una Victini cara de otro set para una promo 05/15).
   if (opts.number) {
-    const normalizedNumber = opts.number.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
-    const exactMatch = cards.find((c) => {
-      const cardNum = (c.cardNumber ?? '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
-      return cardNum === normalizedNumber
-    })
-    if (exactMatch) {
-      cards = [exactMatch]
-    }
+    const byNumber = cards.filter((c) => cardNumberMatches(opts.number, c.cardNumber))
+    if (byNumber.length === 0) return null
+    cards = byNumber
+  }
+
+  // Preferir resultados del set buscado cuando el proveedor lo informa.
+  if (opts.set) {
+    const bySet = cards.filter((c) =>
+      setMatches(opts.set, { code: c.set?.slug, name: c.set?.name })
+    )
+    if (bySet.length > 0) cards = bySet
   }
 
   // Buscar el mejor precio entre todas las cartas encontradas

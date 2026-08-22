@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { pokeWalletSearch } from '@/lib/pokeWallet'
 import { tcgApiSearch, tcgApiBudget } from '@/lib/tcgApi'
 import { pokeTraceSearch, pokeTraceBudget } from '@/lib/pokeTrace'
+import { toTcgdexCardId } from '@/lib/tcgdexId'
 
 const API_BASE = 'https://api.tcgdex.net/v2/en/cards'
 const CONCURRENCY = 10
@@ -21,7 +22,11 @@ function backoff(ms: number) {
 
 async function fetchPriceForCard(cardId: string, attempt = 1): Promise<PriceEntry> {
   try {
-    const res = await fetch(`${API_BASE}/${encodeURIComponent(cardId)}`, {
+    // El catálogo local usa IDs de pokemon-tcg-data; TCGdex tiene su propia
+    // convención (sv5-51 → sv05-051, mcd22-5 → 2022swsh-5). Sin el mapeo la
+    // consulta da 404 y se pierde la fuente exacta/gratuita.
+    const tcgdexId = toTcgdexCardId(cardId)
+    const res = await fetch(`${API_BASE}/${encodeURIComponent(tcgdexId)}`, {
       cache: 'no-store'
     })
 
@@ -240,7 +245,11 @@ export async function POST(req: Request) {
 
     if (noPriceRows.length > 0) {
       const pwResults = await mapLimit(noPriceRows, 3, async (row) => {
-        const pw = await pokeWalletSearch({ cardName: row.card_name, number: row.number })
+        const pw = await pokeWalletSearch({
+          cardName: row.card_name,
+          number: row.number,
+          set: row.set_id
+        })
         return pw ? { card_id: row.card_id, price: pw.price } : null
       })
       for (const r of pwResults) {
@@ -265,7 +274,11 @@ export async function POST(req: Request) {
       const ptBudget = pokeTraceBudget()
       if (ptBudget.remaining > 0) {
         const ptResults = await mapLimit(pokeTraceRows, 2, async (row) => {
-          const pt = await pokeTraceSearch({ cardName: row.card_name, number: row.number })
+          const pt = await pokeTraceSearch({
+            cardName: row.card_name,
+            number: row.number,
+            set: row.set_id
+          })
           return pt ? { card_id: row.card_id, price: pt.price } : null
         })
         for (const r of ptResults) {
@@ -291,7 +304,11 @@ export async function POST(req: Request) {
       const tcgBudget = tcgApiBudget()
       if (tcgBudget.remaining > 0) {
         const tcgResults = await mapLimit(stillNoPriceRows, 2, async (row) => {
-          const price = await tcgApiSearch({ cardName: row.card_name, number: row.number })
+          const price = await tcgApiSearch({
+            cardName: row.card_name,
+            number: row.number,
+            set: row.set_id
+          })
           return price ? { card_id: row.card_id, price: price.market_price } : null
         })
         for (const r of tcgResults) {

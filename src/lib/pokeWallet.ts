@@ -1,5 +1,6 @@
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getApiKey } from './apiKeys'
+import { cardNumberMatches, setMatches } from './priceMatch'
 
 // ============================================================================
 // Integración PokeWallet (https://pokewallet.io) — precios en tiempo real de
@@ -229,6 +230,7 @@ function bestCardmarketPrice(results: PokeWalletResult[]): PokeWalletPrice | nul
 export async function pokeWalletSearch(opts: {
   cardName: string
   number?: string
+  set?: string | null
   key?: string | null
 }): Promise<PokeWalletPrice | null> {
   const key = opts.key ?? (await getPokeWalletKey())
@@ -262,7 +264,27 @@ export async function pokeWalletSearch(opts: {
       const n = normalize(r.card_info?.clean_name ?? r.card_info?.name ?? '')
       return n.includes(nName) || nName.includes(n)
     })
-    const pool = exact.length > 0 ? exact : results
+    let pool = exact.length > 0 ? exact : results
+
+    // Nunca aceptar una carta cuyo número no coincida con el buscado: buscar
+    // solo por nombre puede atribuir el precio de una impresión distinta del
+    // mismo Pokémon (p. ej. una Victini cara de otro set para una promo 05/15).
+    if (opts.number) {
+      const byNumber = pool.filter((r) => cardNumberMatches(opts.number, r.card_info?.card_number))
+      if (byNumber.length === 0) return null
+      pool = byNumber
+    }
+
+    // Preferir resultados del set buscado cuando el proveedor lo informa.
+    if (opts.set) {
+      const bySet = pool.filter((r) =>
+        setMatches(opts.set, {
+          code: r.card_info?.set_code,
+          name: r.card_info?.set_name
+        })
+      )
+      if (bySet.length > 0) pool = bySet
+    }
 
     return bestTcgPrice(pool) ?? bestCardmarketPrice(pool)
   } catch {
