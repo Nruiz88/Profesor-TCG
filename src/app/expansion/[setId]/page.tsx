@@ -102,14 +102,14 @@ export default async function Page({
   if (!data) notFound()
 
   const faq = buildFaq(data, data.featured)
-  const exploreHref = `/explore?set=${encodeURIComponent(data.id)}`
+  const exploreHref = '/'
 
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${APP_URL}/` },
-      { '@type': 'ListItem', position: 2, name: 'Marketplace', item: `${APP_URL}/explore` },
+      { '@type': 'ListItem', position: 2, name: 'Mercado', item: `${APP_URL}/` },
       { '@type': 'ListItem', position: 3, name: data.name }
     ]
   }
@@ -158,8 +158,8 @@ export default async function Page({
             Inicio
           </Link>
           <span aria-hidden="true">/</span>
-          <Link href="/explore" className="transition-colors hover:text-white">
-            Marketplace
+          <Link href="/" className="transition-colors hover:text-white">
+            Mercado
           </Link>
           <span aria-hidden="true">/</span>
           <span className="font-medium text-slate-200">{data.name}</span>
@@ -210,7 +210,7 @@ export default async function Page({
               href={exploreHref}
               className="text-sm font-semibold text-rose-400 transition-colors hover:text-rose-300"
             >
-              Ver en el marketplace →
+              Ver en el mercado →
             </Link>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">

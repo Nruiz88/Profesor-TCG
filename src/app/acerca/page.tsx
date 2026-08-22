@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import SiteNav from '@/components/SiteNav'
+import MarketNav from '@/components/MarketNav'
+import MobileNav from '@/components/MobileNav'
 import FeaturesStatsBar from '@/components/FeaturesStatsBar'
 import HeroBinderDemo from '@/components/HeroBinderDemo'
 import CommunityStatsBar from '@/components/CommunityStatsBar'
@@ -11,6 +12,7 @@ import TradeFairnessWidget from '@/components/TradeFairnessWidget'
 import ClaimSimulator from '@/components/ClaimSimulator'
 import GhostPokemon from '@/components/GhostPokemon'
 import { createClient } from '@/lib/supabase/server'
+import type { Profile } from '@/lib/profile'
 import {
   CardsIcon,
   WalletIcon,
@@ -43,7 +45,7 @@ const FEATURES = [
     description:
       'Cada carta muestra su valor de TCGplayer/Cardmarket vía TCGdex, con caché inteligente y actualización en un clic.',
     tag: 'TCGplayer · Cardmarket',
-    href: '/explore',
+    href: '/',
     cta: 'Ver el mercado',
     gradient: 'from-emerald-500 to-teal-400',
     glow: 'hover:shadow-emerald-500/15'
@@ -65,7 +67,7 @@ const FEATURES = [
     description:
       'Más de 17.000 cartas indexadas. Buscá por nombre, número o set y agregalas al instante.',
     tag: '+17.000 cartas',
-    href: '/explore',
+    href: '/',
     cta: 'Buscar cartas',
     gradient: 'from-sky-500 to-cyan-400',
     glow: 'hover:shadow-sky-500/15'
@@ -76,7 +78,7 @@ const FEATURES = [
     description:
       'Proponé cambios comparando el valor de cada lado automáticamente, con o sin dinero extra.',
     tag: 'Ofertas con valor',
-    href: '/explore',
+    href: '/',
     cta: 'Proponer un trueque',
     gradient: 'from-violet-500 to-purple-400',
     glow: 'hover:shadow-violet-500/15'
@@ -87,7 +89,7 @@ const FEATURES = [
     description:
       'Click en cualquier carta para ver ataques, habilidades, debilidad, retirada, ilustrador y legalidad.',
     tag: 'Todo el detalle',
-    href: '/explore',
+    href: '/',
     cta: 'Explorar detalles',
     gradient: 'from-fuchsia-500 to-pink-400',
     glow: 'hover:shadow-fuchsia-500/15'
@@ -114,7 +116,7 @@ const STEPS = [
     tag: 'Venta o trueque',
     gradient: 'from-sky-500 to-cyan-400',
     glow: 'hover:shadow-sky-500/15',
-    href: '/explore',
+    href: '/',
     cta: 'Ver el mercado'
   },
   {
@@ -125,7 +127,7 @@ const STEPS = [
     tag: 'Sin comisiones',
     gradient: 'from-emerald-500 to-teal-400',
     glow: 'hover:shadow-emerald-500/15',
-    href: '/explore',
+    href: '/',
     cta: 'Ver un ejemplo'
   }
 ]
@@ -144,6 +146,18 @@ export default async function AboutPage() {
   const {
     data: { user }
   } = await supabase.auth.getUser()
+
+  let profile: Profile | null = null
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, username, whatsapp_number, country, city, created_at, updated_at')
+      .eq('id', user.id)
+      .maybeSingle()
+    profile = (data as Profile | null) ?? null
+  }
+
+  const navUser = user ? { id: user.id, email: user.email ?? undefined } : null
 
   return (
     <>
@@ -176,7 +190,7 @@ export default async function AboutPage() {
                   '@type': 'SearchAction',
                   target: {
                     '@type': 'EntryPoint',
-                    urlTemplate: `${APP_URL}/explore?q={search_term_string}`
+                    urlTemplate: `${APP_URL}/?q={search_term_string}`
                   },
                   'query-input': 'required name=search_term_string'
                 }
@@ -187,11 +201,9 @@ export default async function AboutPage() {
       />
     <div className="relative min-h-screen bg-slate-950 text-slate-300">
       <GhostPokemon />
-      {/* Nav */}
-      <SiteNav
-        active="acerca"
-        initialUser={user ? { id: user.id, email: user.email ?? undefined } : null}
-      />
+      {/* Nav: mismo menú que la home en desktop; en mobile solo la barra inferior */}
+      <MarketNav user={navUser} profile={profile} />
+      <MobileNav user={navUser} profile={profile} />
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -226,7 +238,7 @@ export default async function AboutPage() {
                 <ArrowRightIcon width={17} height={17} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/explore"
+                href="/"
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-6 py-3 text-base font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:text-white"
               >
                 Explorar Mercado
@@ -273,7 +285,7 @@ export default async function AboutPage() {
             </p>
           </div>
           <Link
-            href="/explore"
+            href="/"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:border-binder-accent hover:text-white"
           >
             Ver todo el mercado
@@ -312,7 +324,7 @@ export default async function AboutPage() {
               </p>
             </div>
             <Link
-              href="/buscados"
+              href="/"
               className="group inline-flex items-center gap-2 rounded-xl bg-fuchsia-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-fuchsia-900/50 transition-all hover:-translate-y-0.5 hover:bg-fuchsia-500"
             >
               Ver todos los buscados

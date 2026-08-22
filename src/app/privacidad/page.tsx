@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import SiteNav from '@/components/SiteNav'
+import MarketNav from '@/components/MarketNav'
+import MobileNav from '@/components/MobileNav'
 import GhostPokemon from '@/components/GhostPokemon'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Política de privacidad',
@@ -12,10 +14,17 @@ export const metadata: Metadata = {
 }
 
 export default async function PrivacidadPage() {
+  const supabase = await createClient()
+  const {
+    data: { user }
+  } = await supabase.auth.getUser()
+  const navUser = user ? { id: user.id, email: user.email ?? undefined } : null
+
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-300">
       <GhostPokemon />
-      <SiteNav active="home" />
+      <MarketNav user={navUser} profile={null} />
+      <MobileNav user={navUser} profile={null} />
 
       <main className="relative mx-auto max-w-3xl px-4 py-16 sm:py-20">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,rgba(244,63,94,0.08),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(168,85,247,0.06),transparent_55%)]" />

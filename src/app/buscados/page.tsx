@@ -1,14 +1,7 @@
-import type { Metadata } from 'next'
-import BuscadosPage from './BuscadosPage'
+import { redirect } from 'next/navigation'
 
-export const metadata: Metadata = {
-  title: 'Buscadas de la comunidad | Wantlist de cartas TCG',
-  description:
-    'Cartas que la comunidad está buscando. Sumá tu wantlist y coordiná trueques directo por WhatsApp.',
-  alternates: { canonical: '/buscados' },
-  openGraph: { url: '/buscados' }
-}
-
+// /buscados ya no existe como página: la home (/) concentra mercado y
+// buscadas en solapas. Se redirige de forma permanente.
 export default function Page() {
-  return <BuscadosPage />
+  redirect('/')
 }

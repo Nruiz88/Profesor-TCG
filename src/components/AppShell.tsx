@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import ResponsiveNav from '@/components/ResponsiveNav'
-import MarketNav from '@/components/MarketNav'
 import SiteFooter from '@/components/SiteFooter'
 import DonationFooter from '@/components/DonationFooter'
 import { createClient } from '@/lib/supabase/client'
@@ -32,7 +31,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isHome = pathname === '/'
   const isLogin = pathname === '/login'
   const isOwnBinder = pathname === '/binder'
-  const isMarket = pathname === '/explore' || pathname === '/buscados'
   const isLegal = pathname === '/terminos' || pathname === '/privacidad'
   const isV2 = pathname === '/v2'
   const isAbout = pathname === '/acerca'
@@ -40,7 +38,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     !isHome &&
     !isLogin &&
     !isOwnBinder &&
-    !isMarket &&
     !isLegal &&
     !isV2 &&
     !isAbout
@@ -107,16 +104,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // ─── Mercado y Buscados: layout de ancho completo con nav superior ───
-  if (isMarket) {
-    return (
-      <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-200">
-        <MarketNav user={user} profile={profile} />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
-      </div>
-    )
-  }
+  // ─── Mercado y Buscados ya no existen como páginas (la home los concentra) ───
 
   if (!showSidebar) {
     return (

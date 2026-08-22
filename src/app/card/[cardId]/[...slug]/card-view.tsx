@@ -99,10 +99,10 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
             <h1 className="text-xl font-bold text-white">TCG Claim</h1>
             <p className="mt-2 text-sm text-slate-400">{error || 'Carta no encontrada'}</p>
             <Link
-              href="/explore"
+              href="/"
               className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-binder-accent px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500"
             >
-              Explorar el marketplace
+              Explorar el mercado
             </Link>
           </div>
         </div>
@@ -146,10 +146,10 @@ export default function PublicCardPage({ cardId }: { cardId: string }) {
         {/* Barra de navegación + badges */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link
-            href="/explore"
+            href="/"
             className="text-sm font-medium text-slate-400 transition-colors hover:text-white"
           >
-            ← Volver al marketplace
+            ← Volver al mercado
           </Link>
           {binder.is_public ? (
             <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-300">

@@ -24,13 +24,8 @@ export default function HomeV2Footer() {
           <h3 className="v2ft-title">Producto</h3>
           <ul className="v2ft-list">
             <li>
-              <Link href="/explore" className="v2ft-link">
-                Marketplace
-              </Link>
-            </li>
-            <li>
-              <Link href="/buscados" className="v2ft-link">
-                Buscados
+              <Link href="/" className="v2ft-link">
+                Mercado
               </Link>
             </li>
             <li>

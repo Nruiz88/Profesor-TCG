@@ -87,9 +87,7 @@ supabase/
 
 ## 🧭 Rutas principales
 
-- `/` — Landing
-- `/explore` — Marketplace (cartas en venta/cambio)
-- `/buscados` — Wantlist pública
+- `/` — Mercado P2P (ventas + buscadas en solapas) · la landing actual
 - `/binder` — Binder propio · `/binder/[username]` — Binder público
 - `/profile/[username]` — Perfil público
 - `/offers` — Ofertas / trueques

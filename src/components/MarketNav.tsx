@@ -24,7 +24,7 @@ export default function MarketNav({ user, profile }: MarketNavProps) {
     : null
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-slate-800/60 bg-[#0a0c10]/80 backdrop-blur-xl">
+    <nav className="sticky top-0 z-40 hidden border-b border-slate-800/60 bg-[#0a0c10]/80 backdrop-blur-xl lg:block">
       <div className="mx-auto flex max-w-7xl items-center gap-1 px-4 py-3">
         {/* Logo */}
         <Link href="/" className="mr-4 flex items-center gap-2">

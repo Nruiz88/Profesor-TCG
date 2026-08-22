@@ -166,8 +166,8 @@ export default async function Page({
             Inicio
           </Link>
           <span aria-hidden="true">/</span>
-          <Link href="/explore" className="transition-colors hover:text-white">
-            Marketplace
+          <Link href="/" className="transition-colors hover:text-white">
+            Mercado
           </Link>
           <span aria-hidden="true">/</span>
           <span className="font-medium text-slate-200">{data.name}</span>

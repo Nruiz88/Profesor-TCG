@@ -56,7 +56,7 @@ export default function LiveActivityTicker() {
             return (
               <Link
                 key={`${it.id}-${i}`}
-                href={`/explore?q=${encodeURIComponent(it.card_name)}`}
+                href={`/?q=${encodeURIComponent(it.card_name)}`}
                 className="flex items-center gap-2 whitespace-nowrap py-3 pl-6 text-sm text-slate-400 transition-colors hover:text-white"
               >
                 <span className="text-xs">{meta.icon}</span>

@@ -1,14 +1,8 @@
-import type { Metadata } from 'next'
-import ExplorePage from './ExplorePage'
+import { redirect } from 'next/navigation'
 
-export const metadata: Metadata = {
-  title: 'Marketplace de cartas TCG | Explorar ventas y trueques',
-  description:
-    'Explorá cartas en venta e intercambio con precio en vivo. Filtrá por set, variante, tipo o ciudad y contactá directo por WhatsApp.',
-  alternates: { canonical: '/explore' },
-  openGraph: { url: '/explore' }
-}
-
+// /explore ya no existe como página: la home (/) es el mercado completo.
+// Se redirige de forma permanente para no romper links compartidos
+// (notificaciones, ticker, claims) y mantener una única URL canónica.
 export default function Page() {
-  return <ExplorePage />
+  redirect('/')
 }

@@ -62,7 +62,7 @@ export default async function HomePage() {
                   '@type': 'SearchAction',
                   target: {
                     '@type': 'EntryPoint',
-                    urlTemplate: `${APP_URL}/explore?q={search_term_string}`
+                    urlTemplate: `${APP_URL}/?q={search_term_string}`
                   },
                   'query-input': 'required name=search_term_string'
                 }
@@ -71,7 +71,7 @@ export default async function HomePage() {
           })
         }}
       />
-      <div className="v2p-root">
+      <div className="v2p-root pb-20 lg:pb-0">
         {/* Header superior + cintillo de actividad: bajan juntos pegados al tope */}
         <div className="v2p-header">
           <MarketNav
@@ -81,7 +81,10 @@ export default async function HomePage() {
           <LiveActivityTicker />
         </div>
         <GhostPokemon />
-        <HomeV2 />
+        <HomeV2
+          user={user ? { id: user.id, email: user.email ?? undefined } : null}
+          profile={profile}
+        />
         <HomeV2Footer />
       </div>
     </>

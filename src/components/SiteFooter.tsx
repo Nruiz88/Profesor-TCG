@@ -20,13 +20,8 @@ export default function SiteFooter() {
           <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Producto</h3>
           <ul className="mt-4 space-y-2.5 text-sm">
             <li>
-              <Link href="/explore" className="text-slate-400 transition-colors hover:text-white">
-                Marketplace
-              </Link>
-            </li>
-            <li>
-              <Link href="/explore" className="text-slate-400 transition-colors hover:text-white">
-                Binders destacados
+              <Link href="/" className="text-slate-400 transition-colors hover:text-white">
+                Mercado
               </Link>
             </li>
             <li>

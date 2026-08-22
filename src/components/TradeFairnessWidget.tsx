@@ -315,7 +315,7 @@ export default function TradeFairnessWidget() {
             {verdict?.text ?? 'Seleccioná cartas con precio para comparar.'}
           </p>
           <Link
-            href={ctaCard ? `/explore?q=${encodeURIComponent(ctaCard.name)}` : '#'}
+            href={ctaCard ? `/?q=${encodeURIComponent(ctaCard.name)}` : '#'}
             aria-disabled={!ctaCard}
             className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
               ctaCard

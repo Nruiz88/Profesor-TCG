@@ -135,7 +135,7 @@ export default async function Page({
 
   const slug = cardSlug(data.name)
   const faq = buildFaq(data)
-  const setHref = `/explore?set=${encodeURIComponent(data.setId)}`
+  const setHref = `/expansion/${encodeURIComponent(data.setId)}`
   const guideLinks = [
     {
       label: 'TCGPlayer',
@@ -180,7 +180,7 @@ export default async function Page({
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${APP_URL}/` },
-      { '@type': 'ListItem', position: 2, name: 'Marketplace', item: `${APP_URL}/explore` },
+      { '@type': 'ListItem', position: 2, name: 'Mercado', item: `${APP_URL}/` },
       { '@type': 'ListItem', position: 3, name: data.set_name, item: `${APP_URL}${setHref}` },
       { '@type': 'ListItem', position: 4, name: data.name }
     ]
@@ -241,8 +241,8 @@ export default async function Page({
             Inicio
           </Link>
           <span aria-hidden="true">/</span>
-          <Link href="/explore" className="transition-colors hover:text-white">
-            Marketplace
+          <Link href="/" className="transition-colors hover:text-white">
+            Mercado
           </Link>
           <span aria-hidden="true">/</span>
           <Link href={`/expansion/${encodeURIComponent(data.setId)}`} className="transition-colors hover:text-white">

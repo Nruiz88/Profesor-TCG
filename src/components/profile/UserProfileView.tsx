@@ -616,7 +616,7 @@ export default function UserProfileView({
                     — Cartas en venta
                   </p>
                   <Link
-                    href="/explore"
+                    href="/"
                     className="text-xs font-semibold text-rose-300 underline-offset-4 transition-colors hover:text-rose-200 hover:underline"
                   >
                     Ver el mercado completo →

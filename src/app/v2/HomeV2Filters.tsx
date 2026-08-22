@@ -1,6 +1,7 @@
 'use client'
 
-import { SearchIcon, XIcon } from '@/components/icons'
+import { useState } from 'react'
+import { ChevronDownIcon, ChevronUpIcon, SearchIcon, XIcon } from '@/components/icons'
 import type { ExploreFacets } from '@/app/api/public/explore/route'
 import type { WantlistFacets } from '@/app/api/public/wantlist/route'
 import { CARD_LANGUAGES, CARD_LANGUAGE_META } from '@/lib/cardLanguage'
@@ -86,6 +87,21 @@ export default function HomeV2Filters({
 }: HomeV2FiltersProps) {
   const isMarket = tab === 'market'
 
+  // Cantidad de filtros activos (sin contar el texto del buscador) para el
+  // badge del acordeón en mobile.
+  const activeCount = isMarket
+    ? (mode !== 'all' ? 1 : 0) +
+      (marketSet ? 1 : 0) +
+      (marketRarity ? 1 : 0) +
+      (marketVariant ? 1 : 0) +
+      (marketLang ? 1 : 0) +
+      (sort !== 'recent' ? 1 : 0)
+    : (wantRarity ? 1 : 0) + (wantSet ? 1 : 0) + (wantSort !== 'recent' ? 1 : 0)
+
+  // En mobile el panel de filtros está plegado por defecto; el buscador y el
+  // botón "Filtros (n)" quedan siempre visibles.
+  const [mobileOpen, setMobileOpen] = useState(false)
+
   return (
     <aside className="v2f-aside">
       <div className="v2f-panel">
@@ -117,7 +133,32 @@ export default function HomeV2Filters({
           )}
         </div>
 
-        <div className="v2f-head">
+        {/* Acordeón de filtros (solo mobile) */}
+        <div className="v2f-toggle-row lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-expanded={mobileOpen}
+            aria-controls="v2f-fields"
+            className="v2f-toggle"
+          >
+            <span className="v2f-toggle-label">Filtros</span>
+            {activeCount > 0 && <span className="v2f-toggle-badge">{activeCount}</span>}
+            <span className="v2f-toggle-chevron">
+              {mobileOpen ? <ChevronUpIcon className="h-3.5 w-3.5" /> : <ChevronDownIcon className="h-3.5 w-3.5" />}
+            </span>
+          </button>
+          {hasActiveFilters && (
+            <button type="button" onClick={onClear} className="v2f-head-clear">
+              <XIcon width={11} height={11} />
+              Limpiar
+            </button>
+          )}
+        </div>
+
+        {/* Campos de filtro: plegados en mobile, siempre visibles en desktop */}
+        <div id="v2f-fields" className={`${mobileOpen ? '' : 'hidden'} lg:block`}>
+        <div className="v2f-head hidden lg:flex">
           <h2
             className={`v2f-head-title ${
               isMarket ? 'v2f-head-title--market' : 'v2f-head-title--wantlist'
@@ -243,6 +284,7 @@ export default function HomeV2Filters({
             onWantSortChange={onWantSortChange}
           />
         )}
+        </div>
       </div>
     </aside>
   )

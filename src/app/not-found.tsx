@@ -1,15 +1,24 @@
 import Link from 'next/link'
-import SiteNav from '@/components/SiteNav'
+import MarketNav from '@/components/MarketNav'
+import MobileNav from '@/components/MobileNav'
 import GhostPokemon from '@/components/GhostPokemon'
+import { createClient } from '@/lib/supabase/server'
 import { SearchIcon, DiscordIcon } from '@/components/icons'
 
 // Página 404 personalizada (status 404 real, sin redirección). Muestra
 // enlaces para seguir navegando y evitar el rebote del usuario.
-export default function NotFound() {
+export default async function NotFound() {
+  const supabase = await createClient()
+  const {
+    data: { user }
+  } = await supabase.auth.getUser()
+  const navUser = user ? { id: user.id, email: user.email ?? undefined } : null
+
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-300">
       <GhostPokemon />
-      <SiteNav active="home" />
+      <MarketNav user={navUser} profile={null} />
+      <MobileNav user={navUser} profile={null} />
 
       <main className="relative mx-auto flex max-w-3xl flex-col items-center px-4 py-24 text-center">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,rgba(244,63,94,0.08),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(168,85,247,0.06),transparent_55%)]" />
@@ -34,11 +43,11 @@ export default function NotFound() {
             Volver al inicio
           </Link>
           <Link
-            href="/explore"
+            href="/"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-6 py-3 text-sm font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:text-white"
           >
             <SearchIcon className="h-4 w-4" />
-            Explorar el mercado
+            Ver el mercado
           </Link>
           <a
             href="https://discord.gg/NxuWmFKPuZ"

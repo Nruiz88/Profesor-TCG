@@ -23,7 +23,7 @@ function notificationHref(n: AppNotification): string {
   if (p.binder_card_id && p.card_name) {
     return `/card/${p.binder_card_id}/${slugify(p.card_name)}`
   }
-  return '/explore'
+  return '/'
 }
 
 function notificationTitle(n: AppNotification): string {

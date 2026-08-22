@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import MarketGrid from '@/components/MarketGrid'
 import WantlistGrid from '@/components/WantlistGrid'
 import type {
@@ -12,10 +11,11 @@ import type {
   PublicWantlistEntry,
   WantlistFacets
 } from '@/app/api/public/wantlist/route'
-import { ArrowRightIcon } from '@/components/icons'
+import MobileNav from '@/components/MobileNav'
 import HomeV2Filters, { type FilterMode } from './HomeV2Filters'
 import HomeV2Tabs, { type TabId } from './HomeV2Tabs'
 import MarketCardModal from './MarketCardModal'
+import type { Profile } from '@/lib/profile'
 import './HomeV2.css'
 
 type Tab = TabId
@@ -26,6 +26,11 @@ const MAX_RESULTS = 120
 
 const EMPTY_FACETS: ExploreFacets = { sets: [], rarities: [], variants: [], cities: [] }
 const EMPTY_WANT_FACETS: WantlistFacets = { sets: [], rarities: [], cities: [] }
+
+interface HomeV2Props {
+  user: { id: string; email?: string } | null
+  profile: Profile | null
+}
 
 function WantlistSkeleton() {
   return (
@@ -46,7 +51,7 @@ function WantlistSkeleton() {
   )
 }
 
-export default function HomeV2() {
+export default function HomeV2({ user, profile }: HomeV2Props) {
   const [tab, setTab] = useState<Tab>('market')
   const [q, setQ] = useState('')
   const [debouncedQ, setDebouncedQ] = useState('')
@@ -263,10 +268,6 @@ export default function HomeV2() {
                       <>Cargar más cartas</>
                     )}
                   </button>
-                  <Link href="/explore" className="v2h-more-link">
-                    Ver el mercado completo
-                    <ArrowRightIcon width={12} height={12} />
-                  </Link>
                 </div>
               )}
             </>
@@ -293,10 +294,6 @@ export default function HomeV2() {
                       <>Cargar más buscadas</>
                     )}
                   </button>
-                  <Link href="/buscados" className="v2h-more-link v2h-more-link--want">
-                    Ver todas las buscadas
-                    <ArrowRightIcon width={12} height={12} />
-                  </Link>
                 </div>
               )}
             </>
@@ -308,6 +305,9 @@ export default function HomeV2() {
       {selectedCard && (
         <MarketCardModal card={selectedCard} onClose={() => setSelectedCard(null)} />
       )}
+
+      {/* Navegación mobile: acciones según sesión */}
+      <MobileNav user={user} profile={profile} />
     </main>
   )
 }
