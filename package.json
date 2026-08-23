@@ -21,7 +21,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.47.10",
+    "@supabase/supabase-js": "^2.112.3",
     "@vercel/analytics": "^2.0.1",
     "@vercel/og": "^1.0.1",
     "@vercel/speed-insights": "^2.0.0",
