@@ -63,11 +63,13 @@ async function cacheFirst(request, cacheName) {
 }
 
 self.addEventListener('install', (event) => {
+  // NO se hace skipWaiting: el SW nuevo queda "waiting" hasta que el usuario
+  // confirme la actualización (banner). El primer install (sin SW previo)
+  // activa igual porque no hay un controlador viejo que lo bloquee.
   event.waitUntil(
     caches
       .open(STATIC_CACHE)
       .then((cache) => Promise.allSettled(PRECACHE_URLS.map((url) => cache.add(url))))
-      .then(() => self.skipWaiting())
   )
 })
 
@@ -84,6 +86,13 @@ self.addEventListener('activate', (event) => {
       )
       .then(() => self.clients.claim())
   )
+})
+
+// La página pide activar el SW nuevo cuando el usuario confirma en el banner.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
 })
 
 self.addEventListener('fetch', (event) => {
