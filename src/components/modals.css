@@ -3,6 +3,7 @@
    Compartido por los modales de la app (búsqueda, claim, edición, etc.).
    El z-index se mantiene inline en cada uso (z-50 / z-[60]).
    ============================================================================ */
+@reference "../app/globals.css";
 
 .modal-overlay {
   @apply fixed inset-0 flex items-center justify-center bg-black/70 p-4;
