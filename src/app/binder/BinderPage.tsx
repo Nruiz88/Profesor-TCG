@@ -326,38 +326,45 @@ export default function BinderPage() {
     }
   }
 
-  // Asegura que el binder sea público y devuelve su URL corta /b/<slug>.
-  // El slug lo genera el servidor (lib/binderSlug) al crear o leer el binder.
+  // Si el binder está privado, lo hace público automáticamente al compartir y
+  // devuelve el binder actualizado (con el slug garantizado por el servidor).
+  async function ensurePublic(): Promise<Binder | null> {
+    if (!binder) return null
+    if (binder.is_public) return binder
+    const res = await fetch('/api/binder', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ binderId: binder.id, is_public: true })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error')
+    setBinder(data.binder)
+    setBinders((prev) => prev.map((b) => (b.id === data.binder.id ? data.binder : b)))
+    return data.binder
+  }
+
+  // Devuelve la URL pública estable por username (/binder/<username>): no
+  // depende del título del binder, así que sigue funcionando aunque el
+  // usuario lo renombre.
   async function ensurePublicBinder(): Promise<string | null> {
-    if (!binder || !profile?.username) return null
-    // Si está privado, lo hacemos público automáticamente al compartir
-    if (!binder.is_public) {
-      const res = await fetch('/api/binder', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ binderId: binder.id, is_public: true })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error')
-      setBinder(data.binder)
-      setBinders((prev) => prev.map((b) => (b.id === data.binder.id ? data.binder : b)))
-    }
-    // El slug debería venir con el binder; si falta (binder antiguo aún sin
-    // backfill), lo pedimos al servidor que lo garantiza.
-    let slug = binder.slug ?? null
-    if (!slug) {
-      try {
-        const res = await fetch('/api/binder')
-        const data = await res.json()
-        if (res.ok && data.binder?.slug) slug = data.binder.slug
-      } catch {
-        // si falla, seguimos con el binderId en el link por username
-      }
-    }
-    if (slug) {
-      return `${window.location.origin}/b/${encodeURIComponent(slug)}`
-    }
-    return `${window.location.origin}/binder/${encodeURIComponent(profile.username)}?binderId=${encodeURIComponent(binder.id)}`
+    const b = await ensurePublic()
+    if (!b || !profile?.username) return null
+    const base = `${window.location.origin}/binder/${encodeURIComponent(profile.username)}`
+    // /binder/<username> muestra por defecto el primer binder público del
+    // usuario (created_at asc). Si el binder que se comparte no es ese,
+    // lo desambiguamos con ?binderId= para que aterrice en el correcto.
+    const firstPublic = binders.find((x) => x.is_public || x.id === b.id)
+    const isDefault = firstPublic?.id === b.id
+    if (isDefault) return base
+    return `${base}?binderId=${encodeURIComponent(b.id)}`
+  }
+
+  // Link de buscadas: aterriza en la pestaña wantlist de la URL corta
+  // /b/<slug> (la página por username no tiene pestaña de buscadas).
+  async function ensureWantlistUrl(): Promise<string | null> {
+    const b = await ensurePublic()
+    if (!b || !b.slug) return null
+    return `${window.location.origin}/b/${encodeURIComponent(b.slug)}?tab=wantlist`
   }
 
   async function copyLink(url: string, message: string) {
@@ -378,9 +385,9 @@ export default function BinderPage() {
   // Compartir el binder de buscados: link que aterriza en la pestaña
   // wantlist (su preview OG ya muestra cuántas cartas busca el dueño).
   async function copyWantlistLink() {
-    const base = await ensurePublicBinder()
-    if (!base) return
-    await copyLink(`${base}?tab=wantlist`, 'Link de buscadas copiado. El binder ahora es público.')
+    const url = await ensureWantlistUrl()
+    if (!url) return
+    await copyLink(url, 'Link de buscadas copiado. El binder ahora es público.')
   }
 
   // Compartir binder por WhatsApp: abre WhatsApp con mensaje prellenado
@@ -402,12 +409,12 @@ export default function BinderPage() {
 
   // Compartir wantlist por WhatsApp
   async function shareWantlistWhatsApp() {
-    const base = await ensurePublicBinder()
-    if (!base) return
+    const url = await ensureWantlistUrl()
+    if (!url) return
     const text = encodeURIComponent(
       `¡Estoy buscando estas cartas de Pokémon! ✨\n\n` +
       `Busco ${wantlist.length} carta${wantlist.length !== 1 ? 's' : ''}\n` +
-      `${base}?tab=wantlist`
+      `${url}`
     )
     window.open(`https://wa.me/?text=${text}`, '_blank')
   }

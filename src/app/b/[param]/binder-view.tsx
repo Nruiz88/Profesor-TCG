@@ -137,13 +137,11 @@ export default function PublicBinderPage({ param }: { param: string }) {
   }
 
   // Compartir el binder de buscadas: el link aterriza en la pestaña wantlist
-  // (su preview OG ya muestra cuántas cartas busca el dueño).
+  // de esta misma página corta /b/<param> (su preview OG ya muestra cuántas
+  // cartas busca el dueño). La página por username no tiene pestaña wantlist.
   async function handleShareWantlist() {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const base = seller?.username
-      ? `${origin}/binder/${encodeURIComponent(seller.username)}`
-      : `${origin}/b/${binder?.slug ?? param}`
-    const url = `${base}?tab=wantlist`
+    const url = `${origin}/b/${encodeURIComponent(param)}?tab=wantlist`
     try {
       await navigator.clipboard.writeText(url)
     } catch {
