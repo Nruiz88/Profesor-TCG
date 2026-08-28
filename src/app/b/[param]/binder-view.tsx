@@ -137,11 +137,14 @@ export default function PublicBinderPage({ param }: { param: string }) {
   }
 
   // Compartir el binder de buscadas: el link aterriza en la pestaña wantlist
-  // de esta misma página corta /b/<param> (su preview OG ya muestra cuántas
-  // cartas busca el dueño). La página por username no tiene pestaña wantlist.
+  // de esta misma página /b/<id> (su preview OG ya muestra cuántas cartas
+  // busca el dueño). La página por username no tiene pestaña wantlist.
+  // Se comparte el id y no el slug: el slug es único por usuario, no global,
+  // así que dos binders con el mismo título colisionan en /b/<slug> → 404.
   async function handleShareWantlist() {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const url = `${origin}/b/${encodeURIComponent(param)}?tab=wantlist`
+    const key = binder?.id ?? param
+    const url = `${origin}/b/${encodeURIComponent(key)}?tab=wantlist`
     try {
       await navigator.clipboard.writeText(url)
     } catch {

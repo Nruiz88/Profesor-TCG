@@ -359,12 +359,15 @@ export default function BinderPage() {
     return `${base}?binderId=${encodeURIComponent(b.id)}`
   }
 
-  // Link de buscadas: aterriza en la pestaña wantlist de la URL corta
-  // /b/<slug> (la página por username no tiene pestaña de buscadas).
+  // Link de buscadas: aterriza en la pestaña wantlist de la URL corta /b/<id>.
+  // Usamos el id del binder y no el slug: el slug es único por usuario, no
+  // global, así que dos coleccionistas con el mismo título (p.ej. "Mi
+  // Colección") colisionan en /b/<slug> y el link cae en 404. El id resuelve
+  // siempre de forma inequívoca en /b/<id>.
   async function ensureWantlistUrl(): Promise<string | null> {
     const b = await ensurePublic()
-    if (!b || !b.slug) return null
-    return `${window.location.origin}/b/${encodeURIComponent(b.slug)}?tab=wantlist`
+    if (!b) return null
+    return `${window.location.origin}/b/${encodeURIComponent(b.id)}?tab=wantlist`
   }
 
   async function copyLink(url: string, message: string) {

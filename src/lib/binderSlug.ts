@@ -1,11 +1,15 @@
 // ============================================================================
 // Slugs de binders: URLs públicas cortas /b/<slug>
 // ============================================================================
-// El slug se deriva del título del binder (slugify) y es único por usuario.
-// `ensureBinderSlug` garantiza que un binder tenga slug: si no lo tiene, lo
-// genera evitando colisiones y lo persiste. Funciona con cualquier cliente de
-// Supabase (server o browser) porque la lectura de binders propios está
-// permitida por RLS.
+// El slug se deriva del título del binder (slugify). `ensureBinderSlug`
+// garantiza que un binder tenga slug: si no lo tiene, lo genera evitando
+// colisiones y lo persiste. Funciona con cualquier cliente de Supabase
+// (server o browser) porque la lectura de binders propios está permitida por
+// RLS.
+//
+// Los slugs son únicos en TODA la plataforma (no solo por usuario): la
+// resolución de /b/<slug> es global, así que dos coleccionistas con el mismo
+// título (p.ej. "Mi Colección") colisionarían y el link caería en 404.
 // ============================================================================
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -16,18 +20,17 @@ interface SlugRow {
   slug: string | null
 }
 
-// Genera un slug único para el usuario. base = slugify(título). Si existe
+// Genera un slug único global. base = slugify(título). Si existe
 // "mi-coleccion", prueba "mi-coleccion-2", "mi-coleccion-3", etc.
 // excludeBinderId excluye el propio binder al renombrarlo (su slug actual no
 // debe contar como colisión de sí mismo).
 export async function generateUniqueSlug(
-  getRows: (userId: string) => Promise<SlugRow[]>,
-  userId: string,
+  getRows: () => Promise<SlugRow[]>,
   title: string,
   excludeBinderId?: string
 ): Promise<string> {
   const base = slugify(title) || 'binder'
-  const rows = await getRows(userId)
+  const rows = await getRows()
   const taken = rows
     .filter((r) => r.id !== excludeBinderId)
     .map((r) => r.slug)
@@ -39,15 +42,13 @@ export async function generateUniqueSlug(
   return `${base}-${i}`
 }
 
-// Lee los slugs de todos los binders de un usuario (para resolver colisiones).
-export async function listUserSlugs(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<SlugRow[]> {
+// Lee los slugs de todos los binders de la plataforma (para resolver
+// colisiones globales de /b/<slug>).
+export async function listAllSlugs(supabase: SupabaseClient): Promise<SlugRow[]> {
   const { data } = await supabase
     .from('binders')
     .select('id, slug')
-    .eq('user_id', userId)
+    .not('slug', 'is', null)
   return (data ?? []) as SlugRow[]
 }
 
@@ -63,8 +64,7 @@ export async function ensureBinderSlug(
   if (binder.slug && !force) return binder.slug
 
   const slug = await generateUniqueSlug(
-    (uid) => listUserSlugs(supabase, uid),
-    binder.user_id,
+    () => listAllSlugs(supabase),
     binder.title,
     binder.id
   )

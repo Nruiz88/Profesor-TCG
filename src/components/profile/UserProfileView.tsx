@@ -190,7 +190,12 @@ export default function UserProfileView({
     username?: string
     slotByCardId: Record<string, string>
   } | null>(null)
-  const [activeTab, setActiveTab] = useState<'collection' | 'wantlist' | 'sale' | 'reviews'>('collection')
+  const [activeTab, setActiveTab] = useState<'collection' | 'wantlist' | 'sale' | 'reviews'>(() => {
+    if (typeof window === 'undefined') return 'collection'
+    return new URLSearchParams(window.location.search).get('tab') === 'wantlist'
+      ? 'wantlist'
+      : 'collection'
+  })
 
   const totalCardCount = collectionBySet.reduce((s, c) => s + c.owned, 0) || countUniqueCards(saleCards, wantlist, showcaseCards)
 

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import { generateUniqueSlug, listUserSlugs } from '@/lib/binderSlug'
+import { generateUniqueSlug, listAllSlugs } from '@/lib/binderSlug'
 
 // Obtener todos los binders del usuario activo
 export async function getUserBinders(userId: string) {
@@ -25,11 +25,7 @@ export async function createBinder(
   }
 ) {
   const supabase = createClient()
-  const slug = await generateUniqueSlug(
-    (uid) => listUserSlugs(supabase, uid),
-    userId,
-    title
-  )
+  const slug = await generateUniqueSlug(() => listAllSlugs(supabase), title)
   const { data, error } = await supabase
     .from('binders')
     .insert({
