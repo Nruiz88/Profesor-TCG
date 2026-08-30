@@ -26,12 +26,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ param: 
     }
 
     // RLS: solo devuelve binders con is_public = true (visitantes anónimos)
-    let binder: { id: string; title: string; user_id: string } | null = null
+    let binder: { id: string; title: string; user_id: string; background: string | null } | null = null
 
     // 1) Por slug (URL corta)
     const { data: bySlug } = await supabase
       .from('binders')
-      .select('id, title, user_id')
+      .select('id, title, user_id, background')
       .eq('slug', key.toLowerCase())
       .eq('is_public', true)
       .maybeSingle()
@@ -41,7 +41,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ param: 
     if (!binder) {
       const { data: byId } = await supabase
         .from('binders')
-        .select('id, title, user_id')
+        .select('id, title, user_id, background')
         .eq('id', key)
         .eq('is_public', true)
         .maybeSingle()
@@ -55,9 +55,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ param: 
     // Perfil del dueño para el badge del vendedor (solo campos públicos)
     const { data: owner } = await supabase
       .from('profiles')
-      .select('id, username, whatsapp_number, country, city')
+      .select('id, username, whatsapp_number, country, city, is_verified, total_sales, total_trades')
       .eq('id', binder.user_id)
       .maybeSingle()
+
+    // Get review count for the user
+    const { count: reviewCount } = await supabase
+      .from('reviews')
+      .select('id', { count: 'exact', head: true })
+      .eq('reviewed_user_id', binder.user_id)
 
     // Wantlist del dueño (pública por RLS) para la pestaña "Cartas Buscadas"
     const { data: wantlist, error: wantlistError } = await supabase
@@ -110,8 +116,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ param: 
 
     return NextResponse.json(
       {
-        binder: { id: binder.id, title: binder.title, slug: key.toLowerCase() },
-        owner,
+        binder: { id: binder.id, title: binder.title, slug: key.toLowerCase(), background: binder.background },
+        owner: owner ? {
+          ...owner,
+          is_verified: !!owner.is_verified,
+          total_sales: owner.total_sales ?? 0,
+          total_trades: owner.total_trades ?? 0,
+          review_count: reviewCount ?? 0
+        } : null,
         cards: enriched,
         wantlist: wantlistEnriched
       },

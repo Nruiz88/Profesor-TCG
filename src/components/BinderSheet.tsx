@@ -12,6 +12,7 @@ import LanguageBadge from './LanguageBadge'
 import ConditionBadge from './ConditionBadge'
 import { LockIcon } from '@/components/icons'
 import type { SellerInfo } from './SellerInfoBadge'
+import { binderBackgroundForSheet } from '@/lib/binderBackgrounds'
 
 interface BinderSheetProps {
   sheetNumber: number
@@ -25,6 +26,8 @@ interface BinderSheetProps {
   onCardUpdated?: () => void
   seller?: SellerInfo | null
   highlightCardId?: string | null
+  /** Fondo elegido para este binder (clave). Si no hay, se rota por hoja. */
+  background?: string | null
 }
 
 export default function BinderSheet({
@@ -36,7 +39,8 @@ export default function BinderSheet({
   onMarkSold,
   onCardUpdated,
   seller,
-  highlightCardId
+  highlightCardId,
+  background
 }: BinderSheetProps) {
   const [selected, setSelected] = useState<SlotCard | null>(null)
   const [claimCard, setClaimCard] = useState<SlotCard | null>(null)
@@ -54,7 +58,15 @@ export default function BinderSheet({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+    <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+      {/* Fondo temático de la hoja */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${binderBackgroundForSheet(sheetNumber, background)})` }}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-950/85 via-slate-950/60 to-slate-950/80" />
+      <div className="relative">
       <div className="mb-4 flex items-center justify-between px-1">
         <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500">Hoja {sheetNumber}</h3>
         <span className="text-xs font-medium text-slate-600">{slots.filter(Boolean).length}/9</span>
@@ -65,23 +77,23 @@ export default function BinderSheet({
           <div key={i} className="group relative aspect-[63/88] rounded-xl">
             {card ? (
               <div className="relative h-full w-full">
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleCardClick(card)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCardClick(card)
-                  }}
-                  data-card-id={card.id}
-                  className={`h-full w-full cursor-pointer rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-binder-accent ${
-                    card.id === highlightCardId
-                      ? 'ring-2 ring-yellow-400 shadow-[0_0_0_4px_rgba(250,204,21,0.25)]'
-                      : ''
-                  }`}
-                  aria-label={`Ver detalle de ${card.card_name}`}
-                >
-                  <PokemonCard card={card} />
-                </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleCardClick(card)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCardClick(card)
+                    }}
+                    data-card-id={card.id}
+                    className={`h-full w-full cursor-pointer rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-binder-accent ${
+                      card.id === highlightCardId
+                        ? 'ring-2 ring-yellow-400 shadow-[0_0_0_4px_rgba(250,204,21,0.25)]'
+                        : ''
+                    }`}
+                    aria-label={`Ver detalle de ${card.card_name}`}
+                  >
+                    <PokemonCard card={card} />
+                  </div>
 
                 {/* Contador de copias: se muestra cuando hay más de una de la misma carta */}
                 {(card.quantity ?? 1) > 1 && (
@@ -230,6 +242,7 @@ export default function BinderSheet({
       {claimCard && seller && (
         <ClaimModal card={claimCard} seller={seller} onClose={() => setClaimCard(null)} />
       )}
+      </div>
     </div>
   )
 }

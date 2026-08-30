@@ -4,6 +4,7 @@ import { getCardMetadataMap, getSets } from '@/lib/catalog'
 import { resolveCardImage } from '@/lib/cardImage'
 import { validate, extractParams } from '@/lib/validate'
 import { binderSchema } from '@/lib/schemas'
+import { BINDER_BACKGROUNDS } from '@/lib/binderBackgrounds'
 import { apiLimit } from '@/lib/rateLimit'
 import { ensureBinderSlug } from '@/lib/binderSlug'
 
@@ -75,7 +76,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ cards: enriched })
     }
 
-    const BINDER_SELECT = 'id, user_id, title, description, is_public, cover_card_id, slug, created_at'
+    const BINDER_SELECT = 'id, user_id, title, description, is_public, cover_card_id, slug, background, created_at'
 
     if (binderId) {
       const { data } = await supabase
@@ -176,6 +177,7 @@ export async function PATCH(req: Request) {
     description?: unknown
     is_public?: boolean
     cover_card_id?: unknown
+    background?: unknown
   }
   try {
     body = await req.json()
@@ -244,11 +246,37 @@ export async function PATCH(req: Request) {
       }
     }
 
+    // Fondo de la carpeta: debe ser una clave conocida (o null para rotación)
+    if (body.background !== undefined) {
+      if (body.background === null || body.background === '') {
+        updates.background = null
+      } else if (BINDER_BACKGROUNDS.some((b) => b.key === body.background)) {
+        // Verificar premium para fondos personalizados
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_premium')
+          .eq('id', user.id)
+          .maybeSingle()
+        if (!profile?.is_premium) {
+          return NextResponse.json(
+            { error: 'Se requiere premium para fondos personalizados' },
+            { status: 403 }
+          )
+        }
+        updates.background = body.background as string
+      } else {
+        return NextResponse.json(
+          { error: 'Fondo de carpeta inválido' },
+          { status: 400 }
+        )
+      }
+    }
+
     const { data, error } = await supabase
       .from('binders')
       .update(updates)
       .eq('id', binder.id)
-      .select('id, title, description, is_public, cover_card_id, slug, created_at')
+      .select('id, title, description, is_public, cover_card_id, slug, background, created_at')
       .single()
     if (error) throw error
 

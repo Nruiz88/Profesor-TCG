@@ -7,11 +7,9 @@ import {
   CardsIcon,
   ChevronDownIcon,
   CompassIcon,
-  FolderIcon,
   GearIcon,
   HomeIcon,
   LogoutIcon,
-  PlusIcon,
   ShieldIcon,
   SwapIcon,
   UserIcon
@@ -24,17 +22,14 @@ export interface SidebarBinder {
   id: string
   title: string
   is_public?: boolean
+  background?: string | null
 }
 
 export interface SidebarMenuProps {
   profile: Profile | null
   user: { id: string; email?: string } | null
-  binders: SidebarBinder[]
-  activeBinderId: string | null
   pendingOffers: number
   isActive: (p: string) => boolean
-  onSelectBinder: (id: string) => void
-  onCreateBinder: () => void
   onShowProfile: () => void
   onClose: () => void
   /** Muestra el encabezado de logo (se omite en el Bottom Sheet móvil). */
@@ -46,7 +41,7 @@ const SECTION_TOGGLE =
 const NAV_ITEM =
   'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150'
 const NAV_ACTIVE =
-  'bg-white/5 text-white ring-1 ring-inset ring-white/10'
+  'bg-[#00ffcc]/10 text-[#00ffcc] border-l-[3px] border-[#00ffcc] rounded-l-none pl-[9px]'
 const NAV_IDLE = 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
 
 export function SidebarSection({
@@ -96,12 +91,8 @@ export default function SidebarMenu(props: SidebarMenuProps) {
   const {
     profile,
     user,
-    binders,
-    activeBinderId,
     pendingOffers,
     isActive,
-    onSelectBinder,
-    onCreateBinder,
     onShowProfile,
     onClose,
     showHeader = true
@@ -123,7 +114,8 @@ export default function SidebarMenu(props: SidebarMenuProps) {
   return (
     <div className="flex h-full flex-col">
       {showHeader && (
-        <div className="flex h-16 shrink-0 items-center gap-2.5 border-b border-slate-800/60 px-5">
+        <div className="flex shrink-0 flex-col gap-4 border-b border-slate-800/60 px-5 pb-5 pt-6">
+          {/* Logo */}
           <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
             <img
               src="/brand/logo-invertido.png"
@@ -132,6 +124,28 @@ export default function SidebarMenu(props: SidebarMenuProps) {
             />
             <span className="text-lg font-bold tracking-tight text-white">TCG Claim</span>
           </Link>
+
+          {/* Identidad: avatar + username + rank */}
+          {user && (
+            <div className="flex items-center gap-3">
+              <div className="relative shrink-0">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#00ffcc]/40 bg-gradient-to-tr from-[#00ffcc]/25 to-rose-500/25 text-base font-black text-white shadow-[0_0_16px_rgba(0,255,204,0.25)]">
+                  {initial}
+                </div>
+                <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#00ffcc] text-[9px] text-[#080c15] shadow-[0_0_8px_rgba(0,255,204,0.6)]">
+                  ✓
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-white" title={user.email}>
+                  {displayName}
+                </p>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[#00ffcc]">
+                  Coleccionista
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -145,7 +159,7 @@ export default function SidebarMenu(props: SidebarMenuProps) {
             className={`${NAV_ITEM} ${isActive('/') ? NAV_ACTIVE : NAV_IDLE}`}
           >
             <HomeIcon
-              className={`h-5 w-5 ${isActive('/') ? 'text-rose-300' : 'text-slate-500'}`}
+              className={`h-5 w-5 ${isActive('/') ? 'text-[#00ffcc]' : 'text-slate-500'}`}
             />
             Inicio
           </Link>
@@ -159,7 +173,7 @@ export default function SidebarMenu(props: SidebarMenuProps) {
             >
               <UserIcon
                 className={`h-5 w-5 ${
-                  isActive('/profile') ? 'text-rose-300' : 'text-slate-500'
+                  isActive('/profile') ? 'text-[#00ffcc]' : 'text-slate-500'
                 }`}
               />
               Perfil
@@ -167,67 +181,21 @@ export default function SidebarMenu(props: SidebarMenuProps) {
           )}
         </div>
 
-        {/* BINDER (con binders correspondientes) */}
-        <SidebarSection icon={<CardsIcon className="h-5 w-5" />} title="Binder">
-          {user && (
+        {/* BINDERS */}
+        {user && (
+          <div className="flex flex-col gap-0.5">
             <Link
               href="/binder"
               onClick={onClose}
-              className={`${NAV_ITEM} ${
-                isActive('/binder') && !activeBinderId ? NAV_ACTIVE : NAV_IDLE
-              }`}
+              className={`${NAV_ITEM} ${isActive('/binder') ? NAV_ACTIVE : NAV_IDLE}`}
             >
               <CardsIcon
-                className={`h-5 w-5 ${
-                  isActive('/binder') && !activeBinderId ? 'text-rose-300' : 'text-slate-500'
-                }`}
+                className={`h-5 w-5 ${isActive('/binder') ? 'text-[#00ffcc]' : 'text-slate-500'}`}
               />
-              Mi Binder
+              Binders
             </Link>
-          )}
-
-          {user && binders.length > 0 && (
-            <ul className="flex flex-col gap-0.5">
-              {binders.map((b) => {
-                const active = b.id === activeBinderId
-                return (
-                  <li key={b.id}>
-                    <button
-                      onClick={() => {
-                        onSelectBinder(b.id)
-                        onClose()
-                      }}
-                      aria-current={active ? 'page' : undefined}
-                      className={`${NAV_ITEM} w-full text-left ${
-                        active ? NAV_ACTIVE : NAV_IDLE
-                      } ${active ? '' : 'pl-8'}`}
-                    >
-                      <FolderIcon
-                        className={`h-5 w-5 shrink-0 ${
-                          active ? 'text-rose-300' : 'text-slate-500'
-                        }`}
-                      />
-                      <span className="min-w-0 flex-1 truncate">{b.title}</span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-
-          {user && (
-            <button
-              onClick={() => {
-                onCreateBinder()
-                onClose()
-              }}
-              className="mt-0.5 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-gray-800 hover:text-emerald-300"
-            >
-              <PlusIcon className="h-5 w-5" />
-              Crear nuevo binder
-            </button>
-          )}
-        </SidebarSection>
+          </div>
+        )}
 
         {/* MERCADO */}
         <SidebarSection icon={<CompassIcon className="h-5 w-5" />} title="Mercado">
@@ -239,7 +207,7 @@ export default function SidebarMenu(props: SidebarMenuProps) {
             >
               <SwapIcon
                 className={`h-5 w-5 ${
-                  isActive('/offers') ? 'text-rose-300' : 'text-slate-500'
+                  isActive('/offers') ? 'text-[#00ffcc]' : 'text-slate-500'
                 }`}
               />
               Ofertas

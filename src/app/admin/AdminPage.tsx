@@ -10,6 +10,7 @@ import {
   ClockIcon,
   FolderIcon,
   GlobeIcon,
+  KeyIcon,
   LockIcon,
   RefreshIcon,
   ShieldIcon,
@@ -20,6 +21,7 @@ import {
 import { formatLocation } from '@/lib/profile'
 import AdminIntegrations from '@/components/AdminIntegrations'
 import AdminActivityChart from '@/components/AdminActivityChart'
+import { computeTrainerScore } from '@/lib/trainer'
 
 interface UserRow {
   id: string
@@ -29,6 +31,7 @@ interface UserRow {
   created_at: string
   is_admin: boolean
   is_verified: boolean
+  is_premium: boolean
   binderCount: number
   hasPublicBinder: boolean
   cardCount: number
@@ -101,7 +104,6 @@ function statusBadge(status: string) {
   )
 }
 
-// Lista de números de página visibles, con elipsis para listados largos.
 function pageList(current: number, total: number): Array<number | '…'> {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
   const pages: Array<number | '…'> = [1]
@@ -148,11 +150,8 @@ export default function AdminPage() {
     }
   }, [])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
-  // Paginado y búsqueda server-side de la tabla de usuarios
   const loadUsers = useCallback(async (p: number, s: string) => {
     setUsersLoading(true)
     try {
@@ -178,18 +177,13 @@ export default function AdminPage() {
     }
   }, [])
 
-  // Al cambiar la búsqueda vuelve a la primera página
-  useEffect(() => {
-    setPage(1)
-  }, [search])
+  useEffect(() => { setPage(1) }, [search])
 
-  // Debounce para no disparar una request por tecla; refetchea al recargar KPIs
   useEffect(() => {
     const t = setTimeout(() => loadUsers(page, search), 250)
     return () => clearTimeout(t)
   }, [page, search, data, loadUsers])
 
-  // Marca/desmarca el badge ⚡ VERIFICADO de un usuario
   async function handleVerify(u: { id: string; username: string; is_verified: boolean }) {
     try {
       const res = await fetch('/api/admin/verify', {
@@ -205,44 +199,61 @@ export default function AdminPage() {
     }
   }
 
+  async function handleTogglePremium(u: { id: string; username: string; is_premium: boolean }) {
+    try {
+      const res = await fetch('/api/admin/premium', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: u.id, is_premium: !u.is_premium })
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error || 'Error')
+      loadUsers(page, search)
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Error al actualizar premium')
+    }
+  }
+
   if (loading) {
     return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
-        <div className="mb-8 h-8 w-48 animate-pulse rounded-lg bg-slate-800" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl border border-slate-800 bg-slate-900" />
-          ))}
-        </div>
-      </main>
+      <div className="min-h-screen bg-[#090d16] text-slate-200">
+        <main className="mx-auto max-w-6xl px-4 py-10 lg:px-6">
+          <div className="mb-8 h-8 w-48 animate-pulse rounded-lg bg-slate-800" />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-24 animate-pulse rounded-2xl border border-slate-800 bg-slate-900/40" />
+            ))}
+          </div>
+        </main>
+      </div>
     )
   }
 
   if (error || !data) {
     return (
-      <main className="mx-auto max-w-6xl px-4 py-24 text-center">
-        <ShieldIcon className="mx-auto h-10 w-10 text-slate-600" />
-        <h1 className="mt-4 text-xl font-bold text-white">Panel Admin</h1>
-        <p className="mt-2 text-sm text-slate-400">{error || 'No hay datos disponibles'}</p>
-        <Link
-          href="/binder"
-          className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-700"
-        >
-          Volver a mi binder
-        </Link>
-      </main>
+      <div className="min-h-screen bg-[#090d16] text-slate-200">
+        <main className="mx-auto max-w-6xl px-4 py-24 text-center lg:px-6">
+          <ShieldIcon className="mx-auto h-10 w-10 text-slate-600" />
+          <h1 className="mt-4 text-xl font-bold text-white">Panel Admin</h1>
+          <p className="mt-2 text-sm text-slate-400">{error || 'No hay datos disponibles'}</p>
+          <Link
+            href="/binder"
+            className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-700"
+          >
+            Volver a mi binder
+          </Link>
+        </main>
+      </div>
     )
   }
 
   const { users, cards, binders, offers, marketValue, recent, activity } = data
   const q = search.trim()
 
-  // Paginación de la tabla de usuarios (la página llega clamped al servidor)
   const safePage = Math.min(page, userPages)
   const from = userTotal === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1
   const to = Math.min(safePage * PAGE_SIZE, userTotal)
 
-  // Sub-métricas derivadas del overview (conteos exactos del servidor)
   const avgCardsPerUser = users.total > 0 ? Math.round(cards.total / users.total) : 0
   const publicBinderPct = binders.total > 0 ? Math.round((binders.public / binders.total) * 100) : 0
   const listings = cards.forSale + cards.forTrade
@@ -254,33 +265,44 @@ export default function AdminPage() {
       label: 'Usuarios',
       value: fmtNum(users.total),
       sub: `+${users.new14d} en 14 días · ${users.verified} verificados`,
-      icon: <UserIcon className="h-4 w-4 text-violet-400" />,
-      tint: 'text-violet-400'
+      icon: <UserIcon className="h-5 w-5" />,
+      color: 'text-violet-400',
+      glow: 'shadow-violet-500/10',
+      border: 'border-violet-500/20',
+      bg: 'from-violet-500/15'
     },
     {
-      label: 'Cartas registradas',
+      label: 'Cartas',
       value: fmtNum(cards.total),
       sub: `~${avgCardsPerUser} por usuario`,
-      icon: <CardsIcon className="h-4 w-4 text-white" />,
-      tint: 'text-white'
+      icon: <CardsIcon className="h-5 w-5" />,
+      color: 'text-[#00ffcc]',
+      glow: 'shadow-[#00ffcc]/10',
+      border: 'border-[#00ffcc]/20',
+      bg: 'from-[#00ffcc]/15'
     },
     {
       label: 'Binders',
       value: fmtNum(binders.total),
       sub: `${binders.public} públicos (${publicBinderPct}%)`,
-      icon: <FolderIcon className="h-4 w-4 text-sky-400" />,
-      tint: 'text-sky-400'
+      icon: <FolderIcon className="h-5 w-5" />,
+      color: 'text-sky-400',
+      glow: 'shadow-sky-500/10',
+      border: 'border-sky-500/20',
+      bg: 'from-sky-500/15'
     },
     {
-      label: 'Valor de mercado',
+      label: 'Valor mercado',
       value: `$${fmtUsd(marketValue)}`,
-      sub: `${fmtNum(listings)} listados en oferta`,
-      icon: <WalletIcon className="h-4 w-4 text-yellow-400" />,
-      tint: 'text-yellow-400'
+      sub: `${fmtNum(listings)} listados`,
+      icon: <WalletIcon className="h-5 w-5" />,
+      color: 'text-yellow-400',
+      glow: 'shadow-yellow-500/10',
+      border: 'border-yellow-500/20',
+      bg: 'from-yellow-500/15'
     }
   ]
 
-  // Distribución de cartas por estado para la barra del marketplace
   const segments = [
     { label: 'Colección', count: cards.collection, color: 'bg-slate-500' },
     { label: 'En venta', count: cards.forSale, color: 'bg-emerald-500' },
@@ -290,246 +312,337 @@ export default function AdminPage() {
   const segmentTotal = Math.max(1, segments.reduce((acc, s) => acc + s.count, 0))
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10">
-      {/* Header */}
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <ShieldIcon className="h-6 w-6 text-violet-400" />
-            <h1 className="text-2xl font-bold text-white">Panel Admin</h1>
-          </div>
-          <p className="mt-1 text-sm text-slate-400">
-            Estadísticas de la comunidad · actualizado {formatDate(data.generatedAt)}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={load}
-            disabled={loading}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-slate-800 px-3 text-sm font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-50"
-          >
-            <RefreshIcon className="h-4 w-4" />
-            Actualizar
-          </button>
-          <Link
-            href="/binder"
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-violet-600 px-3 text-sm font-semibold text-white hover:bg-violet-500"
-          >
-            Mi binder
-            <ArrowRightIcon className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#090d16] text-slate-200">
+      <main className="mx-auto max-w-6xl px-4 py-6 lg:px-6 lg:py-8">
 
-      {/* KPIs principales con sub-métricas */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3">
-            <div className="flex items-center gap-1.5">
-              {k.icon}
-              <p className="text-[10px] uppercase tracking-widest text-slate-500">{k.label}</p>
+        {/* ─── Header: glass panel ─── */}
+        <div className="relative mb-6 overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl sm:p-6">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-rose-500/10 blur-3xl" />
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15">
+                  <ShieldIcon className="h-5 w-5 text-violet-400" />
+                </div>
+                <h1 className="text-2xl font-extrabold tracking-tight text-white">Panel Admin</h1>
+              </div>
+              <p className="mt-2 text-sm text-slate-400">
+                Estadísticas de la comunidad · actualizado {formatDate(data.generatedAt)}
+              </p>
             </div>
-            <p className={`mt-1 truncate text-2xl font-bold ${k.tint}`}>{k.value}</p>
-            <p className="mt-0.5 truncate text-xs text-slate-500">{k.sub}</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={load}
+                disabled={loading}
+                className="flex h-10 items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/50 px-3 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700 disabled:opacity-50"
+              >
+                <RefreshIcon className="h-4 w-4" />
+                Actualizar
+              </button>
+              <Link
+                href="/binder"
+                className="flex h-10 items-center gap-1.5 rounded-xl bg-[#00ffcc] px-3 text-sm font-bold text-[#080c15] shadow-[0_0_12px_rgba(0,255,204,0.25)] transition-all hover:brightness-110"
+              >
+                Mi binder
+                <ArrowRightIcon className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
-        ))}
-      </div>
-
-      {/* Marketplace: distribución de cartas + ofertas en una sola sección */}
-      <section className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <div className="flex items-center gap-1.5">
-          <ChartIcon className="h-4 w-4 text-slate-400" />
-          <h2 className="text-sm font-bold text-white">Marketplace</h2>
         </div>
 
-        <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-slate-800">
-          {segments.map((s) =>
-            s.count > 0 ? (
-              <div
-                key={s.label}
-                className={s.color}
-                style={{ width: `${(s.count / segmentTotal) * 100}%` }}
-                title={`${s.label}: ${s.count}`}
-              />
-            ) : null
-          )}
-        </div>
-        <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
-          {segments.map((s) => (
-            <span key={s.label} className="inline-flex items-center gap-1.5 text-xs text-slate-400">
-              <span className={`h-2 w-2 rounded-full ${s.color}`} />
-              <span className="font-semibold text-white">{fmtNum(s.count)}</span> {s.label}
-            </span>
+        {/* ─── KPI cards ─── */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {kpis.map((k) => (
+            <div
+              key={k.label}
+              className={`relative overflow-hidden rounded-2xl border ${k.border} bg-slate-900/60 p-4 backdrop-blur-xl transition-shadow hover:shadow-lg ${k.glow}`}
+            >
+              <div className={`pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br ${k.bg} to-transparent blur-2xl`} />
+              <div className="relative">
+                <div className={`flex items-center gap-1.5 ${k.color}`}>
+                  {k.icon}
+                  <p className="text-[10px] font-semibold uppercase tracking-widest">{k.label}</p>
+                </div>
+                <p className={`mt-2 truncate text-2xl font-extrabold ${k.color}`}>{k.value}</p>
+                <p className="mt-0.5 truncate text-xs text-slate-500">{k.sub}</p>
+              </div>
+            </div>
           ))}
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3 text-sm">
-          <span className="mr-1 flex items-center gap-1.5 text-slate-400">
-            <SwapIcon className="h-4 w-4" />
-            Ofertas de intercambio:
-          </span>
-          <span className="rounded-full bg-slate-800 px-2.5 py-1 font-semibold text-slate-200">
-            {offers.total} total
-          </span>
-          <span className="rounded-full bg-amber-500/15 px-2.5 py-1 font-semibold text-amber-400">
-            {offers.pending} pendientes
-          </span>
-          <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 font-semibold text-emerald-400">
-            {offers.accepted} aceptadas
-          </span>
-          <span className="rounded-full bg-rose-500/15 px-2.5 py-1 font-semibold text-rose-400">
-            {offers.rejected} rechazadas
-          </span>
-          <span className="rounded-full bg-slate-700/50 px-2.5 py-1 font-semibold text-slate-300">
-            {offers.cancelled} canceladas
-          </span>
-          <span className="ml-auto text-xs text-slate-500">
-            Tasa de aceptación: <strong className="text-emerald-400">{acceptRate}%</strong>
-          </span>
-        </div>
-      </section>
-
-      {/* Tabs: redistribuyen el contenido para que el panel no sea eterno */}
-      <div className="mt-8 flex flex-wrap gap-1 rounded-xl border border-slate-800 bg-slate-900 p-1">
-        <button
-          type="button"
-          onClick={() => setTab('users')}
-          aria-pressed={tab === 'users'}
-          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            tab === 'users'
-              ? 'bg-binder-accent text-white shadow'
-              : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-          }`}
-        >
-          👥 Usuarios
-          <span
-            className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-              tab === 'users' ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-400'
-            }`}
-          >
-            {users.total}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('activity')}
-          aria-pressed={tab === 'activity'}
-          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            tab === 'activity'
-              ? 'bg-binder-accent text-white shadow'
-              : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-          }`}
-        >
-          📈 Actividad reciente
-          <span
-            className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-              tab === 'activity' ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-400'
-            }`}
-          >
-            {recent.length}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('integrations')}
-          aria-pressed={tab === 'integrations'}
-          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            tab === 'integrations'
-              ? 'bg-binder-accent text-white shadow'
-              : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-          }`}
-        >
-          🔌 Integraciones
-        </button>
-      </div>
-
-      {/* Usuarios: búsqueda y paginación server-side */}
-      {tab === 'users' && (
-        <section className="mt-6">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-slate-400" />
-              <h2 className="text-lg font-bold text-white">Usuarios</h2>
-              <span className="text-xs text-slate-500">
-                {usersLoading ? 'Buscando…' : `${fmtNum(userTotal)} de ${fmtNum(users.total)}`}
-              </span>
-            </div>
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Filtrar por usuario o ubicación…"
-              aria-label="Filtrar usuarios"
-              className="w-full max-w-xs rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none transition-colors focus:border-binder-accent"
-            />
+        {/* ─── Marketplace: glass panel ─── */}
+        <section className="mt-5 overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl">
+          <div className="flex items-center gap-1.5">
+            <ChartIcon className="h-4 w-4 text-slate-400" />
+            <h2 className="text-sm font-bold text-white">Marketplace</h2>
           </div>
 
-          <div
-            className={`overflow-hidden rounded-xl border border-slate-800 transition-opacity ${
-              usersLoading ? 'opacity-50' : ''
-            }`}
-          >
-            <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="bg-slate-900 text-[10px] uppercase tracking-widest text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">Usuario</th>
-                  <th className="px-4 py-3">Ubicación</th>
-                  <th className="px-4 py-3 text-center">Binders</th>
-                  <th className="px-4 py-3 text-center">Cartas</th>
-                  <th className="px-4 py-3 text-center">Venta</th>
-                  <th className="px-4 py-3 text-center">Cambio</th>
-                  <th className="px-4 py-3">Registro</th>
-                  <th className="px-4 py-3">Rol</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/70 bg-slate-900/40">
-                {userRows.length === 0 && (
+          <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-slate-800">
+            {segments.map((s) =>
+              s.count > 0 ? (
+                <div
+                  key={s.label}
+                  className={s.color}
+                  style={{ width: `${(s.count / segmentTotal) * 100}%` }}
+                  title={`${s.label}: ${s.count}`}
+                />
+              ) : null
+            )}
+          </div>
+          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
+            {segments.map((s) => (
+              <span key={s.label} className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                <span className={`h-2 w-2 rounded-full ${s.color}`} />
+                <span className="font-semibold text-white">{fmtNum(s.count)}</span> {s.label}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-4 border-t border-slate-800/60 pt-3">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="mr-1 flex items-center gap-1.5 text-slate-400">
+                <SwapIcon className="h-4 w-4" />
+                Ofertas:
+              </span>
+              <span className="rounded-full bg-slate-800/80 px-2.5 py-1 text-xs font-semibold text-slate-200">
+                {offers.total} total
+              </span>
+              <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-400">
+                {offers.pending} pendientes
+              </span>
+              <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+                {offers.accepted} aceptadas
+              </span>
+              <span className="rounded-full bg-rose-500/15 px-2.5 py-1 text-xs font-semibold text-rose-400">
+                {offers.rejected} rechazadas
+              </span>
+              <span className="rounded-full bg-slate-700/50 px-2.5 py-1 text-xs font-semibold text-slate-300">
+                {offers.cancelled} canceladas
+              </span>
+            </div>
+            <p className="mt-2 text-right text-xs text-slate-500">
+              Tasa de aceptación: <strong className="text-emerald-400">{acceptRate}%</strong>
+            </p>
+          </div>
+        </section>
+
+        {/* ─── Tabs ─── */}
+        <div className="mt-5 flex flex-wrap gap-1 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-1 backdrop-blur-xl">
+          {([
+            { key: 'users' as const, icon: '👥', label: 'Usuarios', count: users.total },
+            { key: 'activity' as const, icon: '📈', label: 'Actividad', count: recent.length },
+            { key: 'integrations' as const, icon: '🔌', label: 'Integraciones', count: null }
+          ]).map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              aria-pressed={tab === t.key}
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                tab === t.key
+                  ? 'bg-[#00ffcc]/15 text-[#00ffcc] shadow-[0_0_12px_rgba(0,255,204,0.1)]'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+              }`}
+            >
+              <span>{t.icon}</span>
+              <span className="hidden sm:inline">{t.label}</span>
+              {t.count != null && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                  tab === t.key ? 'bg-[#00ffcc]/20 text-[#00ffcc]' : 'bg-white/10 text-slate-400'
+                }`}>
+                  {t.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* ─── Usuarios ─── */}
+        {tab === 'users' && (
+          <section className="mt-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <UserIcon className="h-4 w-4 text-slate-400" />
+                <h2 className="text-lg font-bold text-white">Usuarios</h2>
+                <span className="text-xs text-slate-500">
+                  {usersLoading ? 'Buscando…' : `${fmtNum(userTotal)} de ${fmtNum(users.total)}`}
+                </span>
+              </div>
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Filtrar por usuario o ubicación…"
+                aria-label="Filtrar usuarios"
+                className="w-full max-w-xs rounded-xl border border-slate-700 bg-slate-950/60 px-3.5 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none transition-colors focus:border-[#00ffcc]/50"
+              />
+            </div>
+
+            {/* Desktop: tabla */}
+            <div
+              className={`hidden overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-xl transition-opacity md:block ${
+                usersLoading ? 'opacity-50' : ''
+              }`}
+            >
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-slate-800/60 text-[10px] uppercase tracking-widest text-slate-500">
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
-                      {q ? 'Sin coincidencias para tu búsqueda' : 'Sin usuarios todavía'}
-                    </td>
+                    <th className="px-4 py-3">Usuario</th>
+                    <th className="px-4 py-3">Ubicación</th>
+                    <th className="px-4 py-3 text-center">Binders</th>
+                    <th className="px-4 py-3 text-center">Cartas</th>
+                    <th className="px-4 py-3 text-center">Venta</th>
+                    <th className="px-4 py-3 text-center">Cambio</th>
+                    <th className="px-4 py-3">Registro</th>
+                    <th className="px-4 py-3">Rol</th>
                   </tr>
-                )}
-                {userRows.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-800/40">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/binder/${encodeURIComponent(u.username)}`}
-                        className="font-semibold text-violet-400 hover:underline"
-                      >
-                        @{u.username}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-slate-400">
-                      {formatLocation(u.city, u.country) || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center gap-1 text-slate-300">
-                        {u.binderCount > 0 && (u.hasPublicBinder ? (
-                          <GlobeIcon className="h-3.5 w-3.5 text-emerald-400" />
-                        ) : (
-                          <LockIcon className="h-3.5 w-3.5 text-slate-500" />
-                        ))}
-                        {u.binderCount}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center font-semibold text-white">{u.cardCount}</td>
-                    <td className="px-4 py-3 text-center text-emerald-400">{u.saleCount}</td>
-                    <td className="px-4 py-3 text-center text-sky-400">{u.tradeCount}</td>
-                    <td className="px-4 py-3 text-slate-400">{formatDate(u.created_at)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {u.is_admin ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {userRows.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                        {q ? 'Sin coincidencias para tu búsqueda' : 'Sin usuarios todavía'}
+                      </td>
+                    </tr>
+                  )}
+                  {userRows.map((u) => {
+                    const trainer = computeTrainerScore({
+                      capturedSpecies: 0,
+                      completedSales: u.saleCount,
+                      completedTrades: u.tradeCount,
+                      completedBuys: 0,
+                      reviewCount: 0
+                    })
+                    return (
+                      <tr key={u.id} className="transition-colors hover:bg-white/[0.02]">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="relative shrink-0">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/25 to-rose-500/25 text-xs font-bold text-white">
+                                {(u.username[0] ?? '?').toUpperCase()}
+                              </div>
+                              {u.is_verified && (
+                                <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#00ffcc] text-[8px] font-bold text-[#080c15]">✓</span>
+                              )}
+                            </div>
+                            <div>
+                              <Link
+                                href={`/binder/${encodeURIComponent(u.username)}`}
+                                className="font-semibold text-violet-400 hover:underline"
+                              >
+                                @{u.username}
+                              </Link>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-slate-500">
+                                  {trainer.rank.icon} {trainer.rank.name}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-slate-400">
+                          {formatLocation(u.city, u.country) || '—'}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-flex items-center gap-1 text-slate-300">
+                            {u.binderCount > 0 && (u.hasPublicBinder ? (
+                              <GlobeIcon className="h-3.5 w-3.5 text-emerald-400" />
+                            ) : (
+                              <LockIcon className="h-3.5 w-3.5 text-slate-500" />
+                            ))}
+                            {u.binderCount}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center font-semibold text-white">{u.cardCount}</td>
+                        <td className="px-4 py-3 text-center text-emerald-400">{u.saleCount}</td>
+                        <td className="px-4 py-3 text-center text-sky-400">{u.tradeCount}</td>
+                        <td className="px-4 py-3 text-slate-400">{formatDate(u.created_at)}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {u.is_admin ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
+                                <ShieldIcon className="h-3 w-3" /> ADMIN
+                              </span>
+                            ) : null}
+                            <button
+                              onClick={() => handleVerify(u)}
+                              title={u.is_verified ? 'Quitar verificación' : 'Marcar como verificado'}
+                              aria-label={`${u.is_verified ? 'Quitar' : 'Marcar'} verificación de @${u.username}`}
+                              className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs transition-colors ${
+                                u.is_verified
+                                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
+                                  : 'border-slate-700 text-slate-600 hover:border-emerald-500/40 hover:text-emerald-400'
+                              }`}
+                            >
+                              ⚡
+                            </button>
+                            <button
+                              onClick={() => handleTogglePremium(u)}
+                              title={u.is_premium ? 'Quitar premium' : 'Marcar como premium'}
+                              aria-label={`${u.is_premium ? 'Quitar' : 'Marcar'} premium de @${u.username}`}
+                              className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs transition-colors ${
+                                u.is_premium
+                                  ? 'border-amber-500/40 bg-amber-500/15 text-amber-400'
+                                  : 'border-slate-700 text-slate-600 hover:border-amber-500/40 hover:text-amber-400'
+                              }`}
+                            >
+                              ★
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile: cards */}
+            <div className={`space-y-3 md:hidden ${usersLoading ? 'opacity-50' : ''}`}>
+              {userRows.length === 0 && (
+                <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-8 text-center backdrop-blur-xl">
+                  <p className="text-sm text-slate-500">{q ? 'Sin coincidencias' : 'Sin usuarios todavía'}</p>
+                </div>
+              )}
+              {userRows.map((u) => {
+                const trainer = computeTrainerScore({
+                  capturedSpecies: 0,
+                  completedSales: u.saleCount,
+                  completedTrades: u.tradeCount,
+                  completedBuys: 0,
+                  reviewCount: 0
+                })
+                return (
+                  <div key={u.id} className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 backdrop-blur-xl">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="relative shrink-0">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/25 to-rose-500/25 text-sm font-bold text-white">
+                            {(u.username[0] ?? '?').toUpperCase()}
+                          </div>
+                          {u.is_verified && (
+                            <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#00ffcc] text-[8px] font-bold text-[#080c15]">✓</span>
+                          )}
+                        </div>
+                        <div>
+                          <Link href={`/binder/${encodeURIComponent(u.username)}`} className="font-semibold text-violet-400 hover:underline">
+                            @{u.username}
+                          </Link>
+                          <p className="text-[11px] text-slate-500">
+                            {trainer.rank.icon} {trainer.rank.name} · {formatLocation(u.city, u.country) || 'Sin ubicación'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {u.is_admin && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
                             <ShieldIcon className="h-3 w-3" /> ADMIN
                           </span>
-                        ) : (
-                          <span className="text-slate-600">—</span>
                         )}
                         <button
                           onClick={() => handleVerify(u)}
                           title={u.is_verified ? 'Quitar verificación' : 'Marcar como verificado'}
-                          aria-label={`${u.is_verified ? 'Quitar' : 'Marcar'} verificación de @${u.username}`}
                           className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs transition-colors ${
                             u.is_verified
                               ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
@@ -538,132 +651,180 @@ export default function AdminPage() {
                         >
                           ⚡
                         </button>
+                        <button
+                          onClick={() => handleTogglePremium(u)}
+                          title={u.is_premium ? 'Quitar premium' : 'Marcar como premium'}
+                          className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs transition-colors ${
+                            u.is_premium
+                              ? 'border-amber-500/40 bg-amber-500/15 text-amber-400'
+                              : 'border-slate-700 text-slate-600 hover:border-amber-500/40 hover:text-amber-400'
+                          }`}
+                        >
+                          ★
+                        </button>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Controles de paginación */}
-          {userTotal > PAGE_SIZE && (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
-              <span className="text-xs text-slate-500">
-                Mostrando{' '}
-                <strong className="text-slate-300">
-                  {from}–{to}
-                </strong>{' '}
-                de <strong className="text-slate-300">{fmtNum(userTotal)}</strong>
-              </span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={safePage === 1}
-                  aria-label="Página anterior"
-                  className="flex h-8 items-center rounded-lg border border-slate-800 bg-slate-900 px-2.5 text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-800 disabled:opacity-40"
-                >
-                  ←
-                </button>
-                {pageList(safePage, userPages).map((p, i) =>
-                  p === '…' ? (
-                    <span key={`e${i}`} className="px-1 text-xs text-slate-600">
-                      …
-                    </span>
-                  ) : (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setPage(p)}
-                      aria-current={p === safePage ? 'page' : undefined}
-                      className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-xs font-semibold transition-colors ${
-                        p === safePage
-                          ? 'bg-binder-accent text-white shadow'
-                          : 'border border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  )
-                )}
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(userPages, p + 1))}
-                  disabled={safePage === userPages}
-                  aria-label="Página siguiente"
-                  className="flex h-8 items-center rounded-lg border border-slate-800 bg-slate-900 px-2.5 text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-800 disabled:opacity-40"
-                >
-                  →
-                </button>
-              </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-4 gap-2 text-center">
+                      <div className="rounded-xl bg-slate-800/50 px-2 py-1.5">
+                        <p className="text-xs font-bold text-white">{u.binderCount}</p>
+                        <p className="text-[10px] text-slate-500">Binders</p>
+                      </div>
+                      <div className="rounded-xl bg-slate-800/50 px-2 py-1.5">
+                        <p className="text-xs font-bold text-white">{u.cardCount}</p>
+                        <p className="text-[10px] text-slate-500">Cartas</p>
+                      </div>
+                      <div className="rounded-xl bg-emerald-500/10 px-2 py-1.5">
+                        <p className="text-xs font-bold text-emerald-400">{u.saleCount}</p>
+                        <p className="text-[10px] text-slate-500">Venta</p>
+                      </div>
+                      <div className="rounded-xl bg-sky-500/10 px-2 py-1.5">
+                        <p className="text-xs font-bold text-sky-400">{u.tradeCount}</p>
+                        <p className="text-[10px] text-slate-500">Cambio</p>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-[10px] text-slate-600">Registro: {formatDate(u.created_at)}</p>
+                  </div>
+                )
+              })}
             </div>
-          )}
-        </section>
-      )}
 
-      {/* Actividad reciente: gráfico + tabla */}
-      {tab === 'activity' && (
-        <section className="mt-6 space-y-6">
-          <AdminActivityChart data={activity} />
+            {/* Paginación */}
+            {userTotal > PAGE_SIZE && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+                <span className="text-xs text-slate-500">
+                  Mostrando <strong className="text-slate-300">{from}–{to}</strong> de <strong className="text-slate-300">{fmtNum(userTotal)}</strong>
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={safePage === 1}
+                    className="flex h-8 items-center rounded-lg border border-slate-800 bg-slate-900 px-2.5 text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-800 disabled:opacity-40"
+                  >
+                    ←
+                  </button>
+                  {pageList(safePage, userPages).map((p, i) =>
+                    p === '…' ? (
+                      <span key={`e${i}`} className="px-1 text-xs text-slate-600">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPage(p)}
+                        aria-current={p === safePage ? 'page' : undefined}
+                        className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-xs font-semibold transition-colors ${
+                          p === safePage
+                            ? 'bg-[#00ffcc]/15 text-[#00ffcc]'
+                            : 'border border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(userPages, p + 1))}
+                    disabled={safePage === userPages}
+                    className="flex h-8 items-center rounded-lg border border-slate-800 bg-slate-900 px-2.5 text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-800 disabled:opacity-40"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
-          <div>
-          <div className="mb-3 flex items-center gap-2">
-            <ActivityIcon className="h-4 w-4 text-slate-400" />
-            <h2 className="text-lg font-bold text-white">Actividad reciente</h2>
-          </div>
-          <div className="overflow-hidden rounded-xl border border-slate-800">
-            <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="bg-slate-900 text-[10px] uppercase tracking-widest text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">Carta</th>
-                  <th className="px-4 py-3">Set</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3 text-right">Precio</th>
-                  <th className="px-4 py-3">Dueño</th>
-                  <th className="px-4 py-3">Última actualización</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/70 bg-slate-900/40">
+        {/* ─── Actividad reciente ─── */}
+        {tab === 'activity' && (
+          <section className="mt-5 space-y-5">
+            <AdminActivityChart data={activity} />
+
+            <div className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-xl">
+              <div className="flex items-center gap-1.5 border-b border-slate-800/60 px-5 py-3">
+                <ActivityIcon className="h-4 w-4 text-slate-400" />
+                <h2 className="text-sm font-bold text-white">Actividad reciente</h2>
+              </div>
+
+              {/* Desktop: tabla */}
+              <div className="hidden md:block">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b border-slate-800/60 text-[10px] uppercase tracking-widest text-slate-500">
+                    <tr>
+                      <th className="px-5 py-3">Carta</th>
+                      <th className="px-5 py-3">Set</th>
+                      <th className="px-5 py-3">Estado</th>
+                      <th className="px-5 py-3 text-right">Precio</th>
+                      <th className="px-5 py-3">Dueño</th>
+                      <th className="px-5 py-3">Actualización</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {recent.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-5 py-8 text-center text-slate-500">Sin actividad todavía</td>
+                      </tr>
+                    )}
+                    {recent.map((c, i) => (
+                      <tr key={i} className="transition-colors hover:bg-white/[0.02]">
+                        <td className="px-5 py-3 font-semibold text-white">{c.card_name}</td>
+                        <td className="px-5 py-3 text-slate-400">{c.set_id} · {c.number}</td>
+                        <td className="px-5 py-3">{statusBadge(c.status)}</td>
+                        <td className="px-5 py-3 text-right font-semibold text-emerald-400">
+                          {c.price != null ? `$${fmtUsd(c.price)}` : '—'}
+                        </td>
+                        <td className="px-5 py-3 text-slate-400">@{c.username}</td>
+                        <td className="px-5 py-3 text-slate-500">
+                          <span className="inline-flex items-center gap-1">
+                            <ClockIcon className="h-3 w-3" />
+                            {formatDate(c.updated_at)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile: cards */}
+              <div className="divide-y divide-slate-800/60 md:hidden">
                 {recent.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                      Sin actividad todavía
-                    </td>
-                  </tr>
+                  <p className="px-5 py-8 text-center text-sm text-slate-500">Sin actividad todavía</p>
                 )}
                 {recent.map((c, i) => (
-                  <tr key={i} className="hover:bg-slate-800/40">
-                    <td className="px-4 py-3 font-semibold text-white">{c.card_name}</td>
-                    <td className="px-4 py-3 text-slate-400">
-                      {c.set_id} · {c.number}
-                    </td>
-                    <td className="px-4 py-3">{statusBadge(c.status)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-emerald-400">
-                      {c.price != null ? `$${fmtUsd(c.price)}` : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-400">@{c.username}</td>
-                    <td className="px-4 py-3 text-slate-500">
-                      <span className="inline-flex items-center gap-1">
-                        <ClockIcon className="h-3 w-3" />
-                        {formatDate(c.updated_at)}
+                  <div key={i} className="px-4 py-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-white">{c.card_name}</p>
+                        <p className="text-[11px] text-slate-500">{c.set_id} · {c.number}</p>
+                      </div>
+                      {statusBadge(c.status)}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-xs">
+                      <span className="text-slate-400">@{c.username}</span>
+                      <span className="font-semibold text-emerald-400">
+                        {c.price != null ? `$${fmtUsd(c.price)}` : '—'}
                       </span>
-                    </td>
-                  </tr>
+                    </div>
+                    <p className="mt-1 text-[10px] text-slate-600">
+                      <ClockIcon className="mr-1 inline h-3 w-3" />
+                      {formatDate(c.updated_at)}
+                    </p>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          </div>
-        </section>
-      )}
+              </div>
+            </div>
+          </section>
+        )}
 
-      {/* Integraciones y API keys */}
-      {tab === 'integrations' && (
-        <section className="mt-6">
-          <AdminIntegrations />
-        </section>
-      )}
-    </main>
+        {/* ─── Integraciones ─── */}
+        {tab === 'integrations' && (
+          <section className="mt-5">
+            <AdminIntegrations />
+          </section>
+        )}
+      </main>
+    </div>
   )
 }

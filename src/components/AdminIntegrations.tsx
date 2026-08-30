@@ -121,19 +121,26 @@ export default function AdminIntegrations() {
   }
 
   return (
-    <section className="mt-8">
-      <div className="mb-3 flex items-center gap-2">
-        <KeyIcon className="h-4 w-4 text-slate-400" />
-        <h2 className="text-lg font-bold text-white">Integraciones y API keys</h2>
+    <section className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl">
+      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl" />
+
+      <div className="relative mb-4 flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/15">
+          <KeyIcon className="h-4 w-4 text-violet-400" />
+        </div>
+        <div>
+          <h2 className="text-sm font-bold text-white">Integraciones y API keys</h2>
+          <p className="text-[10px] text-slate-500">Credenciales guardadas exclusivamente en el servidor</p>
+        </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="relative grid gap-3 md:grid-cols-2">
         {integrations.map((it) => {
           const isEnv = it.source === 'env'
           return (
             <div
               key={it.name}
-              className="rounded-xl border border-slate-800 bg-slate-900 p-4"
+              className="rounded-xl border border-slate-800/60 bg-slate-950/40 p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-semibold text-white">{it.label}</p>
@@ -165,7 +172,7 @@ export default function AdminIntegrations() {
               )}
 
               {it.usage && (
-                <div className="mt-3 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2.5">
+                <div className="mt-3 rounded-xl border border-slate-800/40 bg-slate-900/50 px-3 py-2.5">
                   <p className="mb-1.5 text-[11px] text-slate-500">Consultas de valor de carta</p>
                   {[it.usage.hour, it.usage.day]
                     .filter((w): w is NonNullable<typeof it.usage.hour> => w != null)
@@ -221,19 +228,19 @@ export default function AdminIntegrations() {
                         : 'Pegá la API key acá'
                   }
                   autoComplete="off"
-                  className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder-slate-600 focus:border-binder-accent focus:outline-none disabled:opacity-40"
+                  className="min-w-0 flex-1 rounded-xl border border-slate-700/60 bg-slate-950/60 px-3 py-2 text-sm text-white placeholder-slate-600 focus:border-[#00ffcc]/50 focus:outline-none disabled:opacity-40"
                 />
                 <button
                   onClick={() => handleSave(it.name, it.label)}
                   disabled={isEnv || busy[it.name]}
-                  className="rounded-xl bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700 disabled:opacity-50"
+                  className="rounded-xl bg-[#00ffcc]/15 px-3 py-2 text-sm font-semibold text-[#00ffcc] transition-colors hover:bg-[#00ffcc]/25 disabled:opacity-50"
                 >
                   {busy[it.name] ? 'Guardando…' : 'Guardar'}
                 </button>
                 <button
                   onClick={() => handleTest(it.name)}
                   disabled={!it.hasValue || testing[it.name]}
-                  className="rounded-xl bg-violet-600/15 px-3 py-2 text-sm font-semibold text-violet-300 transition-colors hover:bg-violet-600/30 disabled:opacity-50"
+                  className="rounded-xl bg-violet-500/15 px-3 py-2 text-sm font-semibold text-violet-300 transition-colors hover:bg-violet-500/25 disabled:opacity-50"
                 >
                   {testing[it.name] ? 'Probando…' : 'Probar conexión'}
                 </button>
@@ -242,7 +249,7 @@ export default function AdminIntegrations() {
                     onClick={() => handleDelete(it.name, it.label)}
                     disabled={busy[it.name]}
                     aria-label={`Eliminar clave de ${it.label}`}
-                    className="flex items-center rounded-xl bg-slate-800 px-2.5 py-2 text-slate-400 transition-colors hover:bg-red-600/70 hover:text-white disabled:opacity-50"
+                    className="flex items-center rounded-xl bg-slate-800/60 px-2.5 py-2 text-slate-400 transition-colors hover:bg-rose-500/15 hover:text-rose-400 disabled:opacity-50"
                   >
                     <TrashIcon className="h-4 w-4" />
                   </button>
@@ -269,7 +276,7 @@ export default function AdminIntegrations() {
           className={`mt-3 flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${
             feedback.kind === 'ok'
               ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-              : 'border-red-900/50 bg-red-950/30 text-red-400'
+              : 'border-rose-500/30 bg-rose-500/10 text-rose-300'
           }`}
         >
           {feedback.kind === 'ok' ? (
@@ -285,9 +292,9 @@ export default function AdminIntegrations() {
         Las claves se guardan <strong className="text-slate-500">solo en el servidor</strong>{' '}
         (tabla sin acceso desde el navegador, escritura exclusiva de administradores) y nunca se
         muestran completas. En producción podés usar las variables de entorno{' '}
-        <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">POKEWALLET_API_KEY</code>,{' '}
-        <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">TCGAPI_KEY</code>{' '}y{' '}
-        <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">POKETRACE_API_KEY</code>{' '}
+        <code className="rounded bg-slate-800/60 px-1.5 py-0.5 text-slate-400">POKEWALLET_API_KEY</code>,{' '}
+        <code className="rounded bg-slate-800/60 px-1.5 py-0.5 text-slate-400">TCGAPI_KEY</code>{' '}y{' '}
+        <code className="rounded bg-slate-800/60 px-1.5 py-0.5 text-slate-400">POKETRACE_API_KEY</code>{' '}
         que tienen prioridad sobre la base de datos.
       </p>
     </section>

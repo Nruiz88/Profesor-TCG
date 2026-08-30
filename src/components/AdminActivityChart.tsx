@@ -28,7 +28,8 @@ export default function AdminActivityChart({ data }: AdminActivityChartProps) {
   const peak = Math.max(1, ...data.map((d) => d.count))
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+    <section className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl">
+      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-rose-500/10 blur-3xl" />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-white">Cartas agregadas por día</h3>
@@ -39,7 +40,7 @@ export default function AdminActivityChart({ data }: AdminActivityChartProps) {
         </span>
       </div>
 
-      <div className="flex h-36 items-end gap-1.5">
+      <div className="relative flex h-36 items-end gap-1.5">
         {data.map((d, i) => {
           const pct = Math.max(4, Math.round((d.count / peak) * 100))
           return (
@@ -59,8 +60,7 @@ export default function AdminActivityChart({ data }: AdminActivityChartProps) {
         })}
       </div>
 
-      {/* Eje X: etiquetas cada dos días para no saturar */}
-      <div className="mt-2 flex gap-1.5 border-t border-slate-800 pt-2">
+      <div className="mt-2 flex gap-1.5 border-t border-slate-800/60 pt-2">
         {data.map((d, i) => (
           <span
             key={d.date}

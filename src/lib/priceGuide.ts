@@ -123,3 +123,30 @@ export function buildTcgPlayerUrl(opts: {
   const q = queryParts(opts, languageWordFor(opts)).join(' ')
   return `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(q)}&view=grid`
 }
+
+// ── Conversión de moneda ─────────────────────────────────────────────
+// Tasas contra USD, obtenidas de /api/public/exchange-rates (ECB). El
+// formato de cache es un mapa { MONEDA: factorDeUSD }.
+
+export interface ExchangeRates {
+  base: string
+  rates: Record<string, number>
+  updatedAt?: string
+}
+
+/** Convierte un monto de `from` a `to` usando tasas contra USD. */
+export function convertCurrency(
+  amount: number | null,
+  from: string | null | undefined,
+  to: string | null | undefined,
+  rates: ExchangeRates | null
+): number | null {
+  if (amount == null || amount <= 0) return amount
+  const fromCur = normalizeCurrency(from)
+  const toCur = normalizeCurrency(to)
+  if (fromCur === toCur || !rates?.rates) return amount
+  const fromRate = rates.rates[fromCur]
+  const toRate = rates.rates[toCur]
+  if (!fromRate || !toRate || fromRate <= 0 || toRate <= 0) return amount
+  return (amount / fromRate) * toRate
+}

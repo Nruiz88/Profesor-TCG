@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/client'
 import { generateUniqueSlug, listAllSlugs } from '@/lib/binderSlug'
 
+/** Máximo de carpetas (binders) que puede tener un usuario. */
+export const MAX_BINDERS = 12
+
 // Obtener todos los binders del usuario activo
 export async function getUserBinders(userId: string) {
   const supabase = createClient()
@@ -14,7 +17,7 @@ export async function getUserBinders(userId: string) {
   return data || []
 }
 
-// Crear un nuevo binder con opciones (título, descripción, privacidad, portada)
+// Crear un nuevo binder con opciones (título, descripción, privacidad, portada, fondo)
 export async function createBinder(
   userId: string,
   title: string,
@@ -22,10 +25,21 @@ export async function createBinder(
     description?: string | null
     is_public?: boolean
     cover_card_id?: string | null
+    background?: string | null
   }
 ) {
   const supabase = createClient()
   const slug = await generateUniqueSlug(() => listAllSlugs(supabase), title)
+
+  // Límite de carpetas por usuario
+  const { count } = await supabase
+    .from('binders')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+  if ((count ?? 0) >= MAX_BINDERS) {
+    throw new Error(`Alcanzaste el máximo de ${MAX_BINDERS} carpetas.`)
+  }
+
   const { data, error } = await supabase
     .from('binders')
     .insert({
@@ -34,6 +48,7 @@ export async function createBinder(
       description: options?.description ?? null,
       is_public: options?.is_public ?? false,
       cover_card_id: options?.cover_card_id ?? null,
+      background: options?.background ?? null,
       slug
     })
     .select()

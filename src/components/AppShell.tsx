@@ -6,27 +6,13 @@ import ResponsiveNav from '@/components/ResponsiveNav'
 import SiteFooter from '@/components/SiteFooter'
 import DonationFooter from '@/components/DonationFooter'
 import { createClient } from '@/lib/supabase/client'
-import { getUserBinders } from '@/lib/binders'
 import type { Profile } from '@/lib/profile'
 
-interface ShellBinder {
-  id: string
-  title: string
-  is_public?: boolean
-}
-
-/**
- * Envoltorio global que aplica la navegación responsive (ResponsiveNav) para
- * todas las rutas salvo la home y el binder propio (que ya integra su propia
- * navegación con lógica local). En desktop se dibuja el sidebar vertical a la
- * izquierda; en mobile, la barra inferior con popovers.
- */
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [binders, setBinders] = useState<ShellBinder[]>([])
 
   const isHome = pathname === '/'
   const isLogin = pathname === '/login'
@@ -42,7 +28,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     !isV2 &&
     !isAbout
 
-  // Cargar sesión y perfil/binders del usuario.
+  // Cargar sesión y perfil del usuario.
   useEffect(() => {
     const supabase = createClient()
     let mounted = true
@@ -58,14 +44,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             if (mounted && d.profile) setProfile(d.profile)
           })
           .catch(() => {})
-        getUserBinders(u.id)
-          .then((list) => {
-            if (mounted) setBinders(list || [])
-          })
-          .catch(() => {})
       } else {
         setProfile(null)
-        setBinders([])
       }
     })
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -75,7 +55,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       setUser(u)
       if (!u) {
         setProfile(null)
-        setBinders([])
       } else {
         fetch('/api/profile')
           .then(async (res) => {
@@ -83,9 +62,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             const d = await res.json()
             if (mounted && d.profile) setProfile(d.profile)
           })
-          .catch(() => {})
-        getUserBinders(u.id)
-          .then((list) => mounted && setBinders(list || []))
           .catch(() => {})
       }
     })
@@ -121,10 +97,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <ResponsiveNav
           profile={profile}
           user={user}
-          binders={binders}
-          activeBinderId={null}
-          onSelectBinder={(id) => router.push(`/binder?binderId=${id}`)}
-          onCreateBinder={() => router.push('/binder')}
           onShowProfile={() => {
             if (profile?.username) {
               router.push(`/profile/${encodeURIComponent(profile.username)}?tab=settings`)

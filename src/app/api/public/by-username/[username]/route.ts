@@ -24,7 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, username, whatsapp_number, country, city')
+      .select('id, username, whatsapp_number, country, city, is_verified, total_sales, total_trades')
       .eq('username', username.toLowerCase())
       .maybeSingle()
 
@@ -34,7 +34,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
 
     const { data: binder } = await supabase
       .from('binders')
-      .select('id, title')
+      .select('id, title, background')
       .eq('user_id', profile.id)
       .eq('is_public', true)
       .order('created_at', { ascending: true })
@@ -66,16 +66,26 @@ export async function GET(_req: Request, { params }: { params: Promise<{ usernam
       }))
     )
 
-    return NextResponse.json(
-      {
-        binder: { id: binder.id, title: binder.title },
-        owner: {
-          id: profile.id,
-          username: profile.username,
-          whatsapp_number: profile.whatsapp_number,
-          country: profile.country,
-          city: profile.city
-        },
+      // Get review count for the user
+      const { count: reviewCount } = await supabase
+        .from('reviews')
+        .select('id', { count: 'exact', head: true })
+        .eq('reviewed_user_id', profile.id)
+
+      return NextResponse.json(
+        {
+          binder: { id: binder.id, title: binder.title, background: binder.background },
+          owner: {
+            id: profile.id,
+            username: profile.username,
+            whatsapp_number: profile.whatsapp_number,
+            country: profile.country,
+            city: profile.city,
+            is_verified: !!profile.is_verified,
+            total_sales: profile.total_sales ?? 0,
+            total_trades: profile.total_trades ?? 0,
+            review_count: reviewCount ?? 0
+          },
         cards: enriched
       },
       {

@@ -124,3 +124,72 @@ body {
     filter: hue-rotate(360deg);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Binder horizontal scroll (hojas sobre fondo panorámico)
+   ═══════════════════════════════════════════════════════════════════ */
+.binder-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 224, 255, 0.35) rgba(255, 255, 255, 0.05);
+}
+.binder-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.binder-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+.binder-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 204, 0.35);
+  border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Glow pulsante (p. ej. botón Discord del binder)
+   ═══════════════════════════════════════════════════════════════════ */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(88, 101, 242, 0.25);
+    border-color: rgba(88, 101, 242, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(88, 101, 242, 0.55);
+    border-color: rgba(88, 101, 242, 0.7);
+  }
+}
+.pulse-glow {
+  animation: pulse-glow 2.2s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PokemonCard — Stage de perspectiva
+   El wrapper .pokemon-card-stage contiene el .card del vendor CSS.
+   Es overflow:visible para que el tilt 3D y el scale del hover
+   no sean recortados por el border-radius del slot padre.
+   Los slots tienen overflow:hidden para el clip de bordes, pero
+   el stage lo supera porque el .card usa transform-style:preserve-3d
+   y el translateZ lo eleva por encima del plano de clip.
+   ═══════════════════════════════════════════════════════════════════ */
+.pokemon-card-stage {
+  /* El stage debe ser visible para no recortar el 3D */
+  overflow: visible !important;
+  /* Asegura que el contexto de perspectiva no sea aplanado */
+  transform-style: preserve-3d;
+  /* Centra el contenido */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* El .card dentro del stage hereda el tamaño del slot */
+.pokemon-card-stage > .card {
+  width: 100%;
+  height: 100%;
+}
+
+/* Slots del binder: overflow visible para el efecto 3D */
+/* El border-radius visual lo manejan pseudo-elementos o capas separadas */
+.binder-slot-3d {
+  overflow: visible !important;
+  transform-style: preserve-3d;
+}

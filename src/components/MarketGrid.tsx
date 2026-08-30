@@ -107,12 +107,12 @@ export default function MarketGrid({
             }`}
           >
             {/* Marco interno de la carta */}
-            <div className="relative rounded-xl bg-slate-950/60">
+            <div className="pokemon-card-stage relative rounded-xl bg-slate-950/60">
               {onCardClick ? (
                 <button
                   type="button"
                   onClick={() => onCardClick(card)}
-                  className="relative block aspect-[63/88] w-full cursor-pointer text-left"
+                  className="relative block aspect-[63/88] w-full cursor-pointer overflow-visible text-left"
                   aria-label={`Ver detalle de ${card.card_name}`}
                 >
                   {holo ? (
@@ -133,10 +133,12 @@ export default function MarketGrid({
               ) : (
                 <Link
                   href={binderHref(card)}
-                  className="relative block aspect-[63/88]"
+                  className="relative block aspect-[63/88] overflow-visible"
                 >
                   {holo ? (
-                    <PokemonCard card={exploreToSlot(card, { forceHolo: true })} />
+                    <div className="pokemon-card-stage">
+                      <PokemonCard card={exploreToSlot(card, { forceHolo: true })} />
+                    </div>
                   ) : (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <Image
@@ -297,7 +299,7 @@ export function BindersGrid({
             href={`/binder/${encodeURIComponent(b.username)}`}
             className="relative block aspect-[16/9] overflow-hidden bg-slate-950"
           >
-{b.coverImage && (
+            {b.coverImage && (
               // eslint-disable-next-line @next/next/no-img-element
               <Image
                 src={b.coverImage}

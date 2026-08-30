@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import MarketGrid from '@/components/MarketGrid'
 import WantlistGrid from '@/components/WantlistGrid'
 import type {
@@ -52,9 +53,44 @@ function WantlistSkeleton() {
 }
 
 export default function HomeV2({ user, profile }: HomeV2Props) {
+  const searchParams = useSearchParams()
   const [tab, setTab] = useState<Tab>('market')
   const [q, setQ] = useState('')
   const [debouncedQ, setDebouncedQ] = useState('')
+
+  // Sincronizar parámetros iniciales desde la URL (?q=... o ?tab=...)
+  useEffect(() => {
+    const qParam = searchParams.get('q')
+    const tabParam = searchParams.get('tab')
+    if (qParam && qParam !== q) {
+      setQ(qParam)
+      setDebouncedQ(qParam)
+    }
+    if ((tabParam === 'market' || tabParam === 'wantlist') && tabParam !== tab) {
+      setTab(tabParam as Tab)
+    }
+  }, [searchParams])
+
+  // Actualizar la URL dinámicamente según q y tab sin recargar la página
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const current = new URLSearchParams(window.location.search)
+    let changed = false
+    if (debouncedQ) {
+      if (current.get('q') !== debouncedQ) { current.set('q', debouncedQ); changed = true }
+    } else if (current.has('q')) {
+      current.delete('q'); changed = true
+    }
+    if (tab !== 'market') {
+      if (current.get('tab') !== tab) { current.set('tab', tab); changed = true }
+    } else if (current.has('tab')) {
+      current.delete('tab'); changed = true
+    }
+    if (changed) {
+      const newUrl = `${window.location.pathname}${current.toString() ? `?${current.toString()}` : ''}`
+      window.history.replaceState(null, '', newUrl)
+    }
+  }, [debouncedQ, tab])
 
   // Filtros del mercado (mismos que /explore)
   const [mode, setMode] = useState<FilterMode>('all')
@@ -249,52 +285,74 @@ export default function HomeV2({ user, profile }: HomeV2Props) {
             <div className="v2h-error">
               <p className="v2h-error-text">{error}</p>
             </div>
-          ) : isMarket ? (
-            <>
-              <MarketGrid cards={cards} loading={loading} compact holo onCardClick={setSelectedCard} />
-              {hasMore && !loading && (
-                <div className="v2h-more">
-                  <button
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="v2h-more-btn v2h-more-btn--market"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <span className="v2h-spinner" />
-                        Cargando más…
-                      </>
-                    ) : (
-                      <>Cargar más cartas</>
-                    )}
-                  </button>
-                </div>
-              )}
-            </>
           ) : (
             <>
-              {loading && entries.length === 0 ? (
-                <WantlistSkeleton />
-              ) : (
-                <WantlistGrid entries={entries} compact />
-              )}
-              {hasMore && !loading && (
-                <div className="v2h-more">
-                  <button
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="v2h-more-btn v2h-more-btn--want"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <span className="v2h-spinner v2h-spinner--want" />
-                        Cargando más…
-                      </>
-                    ) : (
-                      <>Cargar más buscadas</>
-                    )}
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2 px-1 text-xs font-semibold text-slate-400">
+                <span>
+                  {loading ? (
+                    'Cargando...'
+                  ) : isMarket ? (
+                    <>Mostrando <strong className="text-white">{cards.length}</strong> {cards.length === 1 ? 'carta en el mercado' : 'cartas en el mercado'}</>
+                  ) : (
+                    <>Mostrando <strong className="text-fuchsia-300">{entries.length}</strong> {entries.length === 1 ? 'carta buscada' : 'cartas buscadas'}</>
+                  )}
+                  {debouncedQ && <> para &quot;<span className="text-slate-200">{debouncedQ}</span>&quot;</>}
+                </span>
+                {hasActiveFilters && (
+                  <button onClick={clearFilters} className="text-rose-400 hover:underline">
+                    Limpiar filtros
                   </button>
-                </div>
+                )}
+              </div>
+
+              {isMarket ? (
+                <>
+                  <MarketGrid cards={cards} loading={loading} compact holo onCardClick={setSelectedCard} />
+                  {hasMore && !loading && (
+                    <div className="v2h-more">
+                      <button
+                        onClick={loadMore}
+                        disabled={loadingMore}
+                        className="v2h-more-btn v2h-more-btn--market"
+                      >
+                        {loadingMore ? (
+                          <>
+                            <span className="v2h-spinner" />
+                            Cargando más…
+                          </>
+                        ) : (
+                          <>Cargar más cartas</>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {loading && entries.length === 0 ? (
+                    <WantlistSkeleton />
+                  ) : (
+                    <WantlistGrid entries={entries} compact />
+                  )}
+                  {hasMore && !loading && (
+                    <div className="v2h-more">
+                      <button
+                        onClick={loadMore}
+                        disabled={loadingMore}
+                        className="v2h-more-btn v2h-more-btn--want"
+                      >
+                        {loadingMore ? (
+                          <>
+                            <span className="v2h-spinner v2h-spinner--want" />
+                            Cargando más…
+                          </>
+                        ) : (
+                          <>Cargar más buscadas</>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}

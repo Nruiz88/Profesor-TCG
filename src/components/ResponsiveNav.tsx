@@ -13,9 +13,7 @@ import {
   UserIcon
 } from '@/components/icons'
 import { createClient } from '@/lib/supabase/client'
-import { getUserBinders } from '@/lib/binders'
 import SidebarMenu, {
-  type SidebarBinder,
   type SidebarMenuProps
 } from '@/components/SidebarMenu'
 import type { Profile } from '@/lib/profile'
@@ -23,10 +21,6 @@ import type { Profile } from '@/lib/profile'
 interface ResponsiveNavProps {
   profile: Profile | null
   user: { id: string; email?: string } | null
-  binders: SidebarBinder[]
-  activeBinderId: string | null
-  onSelectBinder: (id: string) => void
-  onCreateBinder: () => void
   onShowProfile: () => void
   onShowClaims: () => void
 }
@@ -53,7 +47,6 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
   const pathname = usePathname()
   const [user, setUser] = useState<{ id: string; email?: string } | null>(props.user)
   const [profile, setProfile] = useState<Profile | null>(props.profile)
-  const [binders, setBinders] = useState<SidebarBinder[]>(props.binders)
   const [pendingOffers, setPendingOffers] = useState(0)
   const isActive = useActivePath()
 
@@ -84,10 +77,9 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
   useEffect(() => {
     setUser(props.user)
     setProfile(props.profile)
-    setBinders(props.binders)
-  }, [props.user, props.profile, props.binders])
+  }, [props.user, props.profile])
 
-  // Cargar perfil y binders si no vinieron por props
+  // Cargar perfil si no vino por props
   useEffect(() => {
     if (!user || profile) return
     let active = true
@@ -96,10 +88,8 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
         const res = await fetch('/api/profile')
         const data = await res.json()
         if (active && data.profile?.username) setProfile(data.profile)
-        const list = await getUserBinders(user.id)
-        if (active) setBinders(list || [])
       } catch {
-        // perfil o binders no disponibles
+        // perfil no disponible
       }
     })()
     return () => {
@@ -167,12 +157,8 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
   const menuProps: SidebarMenuProps = {
     profile,
     user,
-    binders,
-    activeBinderId: props.activeBinderId,
     pendingOffers,
     isActive,
-    onSelectBinder: props.onSelectBinder,
-    onCreateBinder: props.onCreateBinder,
     onShowProfile: props.onShowProfile,
     onClose: () => {},
     showHeader: true
@@ -198,28 +184,9 @@ export default function ResponsiveNav(props: ResponsiveNavProps) {
     },
     {
       id: 'binder',
-      label: 'Binder',
+      label: 'Binders',
       icon: <CardsIcon className="h-5 w-5" />,
-      items: user
-        ? [
-            { label: 'Mi Binder', href: '/binder' },
-            ...binders.map((b) => ({
-              label: b.title,
-              onClick: () => {
-                setOpenPopover(null)
-                props.onSelectBinder(b.id)
-              }
-            })),
-            {
-              label: 'Crear nuevo binder',
-              href: '/binder',
-              onClick: () => {
-                setOpenPopover(null)
-                props.onCreateBinder()
-              }
-            }
-          ]
-        : []
+      href: '/binder'
     },
     {
       id: 'mercado',

@@ -48,7 +48,7 @@ export async function GET(req: Request) {
   try {
     let query = admin
       .from('profiles')
-      .select('id, username, city, country, created_at, is_admin, is_verified', {
+      .select('id, username, city, country, created_at, is_admin, is_verified, is_premium', {
         count: 'exact'
       })
     if (q) {
@@ -109,6 +109,7 @@ export async function GET(req: Request) {
             created_at: u.created_at,
             is_admin: u.is_admin,
             is_verified: !!u.is_verified,
+            is_premium: !!u.is_premium,
             binderCount: bStats?.count || 0,
             hasPublicBinder: (bStats?.publicCount || 0) > 0,
             cardCount: acc.cardCount,

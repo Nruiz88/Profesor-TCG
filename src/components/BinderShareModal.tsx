@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { SlotCard } from '@/lib/sheets'
-import { formatPrice } from '@/lib/priceGuide'
+import {
+  formatPrice,
+  CURRENCIES,
+  convertCurrency,
+  type Currency,
+  type ExchangeRates
+} from '@/lib/priceGuide'
 import { effectivePrice } from '@/lib/cardStatus'
 
 interface BinderShareModalProps {
@@ -46,12 +52,19 @@ async function loadImage(url: string): Promise<HTMLImageElement | null> {
   }
 }
 
+// El precio base y el de la página siempre están en USD: la conversión parte
+// de USD hacia la moneda elegida para mostrar en la imagen.
+function priceSourceCurrency(_c: SlotCard): Currency {
+  return 'USD'
+}
+
 function drawBinderImage(
   canvas: HTMLCanvasElement,
   opts: {
     title: string
     cards: { image: HTMLImageElement | null; name: string; price: number | null; currency: string }[]
     username: string | null
+    currency: Currency
   }
 ): boolean {
   const ctx = canvas.getContext('2d')
@@ -59,16 +72,28 @@ function drawBinderImage(
 
   const W = 1080
   const cols = 3
-  const rows = Math.ceil(Math.max(opts.cards.length, 9) / cols)
+  const rows = Math.max(1, Math.ceil(opts.cards.length / cols))
   const headerH = 180
   const footerH = 130
   const gap = 16
   const cardPadding = 20
   const gridW = W - cardPadding * 2
-  const cellW = Math.floor((gridW - gap * (cols - 1)) / cols)
-  const cellH = Math.round((cellW * 88) / 63)
-  const gridH = rows * cellH + (rows - 1) * gap
-  const H = headerH + gridH + cardPadding * 2 + footerH
+  let cellW = Math.floor((gridW - gap * (cols - 1)) / cols)
+
+  // Salvaguarda: para binders enormes el canvas no puede superar los límites
+  // del navegador, así que achicamos las cartas (proporcional) manteniendo el
+  // binder COMPLETO. Límite práctico de alto: ~28.000px.
+  const maxCanvasH = 28000
+  let cellH = Math.round((cellW * 88) / 63)
+  let gridH = rows * cellH + (rows - 1) * gap
+  let H = headerH + gridH + cardPadding * 2 + footerH
+  if (H > maxCanvasH) {
+    const scale = (maxCanvasH - headerH - footerH - cardPadding * 2 - (rows - 1) * gap) / (rows * cellH)
+    cellW = Math.max(40, Math.floor(cellW * scale))
+    cellH = Math.round((cellW * 88) / 63)
+    gridH = rows * cellH + (rows - 1) * gap
+    H = headerH + gridH + cardPadding * 2 + footerH
+  }
 
   canvas.width = W
   canvas.height = H
@@ -154,19 +179,19 @@ function drawBinderImage(
     ctx.lineWidth = 2
     ctx.stroke()
 
-    // Badge de precio (si tiene)
+    // Badge de precio (si tiene): centrado abajo, 30% más grande (16px → 21px)
     if (c.price != null && c.price > 0) {
-      const priceText = formatPrice(c.price, c.currency)
-      ctx.font = '700 16px system-ui, sans-serif'
-      const pw = ctx.measureText(priceText).width + 16
-      const px = x + 8
-      const py = y + cellH - 32
-      roundedRect(ctx, px, py, pw, 24, 12)
-      ctx.fillStyle = 'rgba(0,0,0,0.7)'
+      const priceText = formatPrice(c.price, opts.currency)
+      ctx.font = '700 21px system-ui, sans-serif'
+      const pw = ctx.measureText(priceText).width + 20
+      const px = x + (cellW - pw) / 2
+      const py = y + cellH - 40
+      roundedRect(ctx, px, py, pw, 28, 14)
+      ctx.fillStyle = 'rgba(0,0,0,0.72)'
       ctx.fill()
       ctx.fillStyle = '#fbbf24'
-      ctx.textAlign = 'left'
-      ctx.fillText(priceText, px + 8, py + 17)
+      ctx.textAlign = 'center'
+      ctx.fillText(priceText, x + cellW / 2, py + 19)
       ctx.textAlign = 'center'
     }
   }
@@ -176,7 +201,7 @@ function drawBinderImage(
   ctx.textAlign = 'center'
   if (totalValue > 0) {
     // Badge destacado detrás del valor
-    const valueText = `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
+    const valueText = formatPrice(totalValue, opts.currency)
     ctx.font = '900 60px system-ui, -apple-system, sans-serif'
     const vw = ctx.measureText(valueText).width + 56
     const vh = 84
@@ -214,6 +239,23 @@ export default function BinderShareModal({
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState(false)
+  const [currency, setCurrency] = useState<Currency>('USD')
+  const [rates, setRates] = useState<ExchangeRates | null>(null)
+
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      try {
+        const res = await fetch('/api/public/exchange-rates')
+        const data = await res.json()
+        if (!active) return
+        if (res.ok) setRates(data)
+      } catch {
+        // sin tasas: se muestra sin conversión
+      }
+    })()
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -221,10 +263,10 @@ export default function BinderShareModal({
       const canvas = canvasRef.current
       if (!canvas) return
 
-      // Cargar imágenes de las primeras 12 cartas (max grid 4x3)
-      const limited = cards.slice(0, 12)
+      // Sin límite: renderiza el binder completo con todas las cartas.
+      const all = cards
       const images = await Promise.all(
-        limited.map(async (c) => {
+        all.map(async (c) => {
           if (!c.image || c.image.startsWith('data:')) return null
           return loadImage(c.image)
         })
@@ -232,17 +274,23 @@ export default function BinderShareModal({
 
       if (!active) return
 
-      const items = limited.map((c, i) => ({
-        image: images[i],
-        name: c.card_name,
-        price: effectivePrice(c.market_price, c.price_override, c.price, c.manual_price),
-        currency: c.currency ?? 'USD'
-      }))
+      const items = all.map((c, i) => {
+        const rawPrice = effectivePrice(c.market_price, c.price_override, c.price, c.manual_price)
+        const source = priceSourceCurrency(c)
+        const price = rates ? convertCurrency(rawPrice, source, currency, rates) : rawPrice
+        return {
+          image: images[i],
+          name: c.card_name,
+          price,
+          currency
+        }
+      })
 
       const ok = drawBinderImage(canvas, {
         title: binderTitle,
         cards: items,
         username,
+        currency
       })
 
       if (!ok) {
@@ -260,7 +308,7 @@ export default function BinderShareModal({
     }
     generate()
     return () => { active = false }
-  }, [binderTitle, cards, username])
+  }, [binderTitle, cards, username, currency, rates])
 
   function download() {
     if (!imageUrl) return
@@ -325,6 +373,25 @@ export default function BinderShareModal({
         <p className="mt-1 truncate text-sm text-slate-500">
           {binderTitle} · {cards.length} carta{cards.length !== 1 ? 's' : ''}
         </p>
+
+        {/* Selector de moneda para mostrar los precios en la imagen */}
+        <div className="mt-3">
+          <label htmlFor="share-currency" className="field-label">
+            Moneda de los precios
+          </label>
+          <select
+            id="share-currency"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value as Currency)}
+            className="field mt-1.5 text-slate-200"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label} ({c.symbol})
+              </option>
+            ))}
+          </select>
+        </div>
 
         <canvas ref={canvasRef} className="hidden" />
 

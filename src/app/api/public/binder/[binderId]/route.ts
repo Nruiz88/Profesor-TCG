@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
     // RLS: solo devuelve el binder si is_public = true (para visitantes anónimos)
     const { data: binder } = await supabase
       .from('binders')
-      .select('id, title, user_id')
+      .select('id, title, user_id, background')
       .eq('id', binderId)
       .eq('is_public', true)
       .maybeSingle()
@@ -92,7 +92,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ binderI
 
     return NextResponse.json(
       {
-        binder: { id: binder.id, title: binder.title },
+        binder: { id: binder.id, title: binder.title, background: binder.background },
         owner,
         cards: enriched,
         wantlist: wantlistEnriched

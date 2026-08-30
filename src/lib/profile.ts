@@ -5,6 +5,7 @@ export interface Profile {
   country: string | null
   city: string | null
   is_admin?: boolean
+  is_premium?: boolean
   created_at: string
   updated_at: string
 }

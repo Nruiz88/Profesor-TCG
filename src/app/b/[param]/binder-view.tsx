@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react'
 import BinderSheet from '@/components/BinderSheet'
 import SheetPagination from '@/components/SheetPagination'
-import SellerInfoBadge, { type SellerInfo } from '@/components/SellerInfoBadge'
-import SellerReputationCard from '@/components/SellerReputationCard'
+import type { SellerInfo } from '@/components/SellerInfoBadge'
 import BinderTabs, { type BinderTab } from '@/components/binder/BinderTabs'
 import WantlistSlot from '@/components/binder/WantlistSlot'
 import { ShareIcon, SparklesIcon } from '@/components/icons'
 import { buildSwapOfferUrl } from '@/lib/matchmaking'
 import { createClient } from '@/lib/supabase/client'
 import type { WantlistCard } from '@/types/wantlist'
+import { computeTrainerScore, type TrainerScore } from '@/lib/trainer'
 import {
   computeTotalValue,
   groupIntoSheets,
@@ -23,6 +23,14 @@ interface Binder {
   id: string
   title: string
   slug?: string | null
+  background?: string | null
+}
+
+interface ExtendedSellerInfo extends SellerInfo {
+  is_verified?: boolean
+  total_sales?: number
+  total_trades?: number
+  review_count?: number
 }
 
 // Ficha pública de un binder por su clave corta: /b/<slug> o /b/<uuid>.
@@ -33,7 +41,7 @@ export default function PublicBinderPage({ param }: { param: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentSheet, setCurrentSheet] = useState(0)
-  const [seller, setSeller] = useState<SellerInfo | null>(null)
+  const [seller, setSeller] = useState<ExtendedSellerInfo | null>(null)
   const [tab, setTab] = useState<BinderTab>(() => {
     if (typeof window === 'undefined') return 'collection'
     return new URLSearchParams(window.location.search).get('tab') === 'wantlist'
@@ -44,6 +52,7 @@ export default function PublicBinderPage({ param }: { param: string }) {
   const [viewer, setViewer] = useState<{ username?: string; slotByCardId: Record<string, string> } | null>(null)
   const [matchCount, setMatchCount] = useState(0)
   const [matchSellerUsername, setMatchSellerUsername] = useState<string | null>(null)
+  const [trainerScore, setTrainerScore] = useState<TrainerScore | null>(null)
 
   useEffect(() => {
     if (!param) return
@@ -56,6 +65,17 @@ export default function PublicBinderPage({ param }: { param: string }) {
         setCards((data.cards || []).map(toSlotCard))
         setSeller(data.owner ?? null)
         setWantlist(data.wantlist || [])
+
+        // Compute trainer score from owner data
+        if (data.owner) {
+          setTrainerScore(computeTrainerScore({
+            capturedSpecies: 0,
+            completedSales: data.owner.total_sales ?? 0,
+            completedTrades: data.owner.total_trades ?? 0,
+            completedBuys: 0,
+            reviewCount: data.owner.review_count ?? 0
+          }))
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Binder no encontrado')
       } finally {
@@ -174,7 +194,19 @@ export default function PublicBinderPage({ param }: { param: string }) {
       <div className="mx-auto max-w-5xl px-4 py-8">
       <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-white">TCG Claim</h1>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-2xl font-bold tracking-tight text-white">TCG Claim</h1>
+            {trainerScore && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-amber-300">
+                <span className="text-sm">{trainerScore.rank.icon}</span> {trainerScore.rank.name}
+              </span>
+            )}
+            {seller?.is_verified && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-300">
+                ⚡ Verificado
+              </span>
+            )}
+          </div>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
             <span className="font-medium text-slate-400">{binder?.title ?? 'Cargando…'}</span>
             <span className="text-slate-700">•</span>
@@ -184,6 +216,19 @@ export default function PublicBinderPage({ param }: { param: string }) {
             <span className="text-slate-700">•</span>
             <span className="text-slate-500">vista pública</span>
           </p>
+          {trainerScore && trainerScore.nextRank && (
+            <div className="mt-2 flex items-center gap-3">
+              <div className="h-2 w-32 overflow-hidden rounded-full border border-slate-700/50 bg-slate-900">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-400 shadow-[0_0_8px_rgba(241,193,0,0.4)]"
+                  style={{ width: `${Math.round(trainerScore.progress * 100)}%` }}
+                />
+              </div>
+              <span className="font-mono text-[10px] text-slate-500">
+                {trainerScore.xp.toLocaleString('en-US')} XP · {trainerScore.nextRank.icon} {trainerScore.nextRank.name}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col items-end gap-3">
@@ -196,11 +241,6 @@ export default function PublicBinderPage({ param }: { param: string }) {
         </div>
         </div>
       </header>
-
-      <div className="mb-8 space-y-4">
-        <SellerInfoBadge seller={seller} />
-        <SellerReputationCard username={seller?.username} />
-      </div>
 
       {matchCount > 0 && (
         <div className="mb-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
@@ -263,6 +303,7 @@ export default function PublicBinderPage({ param }: { param: string }) {
                   sheetNumber={sheetIndex + 1}
                   slots={sheetCards ? padSheet(sheetCards) : Array(9).fill(null)}
                   seller={seller}
+                  background={binder?.background}
                 />
               )
             })}

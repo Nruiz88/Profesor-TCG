@@ -10,6 +10,9 @@ out/
 .DS_Store
 .freebuff/
 
+# Supabase CLI temporales
+supabase/.temp/
+
 # Notas y archivos de Obsidian (no van al repo)
 /notas/
 .obsidian/

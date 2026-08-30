@@ -30,6 +30,7 @@ export type Database = {
           country: string | null
           city: string | null
           is_admin: boolean
+          is_premium: boolean
           total_sales: number
           total_trades: number
           rating_avg: number
@@ -44,6 +45,7 @@ export type Database = {
           country?: string | null
           city?: string | null
           is_admin?: boolean
+          is_premium?: boolean
           total_sales?: number
           total_trades?: number
           rating_avg?: number
@@ -63,6 +65,7 @@ export type Database = {
           is_public: boolean
           cover_card_id: string | null
           slug: string | null
+          background: string | null
           created_at: string
         }
         Insert: {
@@ -73,6 +76,7 @@ export type Database = {
           is_public?: boolean
           cover_card_id?: string | null
           slug?: string | null
+          background?: string | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['binders']['Insert']>

@@ -16,13 +16,16 @@ import {
   rectSortingStrategy,
   arrayMove
 } from '@dnd-kit/sortable'
+import dynamic from 'next/dynamic'
 import type { SlotCard } from '@/lib/sheets'
 import SortableSlot from './SortableSlot'
 import PokemonCard from '@/components/PokemonCard'
-import CardDetailModal from '@/components/CardDetailModal'
-import ClaimModal from '@/components/ClaimModal'
 import { normalizeStatus } from '@/lib/cardStatus'
 import type { SellerInfo } from '@/components/SellerInfoBadge'
+import { binderBackgroundForSheet } from '@/lib/binderBackgrounds'
+
+const CardDetailModal = dynamic(() => import('@/components/CardDetailModal'), { ssr: false })
+const ClaimModal = dynamic(() => import('@/components/ClaimModal'), { ssr: false })
 
 interface EditableBinderGridProps {
   sheetNumber: number
@@ -39,6 +42,8 @@ interface EditableBinderGridProps {
   onToggleFeatured?: (cardId: string, isFeatured: boolean) => void
   onFetchPrice?: (card: SlotCard) => void
   fetchingPriceId?: string | null
+  /** Fondo elegido para este binder (clave). Si no hay, se rota por hoja. */
+  background?: string | null
 }
 
 export default function EditableBinderGrid({
@@ -55,7 +60,8 @@ export default function EditableBinderGrid({
   highlightCardId,
   onToggleFeatured,
   onFetchPrice,
-  fetchingPriceId
+  fetchingPriceId,
+  background
 }: EditableBinderGridProps) {
   const [selected, setSelected] = useState<SlotCard | null>(null)
   const [claimCard, setClaimCard] = useState<SlotCard | null>(null)
@@ -121,15 +127,24 @@ export default function EditableBinderGrid({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+    <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+      {/* Fondo temático de la hoja */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-slate-950 bg-no-repeat bg-cover bg-center transition-opacity duration-300"
+        style={{ backgroundImage: `url(${binderBackgroundForSheet(sheetNumber, background)})` }}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-950/85 via-slate-950/60 to-slate-950/80" />
+      <div className="relative">
       <div className="mb-4 flex items-center justify-between px-1">
         <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500">
           Hoja {sheetNumber}
         </h3>
         <div className="flex items-center gap-2">
           {isEditing && (
-            <span className="text-[10px] font-semibold text-fuchsia-400">
-              ✋ Arrastrá para reordenar
+            <span className="text-[10px] sm:text-xs font-semibold text-fuchsia-400">
+              <span className="hidden sm:inline">✋ Arrastrá para reordenar</span>
+              <span className="sm:hidden">✋ Mantené presionada para mover</span>
             </span>
           )}
           <span className="text-xs font-medium text-slate-600">
@@ -187,6 +202,7 @@ export default function EditableBinderGrid({
       {claimCard && seller && (
         <ClaimModal card={claimCard} seller={seller} onClose={() => setClaimCard(null)} />
       )}
+      </div>
     </div>
   )
 }

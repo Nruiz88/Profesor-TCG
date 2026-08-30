@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { SlotCard } from '@/lib/sheets'
@@ -27,7 +28,7 @@ interface SortableSlotProps {
   fetchingPrice?: boolean
 }
 
-export default function SortableSlot({
+export default memo(function SortableSlot({
   slot,
   slotIndex,
   isEditing,
@@ -258,4 +259,4 @@ export default function SortableSlot({
       )}
     </div>
   )
-}
+})
