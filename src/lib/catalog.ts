@@ -40,7 +40,7 @@ export interface SetData {
   images?: { symbol?: string; logo?: string }
 }
 
-const CACHE_DIR = path.join(process.cwd(), 'src', 'content')
+const CACHE_DIR = path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'content')
 const CONTENT_DIRS = [path.join(CACHE_DIR, 'en'), path.join(CACHE_DIR, 'ja')]
 const GITHUB_BASE = 'https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master'
 
@@ -140,7 +140,7 @@ async function buildIndex(): Promise<Array<CardData & { setId: string }>> {
   const all: Array<CardData & { setId: string }> = []
   for (const dir of CONTENT_DIRS) {
     let files: string[]
-    try { files = await readdir(dir) } catch { continue }
+    try { files = await readdir(/*turbopackIgnore: true*/ dir) } catch { continue }
     const cardFiles = files.filter((f) => f.endsWith('.json'))
     for (const file of cardFiles) {
       const setId = file.replace('.json', '')
