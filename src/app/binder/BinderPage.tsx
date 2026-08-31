@@ -536,11 +536,7 @@ export default function BinderPage() {
         <ResponsiveNav
           profile={profile}
           user={user}
-          onShowProfile={async () => {
-            const p = profile ?? (await loadProfile())
-            if (p?.username) router.push(`/profile/${encodeURIComponent(p.username)}?tab=settings`)
-            else setMessage('No se pudo abrir tu perfil. Intentalo de nuevo.')
-          }}
+          onShowProfile={() => router.push('/ajustes')}
           onShowClaims={() => router.push('/claims')}
         />
 

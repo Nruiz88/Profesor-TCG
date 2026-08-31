@@ -41,6 +41,7 @@ export async function middleware(request: NextRequest) {
   if (
     !user &&
     (isPrivateBinder ||
+      pathname === '/ajustes' ||
       pathname === '/offers' ||
       pathname === '/admin' ||
       pathname.startsWith('/api/binder') ||

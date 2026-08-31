@@ -98,9 +98,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           profile={profile}
           user={user}
           onShowProfile={() => {
-            if (profile?.username) {
-              router.push(`/profile/${encodeURIComponent(profile.username)}?tab=settings`)
-            }
+            router.push('/ajustes')
           }}
           onShowClaims={() => router.push('/claims')}
         />
