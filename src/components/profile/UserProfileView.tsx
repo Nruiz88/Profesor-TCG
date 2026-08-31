@@ -2,21 +2,22 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import MarketCard from '@/components/MarketCard'
-import WantlistSlot from '@/components/binder/WantlistSlot'
 import { buildSwapOfferUrl } from '@/lib/matchmaking'
 import { whatsAppLink } from '@/lib/profile'
-import { REVIEW_TAGS } from '@/lib/reputation'
-import { pokedexLevel } from '@/lib/pokedex'
 import type { TrainerScore } from '@/lib/trainer'
 import TrainerScoreCard from './TrainerScoreCard'
+import TrainerXpCard from './TrainerXpCard'
+import ProfilePokedexCard from './ProfilePokedexCard'
+import ProfileSaleSection from './ProfileSaleSection'
+import ProfileWantlistSection from './ProfileWantlistSection'
+import ProfileCollectionSection from './ProfileCollectionSection'
+import ProfileReviewsSection from './ProfileReviewsSection'
 import ShowroomCards from './ShowroomCards'
 import FollowButton from './FollowButton'
 import { createClient } from '@/lib/supabase/client'
 import { ChatIcon, CheckIcon, ShareIcon } from '@/components/icons'
 import type { ExploreCard } from '@/app/api/public/explore/route'
 import type { WantlistCard } from '@/types/wantlist'
-import SetCollectionCard from './SetCollectionCard'
 
 export interface ProfileReview {
   id: string
@@ -74,69 +75,6 @@ interface UserProfileViewProps {
   followingCount?: number
   /** Si el visitante autenticado ya sigue a este perfil */
   viewerFollows?: boolean
-}
-
-function Stars({ rating }: { rating: number }) {
-  return (
-    <span className="inline-flex text-sm text-amber-400" aria-label={`${rating.toFixed(1)} de 5 estrellas`}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} className={i <= Math.round(rating) ? '' : 'opacity-25'}>
-          ★
-        </span>
-      ))}
-    </span>
-  )
-}
-
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString('es-AR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
-  } catch {
-    return iso
-  }
-}
-
-// Fecha relativa ("hace 3 días") con la fecha exacta disponible como tooltip.
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return 'hace un momento'
-  if (minutes < 60) return `hace ${minutes} min`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `hace ${hours} h`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `hace ${days} día${days !== 1 ? 's' : ''}`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `hace ${months} mes${months !== 1 ? 'es' : ''}`
-  return `hace ${Math.floor(months / 12)} año${Math.floor(months / 12) !== 1 ? 's' : ''}`
-}
-
-const KIND_LABEL: Record<string, string> = {
-  sale: '🛒 Compra',
-  trade: '🔄 Intercambio',
-  both: '🔄 Venta e intercambio'
-}
-
-function EmptyState({
-  icon,
-  title,
-  description
-}: {
-  icon: string
-  title: string
-  description: string
-}) {
-  return (
-    <div className="rounded-3xl border border-slate-800/80 bg-slate-900/40 px-6 py-16 text-center backdrop-blur-xl">
-      <p className="text-3xl">{icon}</p>
-      <p className="mt-3 text-lg font-semibold text-white">{title}</p>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
-    </div>
-  )
 }
 
 // Total de cartas únicas del usuario (para el contador destacado)
@@ -406,45 +344,8 @@ export default function UserProfileView({
                     </h2>
 
                     {trainerScore && (
-                      <div className="mt-5 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-                        <div className="flex flex-wrap items-end justify-between gap-3">
-                          <div>
-                            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                              Rango actual
-                            </p>
-                            <p className="mt-0.5 flex items-center gap-1.5 text-lg font-bold text-amber-300">
-                              <span className="text-xl">{trainerScore.rank.icon}</span>
-                              {trainerScore.rank.name}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                              Total XP
-                            </p>
-                            <p className="mt-0.5 text-lg font-bold text-white">
-                              {trainerScore.xp.toLocaleString('en-US')} XP
-                            </p>
-                          </div>
-                        </div>
-                        {trainerScore.nextRank && (
-                          <>
-                            <div
-                              className="mt-3 h-3 w-full overflow-hidden rounded-full border border-slate-700/50 bg-slate-900"
-                              role="progressbar"
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                              aria-valuenow={Math.round(trainerScore.progress * 100)}
-                            >
-                              <div
-                                className="h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-400 shadow-[0_0_12px_rgba(241,193,0,0.5)]"
-                                style={{ width: `${Math.round(trainerScore.progress * 100)}%` }}
-                              />
-                            </div>
-                            <p className="mt-1.5 text-right font-mono text-[10px] text-slate-500">
-                              Siguiente rango: {trainerScore.nextRank.icon} {trainerScore.nextRank.name}
-                            </p>
-                          </>
-                        )}
+                      <div className="mt-5">
+                        <TrainerXpCard score={trainerScore} />
                       </div>
                     )}
                   </div>
@@ -491,49 +392,14 @@ export default function UserProfileView({
               {/* Mi Inventario */}
               <section className="space-y-10">
                 {/* En Venta */}
-                <div className="rounded-2xl border border-slate-800/80 border-t-2 border-t-[#00ffcc]/40 bg-slate-900/40 p-6 backdrop-blur-xl">
-                  <div className="mb-5 flex items-center gap-3">
-                    <h4 className="text-lg font-bold text-white">En Venta</h4>
-                    <span className="rounded-full border border-[#00ffcc]/30 bg-[#00ffcc]/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-[#00ffcc]">
-                      {saleCards.length} ítem{saleCards.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  {saleCards.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-slate-500">
-                      No tiene cartas en venta o intercambio todavía.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
-                      {saleCards.slice(0, 10).map((card) => (
-                        <MarketCard key={card.id} card={card} />
-                      ))}
-                    </div>
-                  )}
-                  {saleCards.length > 10 && (
-                    <Link
-                      href="/"
-                      className="mt-4 inline-block text-xs font-semibold text-rose-300 underline-offset-4 hover:text-rose-200 hover:underline"
-                    >
-                      Ver las {saleCards.length} en el mercado →
-                    </Link>
-                  )}
-                </div>
+                <ProfileSaleSection cards={saleCards} />
 
                 {/* Buscadas */}
                 <div
                   id="seccion-buscadas"
-                  className="relative overflow-hidden rounded-2xl border border-slate-800/80 border-t-2 border-t-rose-500/50 bg-slate-900/40 p-6 backdrop-blur-xl"
+                  className="relative"
                 >
-                  <div className="pointer-events-none absolute -right-8 -top-8 text-rose-500/5">
-                    <span className="text-[120px]">✨</span>
-                  </div>
-                  <div className="mb-5 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <h4 className="text-lg font-bold text-rose-300">Buscadas</h4>
-                      <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-rose-300">
-                        {wantlist.length} ítem{wantlist.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
+                  <div className="mb-3 flex items-center justify-end">
                     {wantlist.length > 0 && (
                       <button
                         type="button"
@@ -545,52 +411,16 @@ export default function UserProfileView({
                       </button>
                     )}
                   </div>
-                  {wantlist.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-slate-500">
-                      No agregó cartas a su lista de buscadas todavía.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-                      {wantlist.map((w) => (
-                        <WantlistSlot key={w.id} entry={w} offerUrl={buildOfferUrl(w) ?? undefined} />
-                      ))}
-                    </div>
-                  )}
+                  <ProfileWantlistSection entries={wantlist} offerUrlFor={buildOfferUrl} />
                 </div>
 
                 {/* Colección */}
-                <div className="rounded-2xl border border-slate-800/80 border-t-2 border-t-amber-400/40 bg-slate-900/40 p-6 backdrop-blur-xl">
-                  <div className="mb-5 flex flex-wrap items-center gap-3">
-                    <h4 className="text-lg font-bold text-white">Colección</h4>
-                    <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-amber-300">
-                      {collectionBySet.length} set{collectionBySet.length !== 1 ? 's' : ''}
-                    </span>
-                    <span className="rounded-full border border-slate-700 bg-slate-950/70 px-2.5 py-0.5 font-mono text-[10px] font-bold text-slate-300">
-                      {totalCardCount} carta{totalCardCount !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  {collectionBySet.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-slate-500">
-                      Todavía no tiene cartas en su binder.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      {collectionBySet.slice(0, 8).map((sc) => (
-                        <SetCollectionCard
-                          key={sc.setId}
-                          setId={sc.setId}
-                          setName={sc.setName}
-                          series={sc.series}
-                          owned={sc.owned}
-                          total={sc.total}
-                          percentage={sc.percentage}
-                          logoUrl={setLogos[sc.setId] ?? null}
-                          wanted={wantedBySet.get(sc.setId) ?? []}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <ProfileCollectionSection
+                  sets={collectionBySet}
+                  totalCardCount={totalCardCount}
+                  setLogos={setLogos}
+                  wantedBySet={wantedBySet}
+                />
               </section>
             </div>
 
@@ -622,36 +452,7 @@ export default function UserProfileView({
 
               {/* Pokédex */}
               {pokedex && pokedex.total > 0 && (
-                <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500/25 to-amber-400/25 text-xl ring-1 ring-rose-400/30">
-                        ⚡
-                      </span>
-                      <div>
-                        <p className="text-sm font-bold text-white">Pokédex capturada</p>
-                        <p className="text-xs text-slate-400">
-                          {pokedex.captured} de {pokedex.total} Pokémon
-                        </p>
-                      </div>
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-400/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-300">
-                      {pokedexLevel(pokedex.captured).icon} {pokedexLevel(pokedex.captured).name}
-                    </span>
-                  </div>
-                  <div
-                    className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-800"
-                    role="progressbar"
-                    aria-valuemin={0}
-                    aria-valuemax={pokedex.total}
-                    aria-valuenow={pokedex.captured}
-                  >
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-400 transition-all duration-500"
-                      style={{ width: `${Math.min(100, (pokedex.captured / pokedex.total) * 100)}%` }}
-                    />
-                  </div>
-                </div>
+                <ProfilePokedexCard captured={pokedex.captured} total={pokedex.total} />
               )}
 
               {/* Progreso por set */}
@@ -811,44 +612,7 @@ export default function UserProfileView({
           {/* Hero: XP inline */}
           {trainerScore && (
             <section className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                    Rango actual
-                  </p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-lg font-bold text-amber-300">
-                    <span className="text-xl">{trainerScore.rank.icon}</span>
-                    {trainerScore.rank.name}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                    Total XP
-                  </p>
-                  <p className="mt-0.5 text-lg font-bold text-white">
-                    {trainerScore.xp.toLocaleString('en-US')} XP
-                  </p>
-                </div>
-              </div>
-              {trainerScore.nextRank && (
-                <>
-                  <div
-                    className="mt-3 h-2.5 w-full overflow-hidden rounded-full border border-slate-700/50 bg-slate-900"
-                    role="progressbar"
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={Math.round(trainerScore.progress * 100)}
-                  >
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-400 shadow-[0_0_12px_rgba(241,193,0,0.5)]"
-                      style={{ width: `${Math.round(trainerScore.progress * 100)}%` }}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-right font-mono text-[10px] text-slate-500">
-                    Siguiente rango: {trainerScore.nextRank.icon} {trainerScore.nextRank.name}
-                  </p>
-                </>
-              )}
+              <TrainerXpCard score={trainerScore} compact />
             </section>
           )}
 
@@ -889,46 +653,13 @@ export default function UserProfileView({
           </section>
 
           {/* En Venta */}
-          <section className="rounded-2xl border border-slate-800/80 border-t-2 border-t-[#00ffcc]/40 bg-slate-900/40 p-5 backdrop-blur-xl">
-            <div className="mb-4 flex items-center gap-2.5">
-              <h4 className="text-lg font-bold text-white">En Venta</h4>
-              <span className="rounded-full border border-[#00ffcc]/30 bg-[#00ffcc]/10 px-2 py-0.5 font-mono text-[10px] font-bold text-[#00ffcc]">
-                {saleCards.length} ítem{saleCards.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-            {saleCards.length === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-500">
-                No tiene cartas en venta o intercambio todavía.
-              </p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {saleCards.slice(0, 8).map((card) => (
-                  <MarketCard key={card.id} card={card} />
-                ))}
-              </div>
-            )}
-            {saleCards.length > 8 && (
-              <Link
-                href="/"
-                className="mt-3 inline-block text-xs font-semibold text-rose-300 underline-offset-4 hover:text-rose-200 hover:underline"
-              >
-                Ver las {saleCards.length} en el mercado →
-              </Link>
-            )}
-          </section>
+          <ProfileSaleSection cards={saleCards} />
 
           {/* Buscadas */}
           <section
             id="seccion-buscadas"
-            className="rounded-2xl border border-slate-800/80 border-t-2 border-t-rose-500/50 bg-slate-900/40 p-5 backdrop-blur-xl"
           >
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <h4 className="text-lg font-bold text-rose-300">Buscadas</h4>
-                <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-rose-300">
-                  {wantlist.length} ítem{wantlist.length !== 1 ? 's' : ''}
-                </span>
-              </div>
+            <div className="mb-4 flex items-center justify-end">
               {wantlist.length > 0 && (
                 <button
                   type="button"
@@ -940,172 +671,24 @@ export default function UserProfileView({
                 </button>
               )}
             </div>
-            {wantlist.length === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-500">
-                No agregó cartas a su lista de buscadas todavía.
-              </p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {wantlist.map((w) => (
-                  <WantlistSlot key={w.id} entry={w} offerUrl={buildOfferUrl(w) ?? undefined} />
-                ))}
-              </div>
-            )}
+            <ProfileWantlistSection entries={wantlist} offerUrlFor={buildOfferUrl} />
           </section>
 
           {/* Colección */}
-          <section className="rounded-2xl border border-slate-800/80 border-t-2 border-t-amber-400/40 bg-slate-900/40 p-5 backdrop-blur-xl">
-            <div className="mb-4 flex flex-wrap items-center gap-2.5">
-              <h4 className="text-lg font-bold text-white">Colección</h4>
-              <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-300">
-                {collectionBySet.length} set{collectionBySet.length !== 1 ? 's' : ''}
-              </span>
-              <span className="rounded-full border border-slate-700 bg-slate-950/70 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-300">
-                {totalCardCount} carta{totalCardCount !== 1 ? 's' : ''}
-              </span>
-            </div>
-            {collectionBySet.length === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-500">
-                Todavía no tiene cartas en su binder.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {collectionBySet.slice(0, 10).map((sc) => (
-                  <SetCollectionCard
-                    key={sc.setId}
-                    setId={sc.setId}
-                    setName={sc.setName}
-                    series={sc.series}
-                    owned={sc.owned}
-                    total={sc.total}
-                    percentage={sc.percentage}
-                    logoUrl={setLogos[sc.setId] ?? null}
-                    wanted={wantedBySet.get(sc.setId) ?? []}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
+          <ProfileCollectionSection
+            sets={collectionBySet}
+            totalCardCount={totalCardCount}
+            setLogos={setLogos}
+            wantedBySet={wantedBySet}
+          />
 
           {/* Pokédex */}
           {pokedex && pokedex.total > 0 && (
-            <section className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500/25 to-amber-400/25 text-xl ring-1 ring-rose-400/30">
-                    ⚡
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold text-white">Pokédex capturada</p>
-                    <p className="text-xs text-slate-400">
-                      {pokedex.captured} de {pokedex.total} Pokémon
-                    </p>
-                  </div>
-                </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-400/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-300">
-                  {pokedexLevel(pokedex.captured).icon} {pokedexLevel(pokedex.captured).name}
-                </span>
-              </div>
-              <div
-                className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-800"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={pokedex.total}
-                aria-valuenow={pokedex.captured}
-              >
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-400 transition-all duration-500"
-                  style={{ width: `${Math.min(100, (pokedex.captured / pokedex.total) * 100)}%` }}
-                />
-              </div>
-            </section>
+            <ProfilePokedexCard captured={pokedex.captured} total={pokedex.total} />
           )}
 
           {/* Reseñas */}
-          <section>
-            <div className="mb-4 border-b border-slate-800/60 pb-3">
-              <h3 className="text-lg font-bold text-white">⭐ Reseñas</h3>
-            </div>
-            {reviews.length === 0 ? (
-              <EmptyState
-                icon="⭐"
-                title="Sin reseñas todavía"
-                description={`Cuando @${profile.username} complete transacciones, sus compradores van a poder dejar su opinión acá.`}
-              />
-            ) : (
-              <div className="space-y-3">
-                {reviews.map((review) => {
-                  const tagLabels = review.tags
-                    .map((t) => REVIEW_TAGS.find((rt) => rt.id === t)?.label)
-                    .filter((l): l is string => !!l)
-                  return (
-                    <article
-                      key={review.id}
-                      className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl transition-colors hover:border-slate-700"
-                    >
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-binder-accent to-amber-500 text-sm font-bold text-white shadow">
-                          {(review.reviewer?.username[0] ?? '?').toUpperCase()}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          {review.reviewer ? (
-                            <p className="truncate text-sm">
-                              <Link
-                                href={`/profile/${encodeURIComponent(review.reviewer.username)}`}
-                                className="font-semibold text-white transition-colors hover:text-rose-300"
-                              >
-                                @{review.reviewer.username}
-                              </Link>{' '}
-                              <span className="text-slate-500">dejó una reseña</span>
-                            </p>
-                          ) : (
-                            <p className="truncate text-sm">
-                              <span className="font-semibold text-white">Un comprador</span>{' '}
-                              <span className="text-slate-500">dejó una reseña</span>
-                            </p>
-                          )}
-                          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                            {review.kind && KIND_LABEL[review.kind] && (
-                              <span className="rounded-full border border-slate-700 bg-slate-950/60 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
-                                {KIND_LABEL[review.kind]}
-                              </span>
-                            )}
-                            <time
-                              dateTime={review.createdAt}
-                              title={formatDate(review.createdAt)}
-                              className="text-xs text-slate-500"
-                            >
-                              {timeAgo(review.createdAt)}
-                            </time>
-                          </p>
-                        </div>
-                        <Stars rating={review.rating} />
-                      </div>
-
-                      {review.comment && (
-                        <p className="mt-3 text-sm leading-relaxed text-slate-300">
-                          {review.comment}
-                        </p>
-                      )}
-
-                      {tagLabels.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {tagLabels.map((label) => (
-                            <span
-                              key={label}
-                              className="rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1 text-[10px] font-medium text-slate-300"
-                            >
-                              {label}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </article>
-                  )
-                })}
-              </div>
-            )}
-          </section>
+          <ProfileReviewsSection username={profile.username} reviews={reviews} />
 
           {/* Café */}
           <section className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 text-center backdrop-blur-xl">
