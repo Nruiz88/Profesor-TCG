@@ -51,6 +51,32 @@ function fromMemoryCache(setId: string): ExpansionData | null {
   return null
 }
 
+/* TOpe de entradas en memoria.
+ *
+ * Antes esta caché no tenía tope: cada expansión vista quedaba en el Map y
+ * solo se borraba al volver a pedirla. Como cada entrada guarda el payload
+ * completo (muchas cartas), el proceso crecía durante días y el contenedor
+ * terminaba reiniciándose por memoria (aquí pasó: 1.5 GB y 6 reinicios).
+ *
+ * Con un tope alcanza de sobra: se conservan las últimas CACHE_MAX usadas
+ * y las más viejas se sueltan. La persistencia real sigue en Supabase
+ * (`expansions_cache`), así que soltar una entrada no pierde nada.
+ */
+const CACHE_MAX = 200
+
+function guardarEnMemoria(setId: string, data: ExpansionData): void {
+  /* Reinsertar mueve la clave al final: así el orden del Map es "de más
+     vieja a más nueva" y evictar el primero suelta la más antigua. */
+  if (memoryCache.has(setId)) memoryCache.delete(setId)
+  memoryCache.set(setId, { at: Date.now(), data })
+
+  while (memoryCache.size > CACHE_MAX) {
+    const masVieja = memoryCache.keys().next().value
+    if (masVieja === undefined) break
+    memoryCache.delete(masVieja)
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Caché en Supabase (expansions_cache) — persiste entre instancias
 // ---------------------------------------------------------------------------
@@ -178,7 +204,7 @@ export async function getExpansionData(setId: string): Promise<ExpansionData> {
 
   const db = await fromDbCache(id)
   if (db) {
-    memoryCache.set(id, { at: Date.now(), data: db })
+    guardarEnMemoria(id, db)
     return db
   }
 
@@ -214,7 +240,7 @@ export async function getExpansionData(setId: string): Promise<ExpansionData> {
     symbolUrl: await resolveSymbolUrl(id)
   }
 
-  memoryCache.set(id, { at: Date.now(), data: result })
+  guardarEnMemoria(id, result)
   await saveToDbCache(id, result)
 
   return result
